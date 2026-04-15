@@ -41,7 +41,12 @@ producing the strict answer format required by `r1_zero_reward_fn`.
 
 **Deliverable:** 1-2 sentences with evaluation metrics.
 
-**Answer:** TODO.
+**Answer:** Since the official course MATH validation set was unavailable in our
+self-hosted environment, we report the zero-shot baseline on the converted
+`competition_math_numeric` MATH-like validation set rather than the official
+MATH validation set. On this substitute validation set, Qwen 2.5 Math 1.5B
+achieved 3.25% reward accuracy, 17.60% format accuracy, and 3.25% answer
+accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 
 ---
 
