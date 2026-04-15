@@ -26,6 +26,7 @@ from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
 DEFAULT_MODEL_PATH = "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B"
 DEFAULT_INPUT_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
 DEFAULT_PROMPT_TEMPLATE = "cs336_alignment/prompts/r1_zero.prompt"
+DEFAULT_LOG_DIR = ".agents/logs/ch3/3_2_math_baseline"
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--summary-path",
         default=None,
-        help="Optional JSON path for aggregate metrics. Defaults to <output-stem>.summary.json.",
+        help=(
+            "Optional JSON path for aggregate metrics. If omitted, the summary is written "
+            "under --log-dir so it can be inspected before being archived to artifacts/."
+        ),
+    )
+    parser.add_argument(
+        "--log-dir",
+        default=DEFAULT_LOG_DIR,
+        help=(
+            "Directory for small experiment logs and summaries. Large per-example outputs "
+            "should still go to the data disk via --output-path."
+        ),
     )
     parser.add_argument(
         "--model",
@@ -124,9 +136,9 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def default_summary_path(output_path: str) -> Path:
+def default_summary_path(output_path: str, log_dir: str) -> Path:
     path = Path(output_path)
-    return path.with_name(f"{path.stem}.summary.json")
+    return Path(log_dir) / f"{path.stem}.summary.json"
 
 
 def main() -> None:
@@ -176,7 +188,24 @@ def main() -> None:
     logger.info("wrote per-example results to %s", output_path)
 
     summary = summarize(records)
-    summary_path = Path(args.summary_path) if args.summary_path else default_summary_path(args.output_path)
+    summary.update(
+        {
+            "input_path": args.input_path,
+            "output_path": args.output_path,
+            "model": args.model,
+            "prompt_template": args.prompt_template,
+            "temperature": args.temperature,
+            "top_p": args.top_p,
+            "max_tokens": args.max_tokens,
+            "stop": "</answer>",
+            "include_stop_str_in_output": True,
+        }
+    )
+    summary_path = (
+        Path(args.summary_path)
+        if args.summary_path
+        else default_summary_path(args.output_path, args.log_dir)
+    )
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     logger.info("wrote summary to %s", summary_path)

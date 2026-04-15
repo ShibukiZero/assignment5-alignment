@@ -7,8 +7,6 @@
 
 **Deliverable:** A baseline evaluation script that loads validation examples, formats prompts, generates model outputs, computes metrics, and serializes examples, generations, and scores.
 
-**Answer:** TODO.
-
 ### (b)
 **Question:** Analyze generated outputs by grouping them into correct formatted answers, formatted but incorrect answers, and unformatted incorrect answers. Inspect examples from the failure categories and decide whether the issue is model behavior or parser behavior.
 
@@ -32,8 +30,6 @@
 
 **Deliverable:** A method compatible with `adapters.run_tokenize_prompt_and_output` and the corresponding unit test.
 
-**Answer:** TODO.
-
 ---
 
 ## Problem `compute_entropy`: Per-Token Entropy (1 point)
@@ -42,8 +38,6 @@
 **Question:** Compute the per-token entropy of next-token predictions from model logits over the vocabulary dimension using a numerically stable method.
 
 **Deliverable:** A method compatible with `adapters.run_compute_entropy` and the corresponding unit test.
-
-**Answer:** TODO.
 
 ---
 
@@ -54,8 +48,6 @@
 
 **Deliverable:** A method compatible with `adapters.run_get_response_log_probs` and the corresponding unit test.
 
-**Answer:** TODO.
-
 ---
 
 ## Problem `masked_normalize`: Masked Normalize (1 point)
@@ -64,8 +56,6 @@
 **Question:** Sum tensor values over masked positions and divide by a supplied normalization constant, optionally along a specified dimension.
 
 **Deliverable:** A method compatible with `adapters.run_masked_normalize` and the corresponding unit test.
-
-**Answer:** TODO.
 
 ---
 
@@ -76,8 +66,6 @@
 
 **Deliverable:** A method compatible with `adapters.run_sft_microbatch_train_step` and the corresponding unit test.
 
-**Answer:** TODO.
-
 ---
 
 ## Problem `log_generations`: Logging Generations (1 point)
@@ -87,8 +75,6 @@
 
 **Deliverable:** A reusable `log_generations` helper for SFT/RL experiments.
 
-**Answer:** TODO.
-
 ---
 
 ## Problem `sft_experiment`: Run SFT on MATH (2 points, 2 H100 hrs)
@@ -97,8 +83,6 @@
 **Question:** Run SFT on reasoning traces using Qwen2.5-Math-1.5B, varying the number of unique SFT examples over `{128, 256, 512, 1024}` and the full dataset. Tune learning rate and batch size to reach at least 15% validation accuracy with the full dataset.
 
 **Deliverable:** Validation accuracy curves for different dataset sizes.
-
-**Answer:** TODO.
 
 ### (2)
 **Question:** Filter the reasoning SFT examples to examples whose responses produce the correct answer, then train on the filtered dataset and compare against the unfiltered SFT run.
@@ -127,8 +111,6 @@
 
 **Deliverable:** A method returning normalized rewards, raw rewards, and useful reward metadata.
 
-**Answer:** TODO.
-
 ---
 
 ## Problem `compute_naive_policy_gradient_loss`: Naive Policy Gradient (1 point)
@@ -137,8 +119,6 @@
 **Question:** Implement the per-token naive policy-gradient loss using raw rewards or advantages and policy log-probabilities.
 
 **Deliverable:** A method compatible with the relevant adapter and unit test.
-
-**Answer:** TODO.
 
 ---
 
@@ -149,8 +129,6 @@
 
 **Deliverable:** A method returning per-token loss and metadata such as clipping statistics.
 
-**Answer:** TODO.
-
 ---
 
 ## Problem `compute_policy_gradient_loss`: Policy-Gradient Wrapper (1 point)
@@ -159,8 +137,6 @@
 **Question:** Implement a wrapper that dispatches to the requested policy-gradient loss type, including no-baseline, reinforce-with-baseline, and GRPO-Clip variants.
 
 **Deliverable:** A method returning per-token loss and aggregated metadata.
-
-**Answer:** TODO.
 
 ---
 
@@ -171,8 +147,6 @@
 
 **Deliverable:** A method compatible with `adapters.run_masked_mean` and the corresponding unit test.
 
-**Answer:** TODO.
-
 ---
 
 ## Problem `grpo_microbatch_train_step`: GRPO Microbatch Train Step (3 points)
@@ -181,8 +155,6 @@
 **Question:** Implement one GRPO microbatch backward step, including policy-gradient loss selection, mask-based aggregation, normalization, metadata logging, and gradient-accumulation scaling.
 
 **Deliverable:** A method compatible with `adapters.run_grpo_microbatch_train_step` and the corresponding unit test.
-
-**Answer:** TODO.
 
 ---
 
@@ -259,8 +231,6 @@
 
 **Deliverable:** Off-policy GRPO training support.
 
-**Answer:** TODO.
-
 ---
 
 ## Problem `grpo_off_policy_sweep`: Off-Policy GRPO Hyperparameter Sweep (4 points, 12 H100 hrs)
@@ -316,8 +286,6 @@
 
 **Deliverable:** A parser compatible with `adapters.run_parse_mmlu_response` and the corresponding unit test.
 
-**Answer:** TODO.
-
 ### (b)-(f)
 **Question:** Evaluate Llama-3.1-8B zero-shot on MMLU, serialize generations and scores, report parse failures, throughput, accuracy, and an error analysis of random incorrect examples.
 
@@ -333,8 +301,6 @@
 **Question:** Implement a parser that extracts the final numeric answer from GSM8K model outputs, returning `None` when parsing fails.
 
 **Deliverable:** A parser compatible with `adapters.run_parse_gsm8k_response` and the corresponding unit test.
-
-**Answer:** TODO.
 
 ### (b)-(f)
 **Question:** Evaluate Llama-3.1-8B zero-shot on GSM8K, serialize generations and scores, report parse failures, throughput, accuracy, and an error analysis of random incorrect examples.
@@ -385,14 +351,10 @@
 
 **Deliverable:** A dataset class compatible with `adapters.get_packed_sft_dataset` and the corresponding unit test.
 
-**Answer:** TODO.
-
 ### (b)
 **Question:** Implement batching over the dataset for a single epoch, with optional shuffling.
 
 **Deliverable:** A batch iterator compatible with `adapters.run_iterate_batches` and the corresponding unit test.
-
-**Answer:** TODO.
 
 ---
 
@@ -402,8 +364,6 @@
 **Question:** Write a configurable instruction-tuning training loop for Llama-3.1-8B using gradient accumulation and periodic train/validation logging.
 
 **Deliverable:** A training script with configurable model and optimizer hyperparameters, larger effective batch support, and logging.
-
-**Answer:** TODO.
 
 ---
 
@@ -487,8 +447,6 @@
 
 **Deliverable:** A Python data-loading function suitable for DPO training.
 
-**Answer:** TODO.
-
 ### (2)
 **Question:** Inspect random helpful and harmless preference examples and compare chosen versus rejected responses.
 
@@ -505,8 +463,6 @@
 
 **Deliverable:** A method compatible with `adapters.per_instance_dpo` and the corresponding unit test.
 
-**Answer:** TODO.
-
 ---
 
 ## Problem `dpo_training`: DPO Training (4 points)
@@ -515,8 +471,6 @@
 **Question:** Train the instruction-tuned Llama model with DPO on HH for one epoch, using a reference model and validation classification accuracy tracking.
 
 **Deliverable:** A DPO training script and screenshot of the validation accuracy curve.
-
-**Answer:** TODO.
 
 ### (2)
 **Question:** Evaluate the DPO-trained model on AlpacaEval and compare to the SFT model.
