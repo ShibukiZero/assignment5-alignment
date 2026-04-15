@@ -3,21 +3,43 @@
 ## Problem `math_baseline`: Zero-Shot MATH Baseline (4 points)
 
 ### (a)
-**Question:** Write a script that evaluates Qwen2.5-Math-1.5B zero-shot performance on the MATH validation set using the R1-Zero prompt, vLLM generation, and the provided MATH reward function.
+**Question:** Write a script to evaluate Qwen 2.5 Math 1.5B zero-shot performance on MATH. This script should (1) load the MATH validation examples from `/data/a5-alignment/MATH/validation.jsonl`, (2) format them as string prompts to the language model using the `r1_zero` prompt, and (3) generate outputs for each example. This script should also (4) calculate evaluation metrics and (5) serialize the examples, model generations, and corresponding evaluation scores to disk for analysis in subsequent problems.
 
-**Deliverable:** A baseline evaluation script that loads validation examples, formats prompts, generates model outputs, computes metrics, and serializes examples, generations, and scores.
+**Deliverable:** A script to evaluate baseline zero-shot MATH performance.
 
 ### (b)
-**Question:** Analyze generated outputs by grouping them into correct formatted answers, formatted but incorrect answers, and unformatted incorrect answers. Inspect examples from the failure categories and decide whether the issue is model behavior or parser behavior.
+**Question:** Run your evaluation script on Qwen 2.5 Math 1.5B. How many model generations fall into each of the following categories: (1) correct with both format and answer reward 1, (2) format reward 1 and answer reward 0, (3) format reward 0 and answer reward 0? Observing at least 10 cases where format reward is 0, do you think the issue is with the base model's output, or the parser? Why? What about in (at least 10) cases where format reward is 1 but answer reward is 0?
 
-**Deliverable:** Counts for the requested reward categories plus commentary with examples from each relevant category.
+**Deliverable:** Commentary on the model and reward function performance, including examples of each category.
 
-**Answer:** TODO.
+**Answer:** Because the official course MATH validation set was unavailable in our
+self-hosted environment, we ran this analysis on the converted
+`competition_math_numeric` MATH-like validation set. Out of 3,199 generations,
+104 had both `format_reward = 1` and `answer_reward = 1`, 459 had
+`format_reward = 1` and `answer_reward = 0`, and 2,636 had both rewards equal
+to 0. We archived the summary and sampled examples under
+`artifacts/ch3/3_2_math_baseline/`.
+
+In the inspected `format_reward = 0` examples, the main issue was usually model
+behavior under the strict R1-Zero output protocol rather than a vLLM failure.
+Many responses contained relevant mathematical reasoning, and sometimes even
+the correct numeric answer, but failed the exact parser format by using malformed
+or nonstandard tags, omitting `</think>`, failing to close `</answer>`, or
+writing an answer outside the required `</think> <answer> ... </answer>`
+pattern. For example, some sampled generations used `<end think>` instead of
+`</think>`, wrote `<answer>` without a closing `</answer>`, or produced the
+correct boxed answer without any R1-Zero answer block. In the inspected
+`format_reward = 1, answer_reward = 0` examples, the failures were mixed: some
+were genuine reasoning errors, while others contained the correct value inside a
+longer natural-language answer that the grader did not parse as equivalent to
+the short ground-truth answer. Overall, this baseline suggests that the base
+model can often reason in the right direction, but it is not reliable at
+producing the strict answer format required by `r1_zero_reward_fn`.
 
 ### (c)
-**Question:** Report the zero-shot MATH performance of Qwen2.5-Math-1.5B.
+**Question:** How well does the Qwen 2.5 Math 1.5B zero-shot baseline perform on MATH?
 
-**Deliverable:** A 1-2 sentence summary with evaluation metrics.
+**Deliverable:** 1-2 sentences with evaluation metrics.
 
 **Answer:** TODO.
 
@@ -26,68 +48,68 @@
 ## Problem `tokenize_prompt_and_output`: Prompt and Output Tokenization (2 points)
 
 ### Implementation
-**Question:** Implement prompt/output tokenization by separately tokenizing prompts and responses, concatenating them, shifting labels, and constructing a response-token mask.
+**Question:** Tokenize the prompt and output strings, and construct a mask that is 1 for the response tokens and 0 for other tokens (prompt or padding).
 
-**Deliverable:** A method compatible with `adapters.run_tokenize_prompt_and_output` and the corresponding unit test.
+**Deliverable:** Implement a method `tokenize_prompt_and_output` that tokenizes the question and output separately, concatenates them together, and constructs a `response_mask`. To test your code, implement `[adapters.run_tokenize_prompt_and_output]`. Then, run the test with `uv run pytest -k test_tokenize_prompt_and_output` and make sure your implementation passes it.
 
 ---
 
 ## Problem `compute_entropy`: Per-Token Entropy (1 point)
 
 ### Implementation
-**Question:** Compute the per-token entropy of next-token predictions from model logits over the vocabulary dimension using a numerically stable method.
+**Question:** Get the entropy of the next-token predictions (i.e., entropy over the vocabulary dimension).
 
-**Deliverable:** A method compatible with `adapters.run_compute_entropy` and the corresponding unit test.
+**Deliverable:** Implement a method `compute_entropy` that computes the per-token entropy of next-token predictions. Note: you should use a numerically stable method (e.g., using `logsumexp`) to avoid overflow. To test your code, implement `[adapters.run_compute_entropy]`. Then run `uv run pytest -k test_compute_entropy` and ensure your implementation passes.
 
 ---
 
 ## Problem `get_response_log_probs`: Response Log-Probabilities and Entropy (2 points)
 
 ### Implementation
-**Question:** Compute per-token conditional log-probabilities for labels given causal LM input IDs, optionally returning token entropy.
+**Question:** Obtain log-probabilities from a model. For a prefix `x`, an LM producing next-token logits `f_theta(x)`, and a label `y`, compute the log-probability of `y`. We also suggest including an argument to optionally compute and return token entropies.
 
-**Deliverable:** A method compatible with `adapters.run_get_response_log_probs` and the corresponding unit test.
+**Deliverable:** Implement a method `get_response_log_probs` that gets per-token conditional log-probabilities (given the previous tokens) from a causal language model, and optionally the entropy of the model's next-token distribution. To test your code, implement `[adapters.run_get_response_log_probs]`. Then run `uv run pytest -k test_get_response_log_probs` and ensure the test passes.
 
 ---
 
 ## Problem `masked_normalize`: Masked Normalize (1 point)
 
 ### Implementation
-**Question:** Sum tensor values over masked positions and divide by a supplied normalization constant, optionally along a specified dimension.
+**Question:** Sum over a dimension and normalize by a constant, considering only those elements where `mask == 1`.
 
-**Deliverable:** A method compatible with `adapters.run_masked_normalize` and the corresponding unit test.
+**Deliverable:** Implement a method `masked_normalize` that sums over tensor elements and normalizes by a constant while respecting a boolean mask. To test your code, implement `[adapters.run_masked_normalize]`. Then run `uv run pytest -k test_masked_normalize` and ensure it passes.
 
 ---
 
 ## Problem `sft_microbatch_train_step`: SFT Microbatch Train Step (3 points)
 
 ### Implementation
-**Question:** Implement a single SFT microbatch backward step using response-token log-probabilities, a response mask, normalization, and gradient accumulation scaling.
+**Question:** Execute a forward-and-backward pass on a microbatch.
 
-**Deliverable:** A method compatible with `adapters.run_sft_microbatch_train_step` and the corresponding unit test.
+**Deliverable:** Implement a single micro-batch update for SFT, including cross-entropy loss, summing with a mask, and gradient scaling. To test your code, implement `[adapters.run_sft_microbatch_train_step]`. Then run `uv run pytest -k test_sft_microbatch_train_step` and confirm it passes.
 
 ---
 
 ## Problem `log_generations`: Logging Generations (1 point)
 
 ### Implementation
-**Question:** Implement in-loop generation logging for prompts, model responses, ground-truth answers, reward information, entropy, and response-length statistics.
+**Question:** Write a function `log_generations` that will prompt your model to generate responses for some given prompts (e.g., sampled from the validation set). It's a good idea to log at least the input prompt, the generated response, the ground-truth answer, reward information, average token entropy of the response, and average response length statistics.
 
-**Deliverable:** A reusable `log_generations` helper for SFT/RL experiments.
+**Deliverable:** Implement a function `log_generations` that can be used to log generations from your model.
 
 ---
 
 ## Problem `sft_experiment`: Run SFT on MATH (2 points, 2 H100 hrs)
 
 ### (1)
-**Question:** Run SFT on reasoning traces using Qwen2.5-Math-1.5B, varying the number of unique SFT examples over `{128, 256, 512, 1024}` and the full dataset. Tune learning rate and batch size to reach at least 15% validation accuracy with the full dataset.
+**Question:** Run SFT on the reasoning SFT examples (provided in `/data/a5-alignment/MATH/sft.jsonl`) using the Qwen 2.5 Math 1.5B base model, varying the number of unique examples for SFT in the range `{128, 256, 512, 1024}`, along with using the full dataset. Tune the learning rate and batch size to achieve at least 15% validation accuracy when using the full dataset.
 
 **Deliverable:** Validation accuracy curves for different dataset sizes.
 
 ### (2)
-**Question:** Filter the reasoning SFT examples to examples whose responses produce the correct answer, then train on the filtered dataset and compare against the unfiltered SFT run.
+**Question:** Filter the reasoning SFT examples to only include examples that produce the correct answer. Run SFT on the (full) filtered dataset and report the size of the filtered dataset and the validation accuracy you achieve. Compare your findings to the previous SFT experiment.
 
-**Deliverable:** Filtered dataset size, validation accuracy curve, and comparison to the previous SFT experiment.
+**Deliverable:** Report the size of the dataset and the validation accuracy curve you achieve.
 
 **Answer:** TODO.
 
@@ -96,9 +118,15 @@
 ## Problem `expert_iteration_experiment`: Run Expert Iteration on MATH (2 points, 6 H100 hrs)
 
 ### Experiment
-**Question:** Run expert iteration with Qwen2.5-Math-1.5B on MATH train questions, varying rollout count, SFT epoch count, and batch size enough to draw conclusions. Use `n_ei_steps = 5`, stop rollouts at the answer tag, and log response entropy over training.
+**Question:** Run expert iteration on the MATH dataset (provided at `/data/a5-alignment/MATH/train.jsonl`) using the Qwen 2.5 Math 1.5B Base model, varying the number of rollouts `G` per question and the number of epochs used in the SFT step, and using `n_ei_steps = 5`. Vary the batch size for each expert iteration step (i.e., the size of `D_b`) in `{512, 1024, 2048}`. You do not need to try all possible combinations of these hyperparameters. Just enough to draw conclusions about each is fine. Log the entropy of the model's responses over training. Make sure to have vLLM terminate generations at the second answer tag `</answer>`, as done in the SFT section.
 
-**Deliverable:** Validation accuracy curves for at least two rollout-count and epoch-count configurations, a model reaching at least 15% MATH validation accuracy, a short comparison to SFT, and an entropy plot.
+**Deliverable:** Validation accuracy curves associated with different rollout configurations. Try at least 2 different rollout counts and epoch counts.
+
+**Deliverable:** A model that achieves validation accuracy of at least 15% on MATH.
+
+**Deliverable:** A brief 2 sentence discussion comparing to your SFT performance, as well as performance across EI steps.
+
+**Deliverable:** A plot of the entropy of the model's responses over training.
 
 **Answer:** TODO.
 
@@ -107,63 +135,63 @@
 ## Problem `compute_group_normalized_rewards`: Group Normalization (2 points)
 
 ### Implementation
-**Question:** Compute raw rewards for rollout responses, group-normalize them within each prompt group, and optionally normalize by group standard deviation.
+**Question:** Compute rewards for each group of rollout responses, normalized by the group size.
 
-**Deliverable:** A method returning normalized rewards, raw rewards, and useful reward metadata.
+**Deliverable:** Implement a method `compute_group_normalized_rewards` that calculates raw rewards for each rollout response, normalizes them within their groups, and returns both the normalized and raw rewards along with any metadata you think is useful. To test your code, implement `[adapters.run_compute_group_normalized_rewards]`. Then, run the test with `uv run pytest -k test_compute_group_normalized_rewards` and make sure your implementation passes it.
 
 ---
 
 ## Problem `compute_naive_policy_gradient_loss`: Naive Policy Gradient (1 point)
 
 ### Implementation
-**Question:** Implement the per-token naive policy-gradient loss using raw rewards or advantages and policy log-probabilities.
+**Question:** Compute the policy-gradient loss at every token, where `raw_rewards_or_advantages` is either the raw reward or an already-normalized advantage.
 
-**Deliverable:** A method compatible with the relevant adapter and unit test.
+**Deliverable:** Implement a method `compute_naive_policy_gradient_loss` that computes the per-token policy-gradient loss using raw rewards or pre-computed advantages. To test your code, implement `[adapters.run_compute_naive_policy_gradient_loss]`. Then run `uv run pytest -k test_compute_naive_policy_gradient_loss` and ensure the test passes.
 
 ---
 
 ## Problem `compute_grpo_clip_loss`: GRPO-Clip Loss (2 points)
 
 ### Implementation
-**Question:** Implement the per-token GRPO-Clip loss using advantages, current policy log-probabilities, old policy log-probabilities, and the clip range.
+**Question:** Compute the per-token GRPO-Clip loss.
 
-**Deliverable:** A method returning per-token loss and metadata such as clipping statistics.
+**Deliverable:** Implement a method `compute_grpo_clip_loss` that computes the per-token GRPO-Clip loss. To test your code, implement `[adapters.run_compute_grpo_clip_loss]`. Then run `uv run pytest -k test_compute_grpo_clip_loss` and ensure the test passes.
 
 ---
 
 ## Problem `compute_policy_gradient_loss`: Policy-Gradient Wrapper (1 point)
 
 ### Implementation
-**Question:** Implement a wrapper that dispatches to the requested policy-gradient loss type, including no-baseline, reinforce-with-baseline, and GRPO-Clip variants.
+**Question:** Select and compute the desired policy-gradient loss.
 
-**Deliverable:** A method returning per-token loss and aggregated metadata.
+**Deliverable:** Implement `compute_policy_gradient_loss`, a convenience wrapper that dispatches to the correct loss routine (`no_baseline`, `reinforce_with_baseline`, or `grpo_clip`) and returns both the per-token loss and any auxiliary statistics. To test your code, implement `[adapters.run_compute_policy_gradient_loss]`. Then run `uv run pytest -k test_compute_policy_gradient_loss` and verify it passes.
 
 ---
 
 ## Problem `masked_mean`: Masked Mean (1 point)
 
 ### Implementation
-**Question:** Compute masked means over all elements or over a specified dimension while ignoring masked-out entries.
+**Question:** Compute the mean of `tensor` along a given dimension, considering only those elements where `mask == 1`.
 
-**Deliverable:** A method compatible with `adapters.run_masked_mean` and the corresponding unit test.
+**Deliverable:** Implement a method `masked_mean` that averages tensor elements while respecting a boolean mask. To test your code, implement `[adapters.run_masked_mean]`. Then run `uv run pytest -k test_masked_mean` and ensure it passes.
 
 ---
 
 ## Problem `grpo_microbatch_train_step`: GRPO Microbatch Train Step (3 points)
 
 ### Implementation
-**Question:** Implement one GRPO microbatch backward step, including policy-gradient loss selection, mask-based aggregation, normalization, metadata logging, and gradient-accumulation scaling.
+**Question:** Execute a forward-and-backward pass on a microbatch.
 
-**Deliverable:** A method compatible with `adapters.run_grpo_microbatch_train_step` and the corresponding unit test.
+**Deliverable:** Implement a single micro-batch update for GRPO, including policy-gradient loss, averaging with a mask, and gradient scaling. To test your code, implement `[adapters.run_grpo_microbatch_train_step]`. Then run `uv run pytest -k test_grpo_microbatch_train_step` and confirm it passes.
 
 ---
 
 ## Problem `grpo_train_loop`: GRPO Train Loop (5 points)
 
 ### Implementation and Experiment
-**Question:** Implement the complete GRPO training loop using R1-Zero prompting, vLLM rollouts, reward computation, policy updates, validation evaluation, and useful debugging logs.
+**Question:** Put together a complete train loop for GRPO. You should refer to the algorithm in Section 7.1 for the overall structure, using the methods we've implemented where appropriate.
 
-**Deliverable:** A train loop, validation reward curve over steps, and example rollouts showing sensible behavior over time.
+**Deliverable:** Implement a complete train loop for GRPO. Begin training a policy on MATH and confirm that you see validation rewards improving, along with sensible rollouts over time. Provide a plot with the validation rewards with respect to steps, and a few example rollouts over time.
 
 **Answer:** TODO.
 
@@ -172,9 +200,13 @@
 ## Problem `grpo_learning_rate`: Tune the Learning Rate (2 points, 6 H100 hrs)
 
 ### Experiment
-**Question:** Starting from the suggested GRPO hyperparameters, sweep learning rates and report final validation answer rewards or divergence.
+**Question:** Starting with the suggested hyperparameters above, perform a sweep over the learning rates and report the final validation answer rewards (or note divergence if the optimizer diverges).
 
-**Deliverable:** Validation reward curves for multiple learning rates, a model reaching at least 25% MATH validation accuracy, and a brief discussion of other logged metric trends.
+**Deliverable:** Validation reward curves associated with multiple learning rates.
+
+**Deliverable:** A model that achieves validation accuracy of at least 25% on MATH.
+
+**Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
 **Answer:** TODO.
 
@@ -183,9 +215,11 @@
 ## Problem `grpo_baselines`: Effect of Baselining (2 points, 2 H100 hrs)
 
 ### Experiment
-**Question:** Compare on-policy GRPO training with `no_baseline` and `reinforce_with_baseline`, using the tuned learning rate.
+**Question:** Train a policy with `reinforce_with_baseline` and with `no_baseline`.
 
-**Deliverable:** Validation reward curves for each loss type and a brief discussion of other logged metric trends.
+**Deliverable:** Validation reward curves associated with each loss type.
+
+**Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
 **Answer:** TODO.
 
@@ -194,9 +228,9 @@
 ## Problem `think_about_length_normalization`: Think About Length Normalization (1 point)
 
 ### Written
-**Question:** Compare masked mean aggregation with masked normalization by a fixed constant before running the empirical length-normalization experiment.
+**Question:** Compare the two approaches (without running experiments yet). What are the pros and cons of each approach? Are there any specific settings or examples where one approach seems better?
 
-**Deliverable:** A conceptual comparison of the pros and cons of the two approaches and cases where one may be preferable.
+**Deliverable:** Compare the two approaches (without running experiments yet). What are the pros and cons of each approach? Are there any specific settings or examples where one approach seems better?
 
 **Answer:** TODO.
 
@@ -205,9 +239,9 @@
 ## Problem `grpo_length_normalization`: Effect of Length Normalization (2 points, 2 H100 hrs)
 
 ### Experiment
-**Question:** Empirically compare GRPO training with masked mean aggregation versus fixed-constant masked normalization.
+**Question:** Compare normalization with `masked_mean` and `masked_normalize` with an end-to-end GRPO training run. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
-**Deliverable:** Validation answer reward curves and commentary on findings, including relevant stability metrics such as gradient norm.
+**Deliverable:** Compare normalization with `masked_mean` and `masked_normalize` with an end-to-end GRPO training run. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
 **Answer:** TODO.
 
@@ -216,9 +250,9 @@
 ## Problem `grpo_group_standard_deviation`: Effect of Standard Deviation Normalization (2 points, 2 H100 hrs)
 
 ### Experiment
-**Question:** Compare GRPO runs with group standard-deviation normalization enabled and disabled.
+**Question:** Compare the performance of `use_std_normalization == True` and `use_std_normalization == False`. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
-**Deliverable:** Validation answer reward curves and commentary on metric trends such as stability and gradient norm.
+**Deliverable:** Compare the performance of `use_std_normalization == True` and `use_std_normalization == False`. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
 **Answer:** TODO.
 
@@ -227,18 +261,22 @@
 ## Problem `grpo_off_policy`: Implement Off-Policy GRPO
 
 ### Implementation
-**Question:** Extend GRPO to support multiple epochs and optimizer updates per rollout batch, compute old log-probabilities once after rollout generation, and use GRPO-Clip for off-policy updates.
+**Question:** Depending on your implementation of the full GRPO train loop above, you may already have the infrastructure to do this. If not, you need to implement the following: you should be able to take multiple epochs of gradient steps per rollout batch, where the number of epochs and optimizer updates per rollout batch are controlled by `rollout_batch_size`, `epochs_per_rollout_batch`, and `train_batch_size`; edit your main training loop to get response logprobs from the policy after each rollout batch generation phase and before the inner loop of gradient steps, which will be the `old_log_probs`; and use the `"GRPO-Clip"` loss type.
 
-**Deliverable:** Off-policy GRPO training support.
+**Deliverable:** Implement off-policy GRPO training.
 
 ---
 
 ## Problem `grpo_off_policy_sweep`: Off-Policy GRPO Hyperparameter Sweep (4 points, 12 H100 hrs)
 
 ### Experiment
-**Question:** With rollout batch size fixed to 256, sweep epochs per rollout batch and train batch size. Start with a broad short sweep, then run a focused 200-step sweep and compare against the on-policy configuration.
+**Question:** Fixing `rollout_batch_size = 256`, choose a range over `epochs_per_rollout_batch` and `train_batch_size` to sweep over. First do a broad sweep for a limited number of GRPO steps (`< 50`) to get a sense of the performance landscape, and then a more focused sweep for a larger number of GRPO steps (200). Provide a brief experiment log explaining the ranges you chose. Compare to your on-policy run with `epochs_per_rollout_batch = 1` and `train_batch_size = 256`, reporting plots with respect to number of validation steps as well as with respect to wall-clock time. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend such as entropy and response length. Compare the entropy of the model's responses over training to what you observed in the EI experiment.
 
-**Deliverable:** Experiment log explaining the sweep ranges, validation reward curves by validation step and wall-clock time, and commentary on trends such as entropy and response length.
+**Deliverable:** Fixing `rollout_batch_size = 256`, choose a range over `epochs_per_rollout_batch` and `train_batch_size` to sweep over. First do a broad sweep for a limited number of GRPO steps (`< 50`) to get a sense of the performance landscape, and then a more focused sweep for a larger number of GRPO steps (200). Provide a brief experiment log explaining the ranges you chose.
+
+**Deliverable:** Compare to your on-policy run with `epochs_per_rollout_batch = 1` and `train_batch_size = 256`, reporting plots with respect to number of validation steps as well as with respect to wall-clock time.
+
+**Deliverable:** Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend such as entropy and response length. Compare the entropy of the model's responses over training to what you observed in the EI experiment.
 
 **Answer:** TODO.
 
@@ -247,9 +285,9 @@
 ## Problem `grpo_off_policy_clip_ablation`: Off-Policy GRPO-Clip Ablation (2 points, 2 H100 hrs)
 
 ### Experiment
-**Question:** Implement an unclipped off-policy loss type and compare it to GRPO-Clip using the best off-policy hyperparameters.
+**Question:** Implement the unclipped per-token loss as a new loss type `"GRPO-No-Clip"`. Take your best performing off-policy hyperparameters from the previous problem and run the unclipped version of the loss. Report the validation answer reward curves. Comment on the findings compared to your GRPO-Clip run, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm.
 
-**Deliverable:** Validation reward curves and commentary comparing clipped versus unclipped training, including metrics such as entropy, response length, and gradient norm.
+**Deliverable:** Implement the unclipped per-token loss as a new loss type `"GRPO-No-Clip"`. Take your best performing off-policy hyperparameters from the previous problem and run the unclipped version of the loss. Report the validation answer reward curves. Comment on the findings compared to your GRPO-Clip run, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm.
 
 **Answer:** TODO.
 
@@ -258,9 +296,9 @@
 ## Problem `grpo_prompt_ablation`: Prompt Ablation (2 points, 2 H100 hrs)
 
 ### Experiment
-**Question:** Compare GRPO training and validation using the R1-Zero prompt versus the question-only prompt, with the corresponding reward function for each.
+**Question:** Report the validation answer reward curves for both the R1-Zero prompt and the question-only prompt. How do metrics compare, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm? Try to explain your findings.
 
-**Deliverable:** Validation answer reward curves for both prompts and commentary on metrics such as entropy, response length, and gradient norm.
+**Deliverable:** Report the validation answer reward curves for both the R1-Zero prompt and the question-only prompt. How do metrics compare, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm? Try to explain your findings.
 
 **Answer:** TODO.
 
@@ -269,9 +307,9 @@
 ## Problem `leaderboard`: Leaderboard (16 points, 16 H100 hrs)
 
 ### Final Experiment
-**Question:** Obtain the highest validation reward possible within 4 hours of training on 2 H100 GPUs, using Qwen2.5-Math-1.5B and the allowed MATH train/validation setup.
+**Question:** As the last part of the (mandatory) assignment, you will experiment with approaches to obtain the highest validation rewards possible within 4 hours of training on 2 H100 GPUs.
 
-**Deliverable:** Validation accuracy over the full MATH validation set, a screenshot of validation accuracy versus wall-clock time ending at no more than 4 hours, and confirmation that validation used R1-Zero prompting, temperature 1.0, max tokens 1024, and `r1_zero_reward_fn` answer rewards.
+**Deliverable:** Report a validation accuracy obtained within 4 hours of training on 2 H100 GPUs and a screenshot of your validation accuracy with respect to wall-clock time, where the x-axis ends at `<= 4` hours. As a reminder, we place the following constraints on your evaluation: (1) your validation accuracy should be the average accuracy over the entire MATH validation set (all 5K examples), (2) you must use the R1-Zero prompt at validation time, (3) you must use temperature 1.0 and max tokens 1024 with vLLM for evaluation, and (4) you must calculate validation accuracy by averaging the answer rewards produced by the `r1_zero_reward_fn` reward function provided in the starter code.
 
 **Answer:** TODO.
 
@@ -282,14 +320,34 @@
 ## Problem `mmlu_baseline`: Zero-Shot MMLU Baseline (4 points)
 
 ### (a)
-**Question:** Implement a parser that extracts the predicted multiple-choice letter from MMLU model outputs, returning `None` when parsing fails.
+**Question:** Write a function to parse generated language model outputs into the letter corresponding to the predicted answer. If model response cannot be parsed, return `None`. To test your function, implement the adapter `[run_parse_mmlu_response]` and make sure it passes `uv run pytest -k test_parse_mmlu_response`.
 
-**Deliverable:** A parser compatible with `adapters.run_parse_mmlu_response` and the corresponding unit test.
+**Deliverable:** A function to parse generated predictions on MMLU into the letter of the corresponding answer option.
 
-### (b)-(f)
-**Question:** Evaluate Llama-3.1-8B zero-shot on MMLU, serialize generations and scores, report parse failures, throughput, accuracy, and an error analysis of random incorrect examples.
+### (b)
+**Question:** Write a script to evaluate Llama 3.1 8B zero-shot performance on MMLU. This script should (1) load the MMLU examples, (2) format them as string prompts to the language model, and (3) generate outputs for each example. This script should also (4) calculate evaluation metrics and (5) serialize the examples, model generations, and corresponding evaluation scores to disk for further analysis.
 
-**Deliverable:** Evaluation script, metrics, throughput, parse-failure analysis, and 2-4 sentence error analysis.
+**Deliverable:** A script to evaluate baseline zero-shot MMLU performance.
+
+### (c)
+**Question:** Run your evaluation script on Llama 3.1 8B. How many model generations does your evaluation function fail to parse? If non-zero, what do these examples look like?
+
+**Deliverable:** Number of model generations that failed parsing. If non-zero, a few examples of generations that your function wasn't able to parse.
+
+### (d)
+**Question:** How long does it take the model to generate responses to each of the MMLU examples? Estimate the throughput in examples/second.
+
+**Deliverable:** Estimate of MMLU examples/second throughput.
+
+### (e)
+**Question:** How well does the Llama 3.1 8B zero-shot baseline perform on MMLU?
+
+**Deliverable:** 1-2 sentences with evaluation metrics.
+
+### (f)
+**Question:** Sample 10 random incorrectly-predicted examples from the evaluation dataset. Looking through the examples, what sort of errors does the language model make?
+
+**Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** TODO.
 
@@ -298,14 +356,34 @@
 ## Problem `gsm8k_baseline`: Zero-Shot GSM8K Baseline (4 points)
 
 ### (a)
-**Question:** Implement a parser that extracts the final numeric answer from GSM8K model outputs, returning `None` when parsing fails.
+**Question:** Write a function to parse generated language model outputs into a single numeric prediction. If model response cannot be parsed, return `None`. To test your function, implement the adapter `[run_parse_gsm8k_response]` and make sure it passes `uv run pytest -k test_parse_gsm8k_response`.
 
-**Deliverable:** A parser compatible with `adapters.run_parse_gsm8k_response` and the corresponding unit test.
+**Deliverable:** A function to parse generated predictions on GSM8K into a single numeric answer.
 
-### (b)-(f)
-**Question:** Evaluate Llama-3.1-8B zero-shot on GSM8K, serialize generations and scores, report parse failures, throughput, accuracy, and an error analysis of random incorrect examples.
+### (b)
+**Question:** Write a script to evaluate Llama 3.1 8B zero-shot performance on GSM8K. This script should (1) load the GSM8K examples, (2) format them as string prompts to the language model, and (3) generate outputs for each example. This script should also (4) calculate evaluation metrics and (5) serialize the examples, model generations, and corresponding evaluation scores to disk for further analysis.
 
-**Deliverable:** Evaluation script, metrics, throughput, parse-failure analysis, and 2-4 sentence error analysis.
+**Deliverable:** A script to evaluate baseline zero-shot GSM8K performance.
+
+### (c)
+**Question:** Run your evaluation script on Llama 3.1 8B. How many model generations does your evaluation function fail to parse? If non-zero, what do these examples look like?
+
+**Deliverable:** Number of model generations that failed parsing. If non-zero, a few examples of generations that your function wasn't able to parse.
+
+### (d)
+**Question:** How long does it take the model to generate responses to each of the GSM8K examples? Estimate the throughput in examples/second.
+
+**Deliverable:** Estimate of GSM8K examples/second throughput.
+
+### (e)
+**Question:** How well does the Llama 3.1 8B zero-shot baseline perform on GSM8K?
+
+**Deliverable:** 1-2 sentences with evaluation metrics.
+
+### (f)
+**Question:** Sample 10 random incorrectly-predicted examples from the evaluation dataset. Looking through the examples, what sort of errors does the language model make?
+
+**Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** TODO.
 
@@ -313,10 +391,25 @@
 
 ## Problem `alpaca_eval_baseline`: Zero-Shot AlpacaEval Baseline (4 points)
 
-### (a)-(d)
-**Question:** Collect Llama-3.1-8B zero-shot predictions on AlpacaEval, serialize outputs in AlpacaEval-compatible JSON format, evaluate winrate with Llama-3.3-70B-Instruct as annotator, and inspect dispreferred examples.
+### (a)
+**Question:** Write a script to collect Llama 3.1 8B zero-shot predictions on AlpacaEval. This script should (1) load the AlpacaEval instructions, (2) generate outputs for each instruction, and (3) serialize the outputs and model generations to disk for evaluation. For compatibility with the AlpacaEval evaluator, your output predictions must be serialized as a JSON array.
 
-**Deliverable:** Prediction-generation script, throughput estimate, winrate and length-controlled winrate, and a short error analysis.
+**Deliverable:** A script to generate zero-shot outputs on AlpacaEval.
+
+### (b)
+**Question:** How long does it take the model to generate responses to each of the AlpacaEval examples? Estimate the throughput in examples/second.
+
+**Deliverable:** Estimate of AlpacaEval examples/second throughput.
+
+### (c)
+**Question:** To measure our model's performance on AlpacaEval, we'll use Llama 3.3 70B Instruct as the annotator and compare our outputs against GPT-4 Turbo. What is the winrate and length-controlled winrate of our zero-shot baseline model when compared against GPT-4 Turbo and using Llama 3.3 70B Instruct as the annotator?
+
+**Deliverable:** 1-2 sentences with the winrate and length-controlled winrate.
+
+### (d)
+**Question:** Sample 10 random examples where the baseline model's response is dispreferred versus GPT-4 Turbo (you should be able to see the AlpacaEval annotations at `scripts/alpaca_eval_vllm_llama3_3_70b_fn/annotations_seed0_configs.json`). Looking through the examples, why do you think the baseline model is dispreferred? Are there any cases where you disagree with the automatic evaluator?
+
+**Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** TODO.
 
@@ -324,10 +417,25 @@
 
 ## Problem `sst_baseline`: Zero-Shot SimpleSafetyTests Baseline (4 points)
 
-### (a)-(d)
-**Question:** Collect Llama-3.1-8B zero-shot predictions on SimpleSafetyTests, serialize JSONL outputs, evaluate safe-output proportion with Llama-3.3-70B-Instruct as annotator, and inspect unsafe examples.
+### (a)
+**Question:** Write a script to collect Llama 3.1 8B zero-shot predictions on SimpleSafetyTests. This script should (1) load the SimpleSafetyTests instructions, (2) generate outputs for each instruction, and (3) serialize the outputs and model generations to disk for evaluation. For compatibility with our provided evaluator, your output predictions must serialized in JSON-lines format (i.e., new-line separated JSON objects).
 
-**Deliverable:** Prediction-generation script, throughput estimate, safe-output proportion, and a short error analysis.
+**Deliverable:** A script to generate zero-shot outputs on SimpleSafetyTests.
+
+### (b)
+**Question:** How long does it take the model to generate responses to each of the SimpleSafetyTests examples? Estimate the throughput in examples/second.
+
+**Deliverable:** Estimate of SimpleSafetyTests examples/second throughput.
+
+### (c)
+**Question:** To measure our model's performance on SimpleSafetyTests, we'll use Llama 3.3 70B Instruct to annotate responses as being safe or unsafe. What proportion of model outputs are judged as safe?
+
+**Deliverable:** 1-2 sentences with the proportion of safe model outputs (as judged by Llama 3.3 70B Instruct).
+
+### (d)
+**Question:** Sample 10 random examples where the baseline model's response is judged to be unsafe (you should be able to see the annotations at the output path that you specified when running the evaluator). Looking through the examples, in what sorts of cases does the model produce unsafe outputs? Are there any cases where you disagree with the automatic evaluator?
+
+**Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** TODO.
 
@@ -336,9 +444,9 @@
 ## Problem `look_at_sft`: Looking at Instruction-Tuning Data (4 points)
 
 ### Written
-**Question:** Inspect ten random examples from the instruction-tuning training dataset and describe the represented task types and data quality.
+**Question:** Look through ten random examples in the provided instruction tuning training dataset. What sort of traditional NLP tasks are represented in this sample (e.g., question answering, sentiment analysis, etc.)? Comment on the quality of the sampled examples (both the prompt and the corresponding instruction).
 
-**Deliverable:** A 2-4 sentence description with concrete examples.
+**Deliverable:** 2-4 sentences with a description of what sorts of tasks are implicitly included in the instruction tuning dataset, as well commentary about the data quality. Use concrete examples.
 
 **Answer:** TODO.
 
@@ -347,32 +455,32 @@
 ## Problem `data_loading`: Implement Data Loading (3 points)
 
 ### (a)
-**Question:** Implement a PyTorch `Dataset` for packed instruction-tuning examples using an Alpaca-style prompt template, tokenizer, sequence length, and document shuffling option.
+**Question:** Implement a PyTorch `Dataset` subclass that generates examples for instruction tuning. The Dataset should have the following interface: `__init__(self, tokenizer, dataset_path, seq_length, shuffle)`, `__len__(self)`, and `__getitem__(self, i)`. The `__getitem__` function should return a dictionary with at least the keys `input_ids` and `labels`, each a PyTorch tensor of shape `(seq_length,)`.
 
-**Deliverable:** A dataset class compatible with `adapters.get_packed_sft_dataset` and the corresponding unit test.
+**Deliverable:** Implement a PyTorch `Dataset` subclass that generates examples for instruction tuning. To test your implementation against our provided tests, you will first need to implement the test adapter at `[adapters.get_packed_sft_dataset]`. Then, run `uv run pytest -k test_packed_sft_dataset` to test your implementation.
 
 ### (b)
-**Question:** Implement batching over the dataset for a single epoch, with optional shuffling.
+**Question:** Implement a function that returns batches from your previously-implemented Dataset. Your function should accept as input (1) a dataset to take batches from, (2) the desired batch size, and (3) whether or not to shuffle the examples before batching them up. Iterating through these batches should constitute a single epoch through the data. You may find `torch.utils.data.DataLoader` to be useful.
 
-**Deliverable:** A batch iterator compatible with `adapters.run_iterate_batches` and the corresponding unit test.
+**Deliverable:** Implement a function that returns batches from your previously-implemented Dataset. To test your implementation against our provided tests, you will first need to implement the test adapter at `[adapters.run_iterate_batches]`. Then, run `uv run pytest -k test_iterate_batches` to test your implementation.
 
 ---
 
 ## Problem `sft_script`: Training Script for Instruction Tuning (4 points)
 
 ### Implementation
-**Question:** Write a configurable instruction-tuning training loop for Llama-3.1-8B using gradient accumulation and periodic train/validation logging.
+**Question:** Write a script that runs a training loop fine-tune the Llama 3.1 8B base model on the provided instruction tuning data. In particular, we recommend that your training script allow for at least the ability to configure and control the various model and optimizer hyperparameters, the ability to train on larger batch sizes than can fit in memory via gradient accumulation, and periodically logging training and validation performance.
 
-**Deliverable:** A training script with configurable model and optimizer hyperparameters, larger effective batch support, and logging.
+**Deliverable:** Write a script that runs a training loop fine-tune the Llama 3.1 8B base model on the provided instruction tuning data.
 
 ---
 
 ## Problem `sft`: Instruction Tuning (6 points, 24 H100 hrs)
 
 ### Experiment
-**Question:** Fine-tune Llama-3.1-8B for one epoch on the provided instruction-tuning data, save the model and tokenizer, and report training setup and validation loss.
+**Question:** Fine-tune Llama 3 8B base on the provided instruction tuning data. We recommend training single epoch using a context length of 512 tokens with a total batch size of 32 sequences per gradient step. Make sure to save your model and tokenizer after training, since we'll evaluate their performance and also use them later in the assignment for further post-training on preference pairs.
 
-**Deliverable:** Training setup description, final validation loss, learning curve, and serialized model/tokenizer for later evaluation.
+**Deliverable:** A description of your training setup, along with the final validation loss that was recorded and an associated learning curve. In addition, make sure to serialize the model and tokenizer after training for use in the next parts of the assignment.
 
 **Answer:** TODO.
 
@@ -380,10 +488,20 @@
 
 ## Problem `mmlu_sft`: MMLU After SFT (4 points)
 
-### (a)-(c)
-**Question:** Evaluate the instruction-tuned model on MMLU with the training prompt format, compare throughput and accuracy to the zero-shot baseline, and inspect incorrect examples.
+### (a)
+**Question:** Write a script to evaluate your instruction-tuned model on MMLU, making sure to format the inputs in the same instruction tuning prompt format used for training. Run your evaluation script and measure the amount of time it takes for the model to generate responses to each of the MMLU examples. Estimate the throughput in examples/second. How does this compare to our zero-shot baseline?
 
-**Deliverable:** Throughput comparison, accuracy comparison, and 2-4 sentence error analysis.
+**Deliverable:** 1-2 sentences with an estimate of MMLU examples/second throughput and a comparison to the zero-shot baseline.
+
+### (b)
+**Question:** How well does the instruction-tuned model perform on MMLU? How does this compare to our zero-shot baseline?
+
+**Deliverable:** 1-2 sentences with evaluation metrics and a comparison to the zero-shot baseline.
+
+### (c)
+**Question:** Sample 10 random incorrectly-predicted examples from the evaluation dataset. Looking through the examples, what sort of errors does the language model make? Qualitatively, how do the outputs of the fine-tuned model differ from the outputs of the zero-shot baseline?
+
+**Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** TODO.
 
@@ -391,10 +509,20 @@
 
 ## Problem `gsm8k_sft`: GSM8K After SFT (4 points)
 
-### (a)-(c)
-**Question:** Evaluate the instruction-tuned model on GSM8K with the training prompt format, compare throughput and accuracy to the zero-shot baseline, and inspect incorrect examples.
+### (a)
+**Question:** Write a script to evaluate your instruction-tuned model on GSM8K, making sure to format the inputs in the same instruction tuning prompt format used for training. Run your evaluation script and measure the amount of time it takes the model to generate responses to each of the GSM8K examples. Estimate the throughput in examples/second. How does this compare to our zero-shot baseline?
 
-**Deliverable:** Throughput comparison, accuracy comparison, and 2-4 sentence error analysis.
+**Deliverable:** 1-2 sentences with an estimate of GSM8K examples/second throughput and a comparison to the zero-shot baseline.
+
+### (b)
+**Question:** How well does the instruction-tuned model perform on GSM8K? How does this compare to our zero-shot baseline?
+
+**Deliverable:** 1-2 sentences with evaluation metrics and a comparison to the zero-shot baseline.
+
+### (c)
+**Question:** Sample 10 random incorrectly-predicted examples from the evaluation dataset. Looking through the examples, what sort of errors does the language model make? Qualitatively, how do the outputs of the fine-tuned model differ from the outputs of the zero-shot baseline?
+
+**Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** TODO.
 
@@ -402,10 +530,20 @@
 
 ## Problem `alpaca_eval_sft`: AlpacaEval After SFT (4 points)
 
-### (a)-(c)
-**Question:** Collect AlpacaEval predictions from the instruction-tuned model, evaluate with Llama-3.3-70B-Instruct as annotator, compare to the zero-shot baseline, and inspect dispreferred examples.
+### (a)
+**Question:** Write a script to collect the predictions of your fine-tuned model on AlpacaEval. How long does it take the model to generate responses to each of the AlpacaEval examples? Estimate the throughput in examples/second, and compare to our previously-used baseline model.
 
-**Deliverable:** Throughput estimate, winrate and length-controlled winrate comparison, and 2-4 sentence error analysis.
+**Deliverable:** 1-2 sentences with an estimate of AlpacaEval examples/second throughput and a comparison to the baseline model.
+
+### (b)
+**Question:** To measure our model's performance on AlpacaEval, we'll use Llama 3.3 70B Instruct as the annotator and compare our outputs against GPT-4 Turbo. What is the winrate and length-controlled winrate of your instruction-tuned model when compared against GPT-4 Turbo and using Llama 3.3 70B Instruct as the annotator? How does this winrate compare to our zero-shot baseline?
+
+**Deliverable:** 1-3 sentences with the winrate and length-controlled winrate, as well a comparison against the zero-shot baseline.
+
+### (c)
+**Question:** Sample 10 random examples where your fine-tuned model's response is dispreferred versus GPT-4 Turbo. You should be able to see the AlpacaEval annotations at `scripts/alpaca_eval_vllm_llama3_3_70b_fn/annotations_seed0_configs.json`, and the entries where `"preference"` is equal to `1.0` are the examples where the evaluator judged the GPT-4 Turbo response to be better. Looking through the examples, why do you think your fine-tuned model is dispreferred? Are there any cases where you disagree with the automatic evaluator?
+
+**Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** TODO.
 
@@ -413,10 +551,20 @@
 
 ## Problem `sst_sft`: SimpleSafetyTests After SFT (4 points)
 
-### (a)-(c)
-**Question:** Collect SimpleSafetyTests predictions from the instruction-tuned model, evaluate safe-output proportion with Llama-3.3-70B-Instruct as annotator, compare to baseline, and inspect unsafe examples.
+### (a)
+**Question:** Write a script to collect the predictions of your fine-tuned model on SimpleSafetyTests. How long does it take the model to generate responses to each of the SimpleSafetyTests examples? Estimate the throughput in examples/second, and compare to our previously-used baseline model.
 
-**Deliverable:** Throughput estimate, safe-output comparison, and 2-4 sentence error analysis.
+**Deliverable:** 1-2 sentences with an estimate of SimpleSafetyTests examples/second throughput and a comparison to the baseline model.
+
+### (b)
+**Question:** To measure our model's performance on SimpleSafetyTests, we'll use Llama 3.3 70B Instruct to annotate responses as being safe or unsafe. What proportion of model outputs are judged as safe? How does this compare to the zero-shot baseline?
+
+**Deliverable:** 1-2 sentences with the proportion of safe model outputs (as judged by Llama 3.3 70B Instruct).
+
+### (c)
+**Question:** Sample 10 random examples where your fine-tuned model's response is judged to be unsafe (you should be able to see the annotations at the output path that you specified when running the evaluator). Looking through the examples, in what sorts of cases does the model produce unsafe outputs? Are there any cases where you disagree with the automatic evaluator?
+
+**Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** TODO.
 
@@ -425,16 +573,16 @@
 ## Problem `red_teaming`: Red-Teaming the Instruction-Tuned Model (4 points)
 
 ### (a)
-**Question:** Name three possible misuse cases for language models beyond the examples in the handout.
+**Question:** Beyond the examples listed above, what are three other possible ways that language models might be misused?
 
-**Deliverable:** A 1-3 sentence list or description.
+**Deliverable:** 1-3 sentences with three examples (beyond those presented above) about potential misuses of language models.
 
 **Answer:** TODO.
 
 ### (b)
-**Question:** Try prompting the fine-tuned model for three different potentially malicious applications and describe the methodology and observed results.
+**Question:** Try prompting your fine-tuned language model to assist you in completing three different potentially malicious applications. For each malicious application, provide a description of your methodology and the results, as well as any qualitative takeaways you drew from the experience. For example, your descriptions should answer questions like whether you were successful or unsuccessful, how long you tried to break the model, and strategies that you employed.
 
-**Deliverable:** For each application, a 2-4 sentence description of the red-teaming procedure and result.
+**Deliverable:** For three different malicious applications, provide a 2-4 sentence description of your red-teaming procedure and results.
 
 **Answer:** TODO.
 
@@ -443,14 +591,14 @@
 ## Problem `look_at_hh`: Looking at HH Preference Data (2 points)
 
 ### (1)
-**Question:** Load the Anthropic HH datasets, combine the four training files, remove multi-turn conversations, split each example into instruction, chosen response, rejected response, and source file.
+**Question:** Write a function to load the Anthropic HH dataset. Make a combined training set containing all of the examples in the 4 files above. After unzipped, each line in these files contains a JSON object with a "chosen" conversation between a human and the assistant (preferred by the human annotator) and a "rejected" conversation, both starting from the same prompt. To simplify our use of the dataset for DPO, you should apply the following processing steps: ignore multi-turn conversations, separate each example into an "instruction" and a pair of chosen and rejected responses, and remember which file each example came from.
 
-**Deliverable:** A Python data-loading function suitable for DPO training.
+**Deliverable:** A Python function that loads the dataset in a convenient data structure for you to use it for training. The Python modules `gzip` and `json` will be useful.
 
 ### (2)
-**Question:** Inspect random helpful and harmless preference examples and compare chosen versus rejected responses.
+**Question:** The Anthropic researchers purposefully did not try to define "helpful" or "harmless", but instead left that up to the human annotators to interpret. Look at 3 random examples of "helpful" and 3 of "harmless" conversations. Comment on these examples: what seems to be the main differences between the chosen and rejected responses? Do you agree with the annotators choices?
 
-**Deliverable:** Commentary on differences between chosen and rejected responses and whether the annotator choices seem reasonable.
+**Deliverable:** Commentary on these examples: what seems to be the main differences between the chosen and rejected responses? Do you agree with the annotators choices?
 
 **Answer:** TODO.
 
@@ -459,36 +607,36 @@
 ## Problem `dpo_loss`: DPO Loss (2 points)
 
 ### Implementation
-**Question:** Implement the per-instance DPO loss for a trainable policy, reference policy, tokenizer, prompt, preferred response, rejected response, and beta.
+**Question:** Write a function that computes the per-instance DPO loss. Your function will receive two language models, and two strings containing both the better and worse responses according to the preference dataset. Use the Alpaca template (the same we used for SFT) to format the prompt and responses you are given, and make sure to add the "end of sequence" token after the response.
 
-**Deliverable:** A method compatible with `adapters.per_instance_dpo` and the corresponding unit test.
+**Deliverable:** A function that takes two LMs (`pi_theta` and `pi_ref`), a tokenizer, and two strings (the prompt concatenated with both a chosen response `y_w` and a rejected response `y_l`), and computes the per-instance DPO loss. Implement the adapter `[adapters.per_instance_dpo]` and make sure it passes `uv run pytest -k test_per_instance_dpo_loss`.
 
 ---
 
 ## Problem `dpo_training`: DPO Training (4 points)
 
 ### (1)
-**Question:** Train the instruction-tuned Llama model with DPO on HH for one epoch, using a reference model and validation classification accuracy tracking.
+**Question:** Implement your DPO training loop, and train your instruction-tuned Llama 3.1 8B model for 1 epoch over HH. Save your model with the highest validation accuracy.
 
 **Deliverable:** A DPO training script and screenshot of the validation accuracy curve.
 
 ### (2)
-**Question:** Evaluate the DPO-trained model on AlpacaEval and compare to the SFT model.
+**Question:** Now, evaluate your model after DPO on AlpacaEval, as you did in problem `alpaca_eval_sft`. What is the new winrate and length-controlled winrate of your DPO-trained model when compared against GPT-4 Turbo, with Llama 3.3 70B Instruct as the annotator? How does that compare to the SFT model you started with?
 
-**Deliverable:** A 1-2 sentence report with winrate and length-controlled winrate.
+**Deliverable:** A 1-2 sentence response with the AlpacaEval winrates of your DPO-trained model.
 
 **Answer:** TODO.
 
 ### (3)
-**Question:** Evaluate the DPO-trained model on SimpleSafetyTests and compare to the SFT model.
+**Question:** Evaluate your DPO-trained model on SimpleSafetyTests. How does it compare to the SFT model?
 
-**Deliverable:** A 1-2 sentence safety evaluation summary.
+**Deliverable:** A 1-2 sentence response with your SimpleSafetyTests evaluation.
 
 **Answer:** TODO.
 
 ### (4)
-**Question:** Evaluate the DPO-trained model on GSM8K and MMLU to check for alignment tax.
+**Question:** Both AlpacaEval and SimpleSafetyTests test behaviours that are directly demonstrated in HH, such as instruction following and refusing potentially harmful prompts. Past work in alignment of language models, including the Anthropic paper introducing HH, have often observed an "alignment tax", where aligned models might also lose some of their capabilities. Evaluate your DPO model on GSM8K and MMLU. What do you observe?
 
-**Deliverable:** A 2-3 sentence report with GSM8K and MMLU evaluations.
+**Deliverable:** A 2-3 sentence response with your evaluations on GSM8K and MMLU.
 
 **Answer:** TODO.
