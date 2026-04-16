@@ -85,3 +85,14 @@ def get_response_log_probs(
     if return_token_entropy:
         output["token_entropy"] = compute_entropy(logits)
     return output
+
+
+def masked_normalize(
+    tensor: Tensor,
+    mask: Tensor,
+    dim: int | None = None,
+    normalize_constant: float = 1.0,
+) -> Tensor:
+    """Sum masked tensor values and divide by a fixed normalization constant."""
+    masked_tensor = torch.where(mask, tensor, torch.zeros_like(tensor))
+    return masked_tensor.sum(dim=dim) / normalize_constant
