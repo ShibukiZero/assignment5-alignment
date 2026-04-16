@@ -96,3 +96,26 @@ def masked_normalize(
     """Sum masked tensor values and divide by a fixed normalization constant."""
     masked_tensor = torch.where(mask, tensor, torch.zeros_like(tensor))
     return masked_tensor.sum(dim=dim) / normalize_constant
+
+
+def sft_microbatch_train_step(
+    policy_log_probs: Tensor,
+    response_mask: Tensor,
+    gradient_accumulation_steps: int,
+    normalize_constant: float | None = 1.0,
+) -> tuple[Tensor, dict[str, Tensor]]:
+    """Backpropagate the masked SFT negative log-likelihood for one microbatch."""
+    if normalize_constant is None:
+        normalize_constant = response_mask.sum().item()
+
+    per_example_loss = -masked_normalize(
+        tensor=policy_log_probs,
+        mask=response_mask,
+        dim=-1,
+        normalize_constant=normalize_constant,
+    )
+    loss = per_example_loss.mean()
+    scaled_loss = loss / gradient_accumulation_steps
+    scaled_loss.backward()
+
+    return scaled_loss, {"loss": loss.detach()}
