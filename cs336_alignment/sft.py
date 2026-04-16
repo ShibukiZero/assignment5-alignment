@@ -77,12 +77,12 @@ def get_response_log_probs(
 ) -> dict[str, Tensor]:
     """Get per-token log-probabilities for the provided next-token labels."""
     logits = model(input_ids=input_ids).logits
-    log_probs = torch.log_softmax(logits, dim=-1)
-    label_log_probs = torch.gather(
-        log_probs,
+    label_logits = torch.gather(
+        logits,
         dim=-1,
         index=labels.unsqueeze(-1),
     ).squeeze(-1)
+    label_log_probs = label_logits - torch.logsumexp(logits, dim=-1)
 
     output = {"log_probs": label_log_probs}
     if return_token_entropy:
