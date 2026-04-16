@@ -41,6 +41,7 @@ DEFAULT_TRAIN_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_n
 DEFAULT_VAL_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
 DEFAULT_PROMPT_TEMPLATE = "cs336_alignment/prompts/r1_zero.prompt"
 DEFAULT_LOG_DIR = ".agents/logs/ch4/sft_experiment"
+BYTES_PER_GIB = 1024**3
 
 
 def parse_args() -> argparse.Namespace:
@@ -259,6 +260,20 @@ def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def cuda_memory_metrics(device: str) -> dict[str, float]:
+    if not device.startswith("cuda"):
+        return {}
+    cuda_device = torch.device(device)
+    return {
+        "cuda_memory_allocated_gib": torch.cuda.memory_allocated(cuda_device) / BYTES_PER_GIB,
+        "cuda_memory_reserved_gib": torch.cuda.memory_reserved(cuda_device) / BYTES_PER_GIB,
+        "cuda_max_memory_allocated_gib": torch.cuda.max_memory_allocated(cuda_device)
+        / BYTES_PER_GIB,
+        "cuda_max_memory_reserved_gib": torch.cuda.max_memory_reserved(cuda_device)
+        / BYTES_PER_GIB,
+    }
+
+
 def run_eval_and_log(
     policy: PreTrainedModel,
     llm: LLM,
@@ -342,8 +357,10 @@ def main() -> None:
     best_answer_accuracy = -1.0
     train_iter = iter_minibatches(train_examples, microbatch_size, rng)
     for train_step in tqdm(range(args.max_steps), desc="SFT optimizer steps"):
+        if args.policy_device.startswith("cuda"):
+            torch.cuda.reset_peak_memory_stats(torch.device(args.policy_device))
+        micro_scaled_losses: list[float] = []
         micro_losses: list[float] = []
-        micro_unscaled_losses: list[float] = []
 
         for _ in range(args.gradient_accumulation_steps):
             try:
@@ -371,8 +388,10 @@ def main() -> None:
                 gradient_accumulation_steps=args.gradient_accumulation_steps,
                 normalize_constant=args.normalize_constant,
             )
-            micro_losses.append(float(loss.detach().cpu().item()))
-            micro_unscaled_losses.append(float(metadata["loss"].detach().cpu().item()))
+            micro_scaled_losses.append(float(loss.detach().cpu().item()))
+            micro_losses.append(float(metadata["loss"].detach().cpu().item()))
+            del scored, loss, metadata
+            del input_ids, labels, response_mask, tokenized
 
         grad_norm = torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=1.0)
         optimizer.step()
@@ -384,7 +403,7 @@ def main() -> None:
                 "type": "train",
                 "train_step": train_step,
                 "loss": mean(micro_losses),
-                "unscaled_loss": mean(micro_unscaled_losses),
+                "scaled_loss": mean(micro_scaled_losses),
                 "grad_norm": float(grad_norm.detach().cpu().item()),
                 "num_train_examples": len(train_examples),
                 "learning_rate": args.learning_rate,
@@ -392,6 +411,7 @@ def main() -> None:
                 "microbatch_size": microbatch_size,
                 "gradient_accumulation_steps": args.gradient_accumulation_steps,
                 "normalize_constant": args.normalize_constant,
+                **cuda_memory_metrics(args.policy_device),
             },
         )
 
