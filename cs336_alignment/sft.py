@@ -57,3 +57,10 @@ def tokenize_prompt_and_output(
         "labels": torch.tensor(labels_batch, dtype=torch.long),
         "response_mask": torch.tensor(response_mask_batch, dtype=torch.bool),
     }
+
+
+def compute_entropy(logits: Tensor) -> Tensor:
+    """Compute next-token entropy over the vocabulary dimension."""
+    log_probs = logits - torch.logsumexp(logits, dim=-1, keepdim=True)
+    probs = torch.exp(log_probs)
+    return -(probs * log_probs).sum(dim=-1)
