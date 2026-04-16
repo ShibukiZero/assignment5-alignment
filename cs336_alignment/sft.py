@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
+
 import torch
 from torch import Tensor
 from transformers import PreTrainedTokenizerBase
@@ -119,3 +122,136 @@ def sft_microbatch_train_step(
     scaled_loss.backward()
 
     return scaled_loss, {"loss": loss.detach()}
+
+
+def _mean_or_none(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return sum(values) / len(values)
+
+
+def log_generations(
+    model: torch.nn.Module,
+    tokenizer: PreTrainedTokenizerBase,
+    prompt_strs: list[str],
+    ground_truths: list[str],
+    reward_fn: Callable[[str, str], dict[str, float]],
+    generation_kwargs: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Generate responses and return per-example logs plus aggregate metrics."""
+    if len(prompt_strs) != len(ground_truths):
+        raise ValueError("prompt_strs and ground_truths must have the same length.")
+
+    generation_kwargs = dict(generation_kwargs or {})
+    if "max_new_tokens" not in generation_kwargs:
+        generation_kwargs["max_new_tokens"] = 1024
+    if tokenizer.pad_token_id is None and tokenizer.eos_token_id is not None:
+        tokenizer.pad_token = tokenizer.eos_token
+        generation_kwargs.setdefault("pad_token_id", tokenizer.eos_token_id)
+
+    device = next(model.parameters()).device
+    encoded_prompts = tokenizer(
+        prompt_strs,
+        return_tensors="pt",
+        padding=True,
+        add_special_tokens=False,
+    ).to(device)
+
+    was_training = model.training
+    model.eval()
+    with torch.no_grad():
+        generated_ids = model.generate(**encoded_prompts, **generation_kwargs)
+
+    prompt_width = encoded_prompts["input_ids"].shape[-1]
+    output_strs: list[str] = []
+    response_lengths: list[int] = []
+    for generated in generated_ids:
+        response_ids = generated[prompt_width:]
+        if tokenizer.eos_token_id is not None:
+            non_eos_response_ids = response_ids[response_ids != tokenizer.eos_token_id]
+        else:
+            non_eos_response_ids = response_ids
+        if tokenizer.pad_token_id is not None:
+            non_eos_response_ids = non_eos_response_ids[
+                non_eos_response_ids != tokenizer.pad_token_id
+            ]
+        response_lengths.append(int(non_eos_response_ids.numel()))
+        output_strs.append(tokenizer.decode(response_ids, skip_special_tokens=True))
+
+    tokenized = tokenize_prompt_and_output(prompt_strs, output_strs, tokenizer)
+    input_ids = tokenized["input_ids"].to(device)
+    labels = tokenized["labels"].to(device)
+    response_mask = tokenized["response_mask"].to(device)
+
+    with torch.no_grad():
+        scored = get_response_log_probs(
+            model=model,
+            input_ids=input_ids,
+            labels=labels,
+            return_token_entropy=True,
+        )
+
+    if was_training:
+        model.train()
+
+    token_entropy = scored["token_entropy"]
+    per_example_entropy = masked_normalize(
+        tensor=token_entropy,
+        mask=response_mask,
+        dim=-1,
+        normalize_constant=1.0,
+    ) / response_mask.sum(dim=-1).clamp(min=1)
+
+    examples: list[dict[str, Any]] = []
+    rewards: list[float] = []
+    format_rewards: list[float] = []
+    answer_rewards: list[float] = []
+    entropy_values: list[float] = []
+    correct_lengths: list[float] = []
+    incorrect_lengths: list[float] = []
+
+    for i, (prompt, response, ground_truth) in enumerate(
+        zip(prompt_strs, output_strs, ground_truths)
+    ):
+        reward_info = reward_fn(response, ground_truth)
+        reward = float(reward_info.get("reward", 0.0))
+        format_reward = float(reward_info.get("format_reward", 0.0))
+        answer_reward = float(reward_info.get("answer_reward", 0.0))
+        avg_entropy = float(per_example_entropy[i].detach().cpu().item())
+        response_length = float(response_lengths[i])
+
+        rewards.append(reward)
+        format_rewards.append(format_reward)
+        answer_rewards.append(answer_reward)
+        entropy_values.append(avg_entropy)
+        if answer_reward == 1.0:
+            correct_lengths.append(response_length)
+        else:
+            incorrect_lengths.append(response_length)
+
+        examples.append(
+            {
+                "prompt": prompt,
+                "response": response,
+                "ground_truth": ground_truth,
+                "reward": reward,
+                "format_reward": format_reward,
+                "answer_reward": answer_reward,
+                "avg_token_entropy": avg_entropy,
+                "response_length": response_lengths[i],
+            }
+        )
+
+    return {
+        "examples": examples,
+        "summary": {
+            "num_examples": len(examples),
+            "avg_reward": _mean_or_none(rewards),
+            "format_accuracy": _mean_or_none(format_rewards),
+            "answer_accuracy": _mean_or_none(answer_rewards),
+            "avg_token_entropy": _mean_or_none(entropy_values),
+            "avg_response_length": _mean_or_none([float(x) for x in response_lengths]),
+            "avg_correct_response_length": _mean_or_none(correct_lengths),
+            "avg_incorrect_response_length": _mean_or_none(incorrect_lengths),
+        },
+    }
