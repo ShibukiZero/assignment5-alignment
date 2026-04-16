@@ -13,16 +13,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import re
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
+
+from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
 
 
 DEFAULT_OUTPUT_DIR = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric"
 DEFAULT_CACHE_DIR = "/root/autodl-tmp/hf-cache"
 DEFAULT_PROMPT_PATH = "cs336_alignment/prompts/r1_zero.prompt"
 DATA_FILE_SUFFIXES = {".parquet", ".jsonl", ".json"}
+ANSWER_BLOCK_RE = re.compile(r"(?s)(<answer>)(.*?)(</answer>)")
 
 
 def parse_args() -> argparse.Namespace:
@@ -80,6 +84,26 @@ def parse_args() -> argparse.Namespace:
             "but may lose exact LaTeX forms such as fractions."
         ),
     )
+    parser.add_argument(
+        "--embed-ground-truth-in-sft",
+        action="store_true",
+        help="Include `ground_truth` and `question` fields in each SFT row for later filtering.",
+    )
+    parser.add_argument(
+        "--sft-corruption-rate",
+        type=float,
+        default=0.0,
+        help=(
+            "Fraction of SFT rows whose final <answer> block should be replaced with an incorrect "
+            "answer while preserving response format."
+        ),
+    )
+    parser.add_argument(
+        "--sft-corruption-seed",
+        type=int,
+        default=0,
+        help="Random seed used when corrupting SFT answers.",
+    )
     return parser.parse_args()
 
 
@@ -123,11 +147,12 @@ def dataset_loader_name(data_files: dict[str, list[str]]) -> str:
 
 def load_hf_dataset(source: str, config: str, cache_dir: str):
     try:
-        from datasets import load_dataset
+        from datasets import Dataset, DatasetDict, load_dataset
+        import pandas as pd
     except ImportError as exc:
         raise SystemExit(
-            "This script needs the `datasets` package on the remote server. "
-            "Install it there with `pip install -U datasets` or the environment manager you use."
+            "This script needs `datasets` and `pandas`. "
+            "Install them with `pip install -U datasets pandas`."
         ) from exc
 
     source_path = Path(source)
@@ -136,7 +161,26 @@ def load_hf_dataset(source: str, config: str, cache_dir: str):
         if local_data_files:
             loader_name = dataset_loader_name(local_data_files)
             print(f"Loading local {loader_name} files from {source_path}")
-            return load_dataset(loader_name, data_files=local_data_files, cache_dir=cache_dir)
+
+            ds_dict = {}
+            for split_name, paths in local_data_files.items():
+                frames = []
+                for p in paths:
+                    p = str(p)
+                    if p.endswith(".parquet"):
+                        frames.append(pd.read_parquet(p))
+                    elif p.endswith(".jsonl"):
+                        frames.append(pd.read_json(p, lines=True))
+                    elif p.endswith(".json"):
+                        frames.append(pd.read_json(p))
+                    else:
+                        raise SystemExit(f"Unsupported local file: {p}")
+
+                df = pd.concat(frames, ignore_index=True)
+                ds_dict[split_name] = Dataset.from_pandas(df, preserve_index=False)
+
+            return DatasetDict(ds_dict)
+
         print(f"No parquet/json/jsonl files found under {source_path}; trying dataset builder path.")
         return load_dataset(str(source_path), config, cache_dir=cache_dir)
 
@@ -243,13 +287,52 @@ def clean_reasoning_trace(solution: str, final_answer: str) -> str:
     return reasoning.replace("\r\n", "\n").strip()
 
 
-def make_sft_record(eval_record: dict[str, Any], prompt_template: str) -> dict[str, str]:
+def replace_answer_block(response: str, new_answer: str) -> str:
+    def repl(match: re.Match[str]) -> str:
+        return f"{match.group(1)} {new_answer} {match.group(3)}"
+
+    updated_response, num_subs = ANSWER_BLOCK_RE.subn(repl, response, count=1)
+    if num_subs != 1:
+        raise ValueError("Could not find exactly one <answer>...</answer> block to replace.")
+    return updated_response
+
+
+def choose_incorrect_answer(
+    candidates: list[str],
+    response: str,
+    ground_truth: str,
+    rng: random.Random,
+) -> str:
+    shuffled_candidates = list(candidates)
+    rng.shuffle(shuffled_candidates)
+    for candidate in shuffled_candidates:
+        if candidate == ground_truth:
+            continue
+        corrupted_response = replace_answer_block(response, candidate)
+        scores = r1_zero_reward_fn(corrupted_response, ground_truth)
+        if scores["answer_reward"] == 0.0:
+            return candidate
+    raise ValueError("Failed to sample an incorrect replacement answer.")
+
+
+def make_sft_record(
+    eval_record: dict[str, Any],
+    prompt_template: str,
+    *,
+    embed_ground_truth: bool,
+) -> dict[str, Any]:
     question = eval_record["question"]
     final_answer = eval_record["ground_truth"]
     prompt = prompt_template.format(question=question)
     reasoning = clean_reasoning_trace(eval_record.get("solution", ""), final_answer)
     response = f"{reasoning}\n</think> <answer> {final_answer} </answer>"
-    return {"prompt": prompt, "response": response}
+    record: dict[str, str] = {"prompt": prompt, "response": response}
+    if embed_ground_truth:
+        record["question"] = question
+        record["ground_truth"] = final_answer
+        if eval_record.get("source_split") is not None:
+            record["source_split"] = str(eval_record["source_split"])
+    return record
 
 
 def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> int:
@@ -288,6 +371,8 @@ def convert_split(
 
 def main() -> None:
     args = parse_args()
+    if not 0.0 <= args.sft_corruption_rate <= 1.0:
+        raise SystemExit("--sft-corruption-rate must lie in [0, 1].")
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -317,7 +402,35 @@ def main() -> None:
     )
 
     if not args.skip_sft:
-        sft_records = [make_sft_record(record, prompt_template) for record in train_records]
+        sft_records = [
+            make_sft_record(
+                record,
+                prompt_template,
+                embed_ground_truth=args.embed_ground_truth_in_sft,
+            )
+            for record in train_records
+        ]
+        if args.sft_corruption_rate > 0.0:
+            rng = random.Random(args.sft_corruption_seed)
+            candidate_answers = [str(record["ground_truth"]) for record in train_records]
+            num_to_corrupt = int(round(len(sft_records) * args.sft_corruption_rate))
+            corrupt_indices = set(rng.sample(range(len(sft_records)), num_to_corrupt))
+            for index in corrupt_indices:
+                ground_truth = str(train_records[index]["ground_truth"])
+                replacement = choose_incorrect_answer(
+                    candidates=candidate_answers,
+                    response=sft_records[index]["response"],
+                    ground_truth=ground_truth,
+                    rng=rng,
+                )
+                sft_records[index]["response"] = replace_answer_block(
+                    sft_records[index]["response"], replacement
+                )
+                if args.embed_ground_truth_in_sft:
+                    sft_records[index]["was_corrupted"] = True
+            if args.embed_ground_truth_in_sft:
+                for index, row in enumerate(sft_records):
+                    row.setdefault("was_corrupted", False)
         written = write_jsonl(output_dir / "sft.jsonl", sft_records)
         print(f"Wrote {written} records to {output_dir / 'sft.jsonl'}.")
 
@@ -329,6 +442,9 @@ def main() -> None:
         "train_records": len(train_records),
         "validation_records": len(validation_records),
         "wrote_sft": not args.skip_sft,
+        "embed_ground_truth_in_sft": args.embed_ground_truth_in_sft,
+        "sft_corruption_rate": args.sft_corruption_rate,
+        "sft_corruption_seed": args.sft_corruption_seed,
         "answer_policy": "extracted_solution_first"
         if args.prefer_extracted_solution
         else "boxed_answer_first",
