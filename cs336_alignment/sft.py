@@ -64,3 +64,24 @@ def compute_entropy(logits: Tensor) -> Tensor:
     log_probs = logits - torch.logsumexp(logits, dim=-1, keepdim=True)
     probs = torch.exp(log_probs)
     return -(probs * log_probs).sum(dim=-1)
+
+
+def get_response_log_probs(
+    model: torch.nn.Module,
+    input_ids: Tensor,
+    labels: Tensor,
+    return_token_entropy: bool,
+) -> dict[str, Tensor]:
+    """Get per-token log-probabilities for the provided next-token labels."""
+    logits = model(input_ids=input_ids).logits
+    log_probs = torch.log_softmax(logits, dim=-1)
+    label_log_probs = torch.gather(
+        log_probs,
+        dim=-1,
+        index=labels.unsqueeze(-1),
+    ).squeeze(-1)
+
+    output = {"log_probs": label_log_probs}
+    if return_token_entropy:
+        output["token_entropy"] = compute_entropy(logits)
+    return output
