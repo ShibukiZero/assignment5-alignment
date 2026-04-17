@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Literal
 
 import torch
 from torch import Tensor
@@ -105,3 +106,48 @@ def compute_grpo_clip_loss(
         "is_clipped": (ratio != clipped_ratio),
     }
     return per_token_loss, metadata
+
+
+def compute_policy_gradient_loss(
+    policy_log_probs: Tensor,
+    loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip"],
+    raw_rewards: Tensor,
+    advantages: Tensor,
+    old_log_probs: Tensor,
+    cliprange: float,
+) -> tuple[Tensor, dict[str, Tensor]]:
+    """Dispatch to the requested per-token policy-gradient loss."""
+    if loss_type == "no_baseline":
+        loss = compute_naive_policy_gradient_loss(
+            raw_rewards_or_advantages=raw_rewards,
+            policy_log_probs=policy_log_probs,
+        )
+        return loss, {}
+
+    if loss_type == "reinforce_with_baseline":
+        loss = compute_naive_policy_gradient_loss(
+            raw_rewards_or_advantages=advantages,
+            policy_log_probs=policy_log_probs,
+        )
+        return loss, {}
+
+    if loss_type == "grpo_clip":
+        return compute_grpo_clip_loss(
+            advantages=advantages,
+            policy_log_probs=policy_log_probs,
+            old_log_probs=old_log_probs,
+            cliprange=cliprange,
+        )
+
+    raise ValueError(f"Unknown policy-gradient loss_type: {loss_type}")
+
+
+def masked_mean(tensor: Tensor, mask: Tensor, dim: int | None = None) -> Tensor:
+    """Average tensor values over positions where mask is true."""
+    if tensor.shape != mask.shape:
+        raise ValueError("tensor and mask must have the same shape.")
+
+    float_mask = mask.to(dtype=tensor.dtype)
+    masked_sum = (tensor * float_mask).sum(dim=dim)
+    mask_count = float_mask.sum(dim=dim)
+    return masked_sum / mask_count
