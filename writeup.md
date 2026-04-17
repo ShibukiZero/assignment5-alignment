@@ -116,7 +116,61 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 
 **Deliverable:** Report the size of the dataset and the validation accuracy curve you achieve.
 
-**Answer:** TODO.
+**Answer:** The official `/data/a5-alignment/MATH` files were not available in
+our self-hosted environment, so I ran this experiment on the converted
+`competition_math_numeric` MATH-like substitute dataset. I used the noisy SFT
+split from this substitute data for the dataset-size sweep, and used the reward
+function to construct a filtered version for the second experiment. The reward
+filter removed 730 of 4,866 examples, so the observed contamination rate in
+this noisy SFT split was about 15.0%. All runs used Qwen2.5-Math-1.5B,
+effective batch size 16, microbatch size 4, gradient accumulation 4, learning
+rate `5e-5`, synchronous vLLM validation every 100 optimizer steps, and 900
+optimizer steps total.
+
+The validation accuracy curves for the SFT dataset-size sweep are archived at
+`artifacts/ch4/sft_experiment/sft_size_sweep_accuracy.svg`. The main results
+are:
+
+| setting | train examples | effective epochs | best answer acc | best step | final answer acc | final step |
+|---|---:|---:|---:|---:|---:|---:|
+| 128 | 128 | 112.5 | 41.14% | 200 | 31.48% | 900 |
+| 256 | 256 | 56.2 | 42.20% | 500 | 38.26% | 900 |
+| 512 | 512 | 28.1 | 41.64% | 900 | 41.64% | 900 |
+| 1024 | 1024 | 14.1 | 37.86% | 900 | 37.86% | 900 |
+| Noisy full | 4866 | 3.0 | 26.07% | 700 | 22.01% | 900 |
+
+The 256-example run achieved the highest peak validation answer accuracy,
+42.20% at step 500, but then declined to 38.26% by step 900. The 512-example
+run was the best final checkpoint, reaching 41.64% at step 900. The 128-example
+run peaked early at 41.14% and then degraded substantially, which suggests
+overfitting under a fixed 900-step training budget. The full noisy dataset
+still exceeded the assignment's 15% target, reaching 26.07% at best, but it
+underperformed the smaller subsets.
+
+For the filtered SFT experiment, filtering retained 4,136 of the 4,866 noisy
+SFT examples. The filtered-vs-noisy validation curve is archived at
+`artifacts/ch4/sft_experiment/sft_filtered_vs_noisy_full_accuracy.svg`. The
+comparison is:
+
+| setting | train examples | best answer acc | best step | final answer acc | final step |
+|---|---:|---:|---:|---:|---:|
+| Noisy full | 4866 | 26.07% | 700 | 22.01% | 900 |
+| Filtered full | 4136 | 35.79% | 800 | 35.10% | 900 |
+
+Reward filtering improved the best validation answer accuracy by 9.72
+percentage points, from 26.07% to 35.79%, and improved final validation answer
+accuracy by 13.10 points, from 22.01% to 35.10%. This supports the filtering
+hypothesis in the assignment: SFT traces whose final answers fail the reward
+function are harmful enough that removing them produces a substantially better
+supervised warm start.
+
+The size-sweep results should be interpreted carefully because the optimizer
+step budget was fixed across dataset sizes. Smaller datasets therefore receive
+many more effective epochs than the full dataset: for example, the 128-example
+run sees about 112.5 epochs, while the full noisy run sees only about 3.0.
+Thus, the result does not imply that smaller datasets are inherently better;
+rather, under this fixed-step budget, the small datasets fit quickly and then
+begin to overfit, while the full noisy dataset is both harder and noisier.
 
 ---
 
