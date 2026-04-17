@@ -68,3 +68,40 @@ def compute_naive_policy_gradient_loss(
         raise ValueError("raw_rewards_or_advantages and policy_log_probs batch sizes must match.")
 
     return -raw_rewards_or_advantages * policy_log_probs
+
+
+def compute_grpo_clip_loss(
+    advantages: Tensor,
+    policy_log_probs: Tensor,
+    old_log_probs: Tensor,
+    cliprange: float,
+) -> tuple[Tensor, dict[str, Tensor]]:
+    """Compute the per-token GRPO clipped policy-gradient loss.
+
+    This is the PPO-style clipped surrogate used by GRPO. The ratio compares
+    the current policy with the rollout policy that produced the sampled tokens.
+    """
+    if advantages.ndim != 2 or advantages.shape[-1] != 1:
+        raise ValueError("advantages must have shape (batch_size, 1).")
+    if policy_log_probs.ndim != 2:
+        raise ValueError("policy_log_probs must have shape (batch_size, sequence_length).")
+    if old_log_probs.shape != policy_log_probs.shape:
+        raise ValueError("old_log_probs must have the same shape as policy_log_probs.")
+    if advantages.shape[0] != policy_log_probs.shape[0]:
+        raise ValueError("advantages and policy_log_probs batch sizes must match.")
+    if cliprange < 0:
+        raise ValueError("cliprange must be non-negative.")
+
+    ratio = torch.exp(policy_log_probs - old_log_probs)
+    clipped_ratio = torch.clamp(ratio, min=1.0 - cliprange, max=1.0 + cliprange)
+
+    unclipped_objective = ratio * advantages
+    clipped_objective = clipped_ratio * advantages
+    per_token_loss = -torch.minimum(unclipped_objective, clipped_objective)
+
+    metadata = {
+        "ratio": ratio,
+        "clipped_ratio": clipped_ratio,
+        "is_clipped": (ratio != clipped_ratio),
+    }
+    return per_token_loss, metadata
