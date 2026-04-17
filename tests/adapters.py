@@ -8,7 +8,10 @@ from torch import Tensor
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizerBase
 
-from cs336_alignment.grpo import compute_group_normalized_rewards
+from cs336_alignment.grpo import (
+    compute_group_normalized_rewards,
+    compute_naive_policy_gradient_loss,
+)
 from cs336_alignment.sft import (
     compute_entropy,
     get_response_log_probs,
@@ -154,7 +157,10 @@ def run_compute_naive_policy_gradient_loss(
         torch.Tensor of shape (batch_size, sequence_length): 
             the policy gradient per-token loss.
     """
-    raise NotImplementedError
+    return compute_naive_policy_gradient_loss(
+        raw_rewards_or_advantages=raw_rewards_or_advantages,
+        policy_log_probs=policy_log_probs,
+    )
 
 
 def run_compute_grpo_clip_loss(

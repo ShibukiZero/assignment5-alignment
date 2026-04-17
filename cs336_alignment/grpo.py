@@ -53,3 +53,18 @@ def compute_group_normalized_rewards(
         "group_size": float(group_size),
     }
     return flat_advantages, raw_rewards, metadata
+
+
+def compute_naive_policy_gradient_loss(
+    raw_rewards_or_advantages: Tensor,
+    policy_log_probs: Tensor,
+) -> Tensor:
+    """Compute the per-token REINFORCE-style policy-gradient loss."""
+    if raw_rewards_or_advantages.ndim != 2 or raw_rewards_or_advantages.shape[-1] != 1:
+        raise ValueError("raw_rewards_or_advantages must have shape (batch_size, 1).")
+    if policy_log_probs.ndim != 2:
+        raise ValueError("policy_log_probs must have shape (batch_size, sequence_length).")
+    if raw_rewards_or_advantages.shape[0] != policy_log_probs.shape[0]:
+        raise ValueError("raw_rewards_or_advantages and policy_log_probs batch sizes must match.")
+
+    return -raw_rewards_or_advantages * policy_log_probs
