@@ -151,3 +151,65 @@ def masked_mean(tensor: Tensor, mask: Tensor, dim: int | None = None) -> Tensor:
     masked_sum = (tensor * float_mask).sum(dim=dim)
     mask_count = float_mask.sum(dim=dim)
     return masked_sum / mask_count
+
+
+def grpo_microbatch_train_step(
+    policy_log_probs: Tensor,
+    response_mask: Tensor,
+    gradient_accumulation_steps: int,
+    loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip"],
+    raw_rewards: Tensor | None = None,
+    advantages: Tensor | None = None,
+    old_log_probs: Tensor | None = None,
+    cliprange: float | None = None,
+) -> tuple[Tensor, dict[str, Tensor]]:
+    """Backpropagate one GRPO microbatch loss."""
+    if response_mask.shape != policy_log_probs.shape:
+        raise ValueError("response_mask must have the same shape as policy_log_probs.")
+    if gradient_accumulation_steps <= 0:
+        raise ValueError("gradient_accumulation_steps must be positive.")
+
+    if loss_type == "no_baseline":
+        if raw_rewards is None:
+            raise ValueError("raw_rewards is required for loss_type='no_baseline'.")
+        loss_raw_rewards = raw_rewards
+        loss_advantages = raw_rewards
+        loss_old_log_probs = policy_log_probs
+        loss_cliprange = 0.0
+    elif loss_type == "reinforce_with_baseline":
+        if advantages is None:
+            raise ValueError("advantages is required for loss_type='reinforce_with_baseline'.")
+        loss_raw_rewards = advantages
+        loss_advantages = advantages
+        loss_old_log_probs = policy_log_probs
+        loss_cliprange = 0.0
+    elif loss_type == "grpo_clip":
+        if advantages is None:
+            raise ValueError("advantages is required for loss_type='grpo_clip'.")
+        if old_log_probs is None:
+            raise ValueError("old_log_probs is required for loss_type='grpo_clip'.")
+        if cliprange is None:
+            raise ValueError("cliprange is required for loss_type='grpo_clip'.")
+        loss_raw_rewards = raw_rewards if raw_rewards is not None else advantages
+        loss_advantages = advantages
+        loss_old_log_probs = old_log_probs
+        loss_cliprange = cliprange
+    else:
+        raise ValueError(f"Unknown policy-gradient loss_type: {loss_type}")
+
+    per_token_loss, metadata = compute_policy_gradient_loss(
+        policy_log_probs=policy_log_probs,
+        loss_type=loss_type,
+        raw_rewards=loss_raw_rewards,
+        advantages=loss_advantages,
+        old_log_probs=loss_old_log_probs,
+        cliprange=loss_cliprange,
+    )
+    per_example_loss = masked_mean(tensor=per_token_loss, mask=response_mask, dim=-1)
+    loss = per_example_loss.mean()
+    scaled_loss = loss / gradient_accumulation_steps
+    scaled_loss.backward()
+
+    metadata = dict(metadata)
+    metadata["loss"] = loss.detach()
+    return scaled_loss, metadata
