@@ -63,7 +63,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-train-examples", type=int, default=None)
     parser.add_argument("--max-steps", type=int, default=1000)
     parser.add_argument("--eval-every", type=int, default=100)
-    parser.add_argument("--eval-max-examples", type=int, default=256)
+    parser.add_argument(
+        "--eval-max-examples",
+        type=int,
+        default=None,
+        help="Maximum number of validation examples to evaluate. Defaults to the full set.",
+    )
     parser.add_argument(
         "--train-batch-size",
         type=int,
@@ -83,6 +88,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--vllm-device", default="cuda:1")
     parser.add_argument("--vllm-gpu-memory-utilization", type=float, default=0.85)
     parser.add_argument("--max-new-tokens", type=int, default=1024)
+    parser.add_argument("--eval-temperature", type=float, default=1.0)
+    parser.add_argument("--eval-top-p", type=float, default=1.0)
     parser.add_argument(
         "--filter-correct-sft",
         action="store_true",
@@ -213,11 +220,13 @@ def evaluate_with_vllm(
     val_examples: list[dict[str, Any]],
     prompt_template: str,
     max_new_tokens: int,
+    temperature: float,
+    top_p: float,
 ) -> dict[str, Any]:
     prompts = [prompt_template.format(question=get_question(example)) for example in val_examples]
     sampling_params = SamplingParams(
-        temperature=0.0,
-        top_p=1.0,
+        temperature=temperature,
+        top_p=top_p,
         max_tokens=max_new_tokens,
         stop=["</answer>"],
         include_stop_str_in_output=True,
@@ -245,6 +254,11 @@ def evaluate_with_vllm(
             "reward": mean(r["reward"] for r in records),
             "format_accuracy": mean(r["format_reward"] for r in records),
             "answer_accuracy": mean(r["answer_reward"] for r in records),
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_new_tokens,
+            "stop": "</answer>",
+            "include_stop_str_in_output": True,
         },
     }
 
@@ -280,11 +294,13 @@ def run_eval_and_log(
     val_examples: list[dict[str, Any]],
     prompt_template: str,
     max_new_tokens: int,
+    temperature: float,
+    top_p: float,
     output_dir: Path,
     log_dir: Path,
     metrics_path: Path,
     train_step: int,
-) -> dict[str, float]:
+) -> dict[str, Any]:
     start = time.time()
     load_policy_into_vllm_instance(policy, llm)
     eval_result = evaluate_with_vllm(
@@ -292,6 +308,8 @@ def run_eval_and_log(
         val_examples=val_examples,
         prompt_template=prompt_template,
         max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        top_p=top_p,
     )
     summary = eval_result["summary"]
     append_jsonl(
@@ -422,6 +440,8 @@ def main() -> None:
                 val_examples=val_examples,
                 prompt_template=prompt_template,
                 max_new_tokens=args.max_new_tokens,
+                temperature=args.eval_temperature,
+                top_p=args.eval_top_p,
                 output_dir=output_dir,
                 log_dir=log_dir,
                 metrics_path=metrics_path,
@@ -441,6 +461,8 @@ def main() -> None:
         val_examples=val_examples,
         prompt_template=prompt_template,
         max_new_tokens=args.max_new_tokens,
+        temperature=args.eval_temperature,
+        top_p=args.eval_top_p,
         output_dir=output_dir,
         log_dir=log_dir,
         metrics_path=metrics_path,
