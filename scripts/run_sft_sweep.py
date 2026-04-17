@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -52,9 +53,62 @@ def append_arg(command: list[str], key: str, value: Any) -> None:
     command.extend([flag_name(key), str(value)])
 
 
-def run_name(batch_size: int, learning_rate: float, seed: int) -> str:
-    lr_text = f"{learning_rate:.0e}".replace("+", "")
-    return f"bs{batch_size}_lr{lr_text}_seed{seed}"
+RUN_NAME_KEY_ALIASES = {
+    "train_batch_size": "bs",
+    "gradient_accumulation_steps": "ga",
+    "learning_rate": "lr",
+    "num_train_examples": "n",
+    "seed": "seed",
+}
+RUN_NAME_KEY_ORDER = {
+    "train_batch_size": 0,
+    "gradient_accumulation_steps": 1,
+    "learning_rate": 2,
+    "num_train_examples": 3,
+    "seed": 4,
+}
+
+
+def format_name_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float):
+        text = f"{value:.6g}"
+    else:
+        text = str(value)
+    text = text.replace("+", "")
+    text = text.replace(".", "p")
+    return re.sub(r"[^A-Za-z0-9-]+", "_", text).strip("_")
+
+
+def default_run_name(run_config: dict[str, Any], config: dict[str, Any]) -> str:
+    common_args = dict(config.get("common_args", {}))
+    batch_size = int(run_config["train_batch_size"])
+    grad_by_bs = config.get("gradient_accumulation_steps_by_batch_size", {})
+    grad_steps = run_config.get(
+        "gradient_accumulation_steps",
+        grad_by_bs.get(str(batch_size), common_args.get("gradient_accumulation_steps")),
+    )
+
+    name_params: dict[str, Any] = {
+        "train_batch_size": batch_size,
+        "gradient_accumulation_steps": grad_steps,
+        "learning_rate": run_config["learning_rate"],
+        "seed": run_config.get("seed", common_args.get("seed", 0)),
+    }
+    for key, value in run_config.items():
+        if key in {"name", "train_batch_size", "gradient_accumulation_steps", "learning_rate"}:
+            continue
+        name_params[key] = value
+
+    parts: list[str] = []
+    for key in sorted(name_params, key=lambda item: (RUN_NAME_KEY_ORDER.get(item, 100), item)):
+        value = name_params[key]
+        if value is None:
+            continue
+        label = RUN_NAME_KEY_ALIASES.get(key, key)
+        parts.append(f"{label}{format_name_value(value)}")
+    return "_".join(parts)
 
 
 def build_command(
@@ -120,9 +174,8 @@ def main() -> None:
     output_root.mkdir(parents=True, exist_ok=True)
     log_root.mkdir(parents=True, exist_ok=True)
 
-    seed = int(config.get("common_args", {}).get("seed", 0))
-
     sweep_records: list[dict[str, Any]] = []
+    seen_run_names: set[str] = set()
     runs = config.get("runs")
     if runs is None:
         batch_sizes = [int(value) for value in config["batch_sizes"]]
@@ -133,12 +186,16 @@ def main() -> None:
         ]
 
     for run_config in runs:
-        batch_size = int(run_config["train_batch_size"])
-        learning_rate = float(run_config["learning_rate"])
         name = run_config.get(
             "name",
-            run_name(batch_size=batch_size, learning_rate=learning_rate, seed=seed),
+            default_run_name(run_config=run_config, config=config),
         )
+        if name in seen_run_names:
+            raise ValueError(
+                f"Duplicate SFT sweep run name {name!r}. Provide explicit names or vary "
+                "the run parameters included in the default name."
+            )
+        seen_run_names.add(name)
         run_dir = output_root / name
         run_log_dir = log_root / name
         run_log_dir.mkdir(parents=True, exist_ok=True)

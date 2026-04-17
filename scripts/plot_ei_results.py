@@ -117,17 +117,31 @@ def as_optional_float(value: Any) -> float | None:
 
 
 def parse_run_name(run_name: str) -> tuple[int | None, int | None, int | None]:
-    match = re.search(r"db(\d+)_g(\d+)_epoch(\d+)", run_name)
+    match = re.search(r"db(\d+)_g(\d+)_epochs?(\d+)", run_name)
     if not match:
         return None, None, None
     return int(match.group(1)), int(match.group(2)), int(match.group(3))
 
 
-def label_for_run(run_name: str) -> str:
-    db, g, epochs = parse_run_name(run_name)
+def label_for_run(
+    run_name: str,
+    db: int | None = None,
+    g: int | None = None,
+    epochs: int | None = None,
+) -> str:
+    parsed_db, parsed_g, parsed_epochs = parse_run_name(run_name)
+    db = parsed_db if db is None else db
+    g = parsed_g if g is None else g
+    epochs = parsed_epochs if epochs is None else epochs
     if db is None or g is None or epochs is None:
         return run_name
     return f"D_b={db}, G={g}, epochs={epochs}"
+
+
+def as_optional_int(value: Any) -> int | None:
+    if value is None:
+        return None
+    return int(float(value))
 
 
 def sort_key(run: RunData) -> tuple[int, int, int, str]:
@@ -144,6 +158,15 @@ def load_run(run_dir: Path) -> RunData | None:
         return None
 
     db, g, epochs = parse_run_name(run_dir.name)
+    config_path = run_dir / "config.json"
+    if config_path.exists():
+        run_config = read_json(config_path)
+        if db is None:
+            db = as_optional_int(run_config.get("rollout_batch_size"))
+        if g is None:
+            g = as_optional_int(run_config.get("rollouts_per_question"))
+        if epochs is None:
+            epochs = as_optional_int(run_config.get("sft_epochs_per_step"))
 
     eval_points: list[EvalPoint] = []
     for path in eval_paths:
@@ -192,7 +215,7 @@ def load_run(run_dir: Path) -> RunData | None:
 
     return RunData(
         run_name=run_dir.name,
-        label=label_for_run(run_dir.name),
+        label=label_for_run(run_dir.name, db=db, g=g, epochs=epochs),
         rollout_batch_size=db,
         rollouts_per_question=g,
         sft_epochs_per_step=epochs,
