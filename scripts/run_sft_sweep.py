@@ -63,7 +63,12 @@ def build_command(
     run_dir: Path,
     log_dir: Path,
 ) -> list[str]:
-    command = [config.get("python", sys.executable), config["script"]]
+    python_command = config.get("python", sys.executable)
+    if isinstance(python_command, list):
+        command = [str(part) for part in python_command]
+    else:
+        command = [str(python_command)]
+    command.append(config["script"])
 
     common_args = dict(config.get("common_args", {}))
     batch_size = int(run_config["train_batch_size"])
