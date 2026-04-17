@@ -127,9 +127,11 @@ effective batch size 16, microbatch size 4, gradient accumulation 4, learning
 rate `5e-5`, synchronous vLLM validation every 100 optimizer steps, and 900
 optimizer steps total.
 
-The validation accuracy curves for the SFT dataset-size sweep are archived at
-`artifacts/ch4/sft_experiment/sft_size_sweep_accuracy.svg`. The main results
-are:
+The validation accuracy curves for the SFT dataset-size sweep are shown below.
+
+![Validation accuracy for the noisy SFT dataset-size sweep](artifacts/ch4/sft_experiment/sft_size_sweep_accuracy.svg)
+
+The main results are:
 
 | setting | train examples | effective epochs | best answer acc | best step | final answer acc | final step |
 |---|---:|---:|---:|---:|---:|---:|
@@ -148,9 +150,11 @@ still exceeded the assignment's 15% target, reaching 26.07% at best, but it
 underperformed the smaller subsets.
 
 For the filtered SFT experiment, filtering retained 4,136 of the 4,866 noisy
-SFT examples. The filtered-vs-noisy validation curve is archived at
-`artifacts/ch4/sft_experiment/sft_filtered_vs_noisy_full_accuracy.svg`. The
-comparison is:
+SFT examples. The filtered-vs-noisy validation curve is shown below.
+
+![Validation accuracy for noisy full SFT versus reward-filtered full SFT](artifacts/ch4/sft_experiment/sft_filtered_vs_noisy_full_accuracy.svg)
+
+The comparison is:
 
 | setting | train examples | best answer acc | best step | final answer acc | final step |
 |---|---:|---:|---:|---:|---:|
