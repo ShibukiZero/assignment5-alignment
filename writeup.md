@@ -191,7 +191,56 @@ begin to overfit, while the full noisy dataset is both harder and noisier.
 
 **Deliverable:** A plot of the entropy of the model's responses over training.
 
-**Answer:** TODO.
+**Answer:** Because the official course MATH files were not available in this
+environment, I ran EI on the same substitute MATH-like
+`competition_math_numeric_noisy` split used in the previous experiments.
+Validation was run on the full 3199-example validation set with the R1-Zero
+prompt, temperature 1.0, max tokens 1024, and the `r1_zero_reward_fn`-based
+answer reward.
+
+![Expert Iteration validation accuracy](artifacts/ch5/expert_iteration/ei_validation_accuracy.svg)
+
+![Expert Iteration response entropy](artifacts/ch5/expert_iteration/ei_rollout_entropy.svg)
+
+The table below summarizes the EI runs.
+
+| Configuration | Best answer accuracy | Best EI step | Final answer accuracy | Final EI step |
+|---|---:|---:|---:|---:|
+| `D_b=512, G=2, epochs=1` | 28.17% | 5 | 28.17% | 5 |
+| `D_b=512, G=2, epochs=2` | 33.85% | 5 | 33.85% | 5 |
+| `D_b=512, G=4, epochs=1` | 25.63% | 4 | 22.60% | 5 |
+| `D_b=512, G=4, epochs=2` | 35.92% | 4 | 35.35% | 5 |
+| `D_b=1024, G=4, epochs=2` | 33.14% | 5 | 33.14% | 5 |
+| `D_b=1024, G=8, epochs=2` | 32.35% | 2 | 27.85% | 5 |
+| `D_b=2048, G=4, epochs=2` | 34.64% | 4 | 31.35% | 5 |
+| `D_b=2048, G=4, epochs=3` | **40.95%** | 3 | **40.54%** | 5 |
+
+The best EI configuration was `D_b=2048, G=4, epochs=3`, which reached
+40.95% validation answer accuracy at EI step 3 and finished at 40.54% after
+step 5. This comfortably exceeds the 15% target, though this result is on the
+substitute MATH-like validation set rather than the official course MATH split.
+
+The EI curves show a clear bootstrapping effect: after the first EI step,
+accepted self-generated traces become much more common, and validation
+accuracy rises quickly. Larger `D_b` helped when paired with enough SFT
+training: moving from `D_b=512, G=4, epochs=2` to
+`D_b=2048, G=4, epochs=3` improved the best validation accuracy from 35.92%
+to 40.95%. Increasing `G` from 4 to 8 at `D_b=1024` helped early but hurt the
+final result, suggesting that more rollouts alone were not enough under this
+training schedule.
+
+Compared with the SFT experiments, EI was more effective because it
+continually refreshed the training traces from the current policy and filtered
+them by verifier reward. The best EI run also exceeded the earlier
+filtered-SFT result, showing that self-generated verified traces can improve
+beyond the static SFT dataset in this setup.
+
+The entropy curve decreases most strongly for the best run, especially for
+`D_b=2048, G=4, epochs=3`, whose final rollout entropy is about 0.365. This
+suggests that as EI progresses, the policy becomes more confident and produces
+more consistently formatted, verifier-accepted responses. Entropy values are
+measured in nats and are not bounded by 1, so values above 1 in weaker or less
+stable runs are expected.
 
 ---
 
