@@ -1,0 +1,16 @@
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrrr}
+\toprule
+Setting & Examples & Epochs & Best Acc. & Best Step & Final Acc. \\
+\midrule
+128 & 128 & 112.5 & 41.14\% & 200 & 31.48\% \\
+256 & 256 & 56.2 & 42.20\% & 500 & 38.26\% \\
+512 & 512 & 28.1 & 41.64\% & 900 & 41.64\% \\
+1024 & 1024 & 14.1 & 37.86\% & 900 & 37.86\% \\
+Noisy full & 4866 & 3.0 & 26.07\% & 700 & 22.01\% \\
+\bottomrule
+\end{tabular}
+\caption{SFT validation accuracy across dataset sizes.}
+\label{tab:sft-size-sweep}
+\end{table}

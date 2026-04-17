@@ -1,0 +1,7 @@
+run,label,train_examples,effective_epochs,best_answer_accuracy_percent,best_step,best_format_accuracy_percent,final_answer_accuracy_percent,final_step,final_format_accuracy_percent,final_train_loss
+size128_bs16_micro4_lr5e-5,128,128,112.50,41.14,200,97.72,31.48,900,91.22,5.1406
+size256_bs16_micro4_lr5e-5,256,256,56.25,42.20,500,98.06,38.26,900,97.66,2.7031
+size512_bs16_micro4_lr5e-5,512,512,28.12,41.64,900,98.16,41.64,900,98.16,3.8833
+size1024_bs16_micro4_lr5e-5,1024,1024,14.06,37.86,900,97.22,37.86,900,97.22,2.5723
+sizefull_bs16_micro4_lr5e-5,Noisy full,4866,2.96,26.07,700,92.97,22.01,900,92.37,58.4375
+filtered_full_bs16_micro4_lr5e-5,Filtered full,4136,3.48,35.79,800,95.53,35.10,900,95.19,62.6875

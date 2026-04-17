@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="620" viewBox="0 0 1040 620">
+<rect width="100%" height="100%" fill="white"/>
+<text x="520.0" y="34" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700">Expert Iteration Accepted Rollout Fraction</text>
+<line x1="90" y1="540" x2="760" y2="540" stroke="#222" stroke-width="1.5"/>
+<line x1="90" y1="70" x2="90" y2="540" stroke="#222" stroke-width="1.5"/>
+<line x1="85" y1="540.0" x2="760" y2="540.0" stroke="#ddd" stroke-width="1"/>
+<text x="78" y="544.0" text-anchor="end" font-family="Arial" font-size="12">0.00</text>
+<line x1="85" y1="446.0" x2="760" y2="446.0" stroke="#ddd" stroke-width="1"/>
+<text x="78" y="450.0" text-anchor="end" font-family="Arial" font-size="12">0.08</text>
+<line x1="85" y1="352.0" x2="760" y2="352.0" stroke="#ddd" stroke-width="1"/>
+<text x="78" y="356.0" text-anchor="end" font-family="Arial" font-size="12">0.16</text>
+<line x1="85" y1="258.0" x2="760" y2="258.0" stroke="#ddd" stroke-width="1"/>
+<text x="78" y="262.0" text-anchor="end" font-family="Arial" font-size="12">0.24</text>
+<line x1="85" y1="164.0" x2="760" y2="164.0" stroke="#ddd" stroke-width="1"/>
+<text x="78" y="168.0" text-anchor="end" font-family="Arial" font-size="12">0.32</text>
+<line x1="85" y1="70.0" x2="760" y2="70.0" stroke="#ddd" stroke-width="1"/>
+<text x="78" y="74.0" text-anchor="end" font-family="Arial" font-size="12">0.40</text>
+<line x1="90.0" y1="540" x2="90.0" y2="545" stroke="#222" stroke-width="1"/>
+<text x="90.0" y="564" text-anchor="middle" font-family="Arial" font-size="12">1</text>
+<line x1="224.0" y1="540" x2="224.0" y2="545" stroke="#222" stroke-width="1"/>
+<text x="224.0" y="564" text-anchor="middle" font-family="Arial" font-size="12">2</text>
+<line x1="358.0" y1="540" x2="358.0" y2="545" stroke="#222" stroke-width="1"/>
+<text x="358.0" y="564" text-anchor="middle" font-family="Arial" font-size="12">3</text>
+<line x1="492.0" y1="540" x2="492.0" y2="545" stroke="#222" stroke-width="1"/>
+<text x="492.0" y="564" text-anchor="middle" font-family="Arial" font-size="12">3</text>
+<line x1="626.0" y1="540" x2="626.0" y2="545" stroke="#222" stroke-width="1"/>
+<text x="626.0" y="564" text-anchor="middle" font-family="Arial" font-size="12">4</text>
+<line x1="760.0" y1="540" x2="760.0" y2="545" stroke="#222" stroke-width="1"/>
+<text x="760.0" y="564" text-anchor="middle" font-family="Arial" font-size="12">5</text>
+<polyline points="90.0,509.0 257.5,304.8 425.0,277.2 592.5,274.9 760.0,237.1" fill="none" stroke="#1f77b4" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="90.0" cy="509.0" r="3" fill="#1f77b4"/>
+<circle cx="257.5" cy="304.8" r="3" fill="#1f77b4"/>
+<circle cx="425.0" cy="277.2" r="3" fill="#1f77b4"/>
+<circle cx="592.5" cy="274.9" r="3" fill="#1f77b4"/>
+<circle cx="760.0" cy="237.1" r="3" fill="#1f77b4"/>
+<line x1="790" y1="70" x2="814" y2="70" stroke="#1f77b4" stroke-width="3"/>
+<text x="824" y="74" font-family="Arial" font-size="13">D_b=512, G=2, epochs=1</text>
+<polyline points="90.0,509.0 257.5,309.4 425.0,190.0 592.5,149.9 760.0,244.0" fill="none" stroke="#d62728" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="90.0" cy="509.0" r="3" fill="#d62728"/>
+<circle cx="257.5" cy="309.4" r="3" fill="#d62728"/>
+<circle cx="425.0" cy="190.0" r="3" fill="#d62728"/>
+<circle cx="592.5" cy="149.9" r="3" fill="#d62728"/>
+<circle cx="760.0" cy="244.0" r="3" fill="#d62728"/>
+<line x1="790" y1="95" x2="814" y2="95" stroke="#d62728" stroke-width="3"/>
+<text x="824" y="99" font-family="Arial" font-size="13">D_b=512, G=2, epochs=2</text>
+<polyline points="90.0,513.0 257.5,312.8 425.0,291.6 592.5,246.8 760.0,307.1" fill="none" stroke="#2ca02c" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="90.0" cy="513.0" r="3" fill="#2ca02c"/>
+<circle cx="257.5" cy="312.8" r="3" fill="#2ca02c"/>
+<circle cx="425.0" cy="291.6" r="3" fill="#2ca02c"/>
+<circle cx="592.5" cy="246.8" r="3" fill="#2ca02c"/>
+<circle cx="760.0" cy="307.1" r="3" fill="#2ca02c"/>
+<line x1="790" y1="120" x2="814" y2="120" stroke="#2ca02c" stroke-width="3"/>
+<text x="824" y="124" font-family="Arial" font-size="13">D_b=512, G=4, epochs=1</text>
+<polyline points="90.0,513.0 257.5,248.5 425.0,219.9 592.5,217.0 760.0,260.0" fill="none" stroke="#9467bd" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="90.0" cy="513.0" r="3" fill="#9467bd"/>
+<circle cx="257.5" cy="248.5" r="3" fill="#9467bd"/>
+<circle cx="425.0" cy="219.9" r="3" fill="#9467bd"/>
+<circle cx="592.5" cy="217.0" r="3" fill="#9467bd"/>
+<circle cx="760.0" cy="260.0" r="3" fill="#9467bd"/>
+<line x1="790" y1="145" x2="814" y2="145" stroke="#9467bd" stroke-width="3"/>
+<text x="824" y="149" font-family="Arial" font-size="13">D_b=512, G=4, epochs=2</text>
+<polyline points="90.0,508.4 257.5,299.6 425.0,255.1 592.5,215.8 760.0,244.2" fill="none" stroke="#ff7f0e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="90.0" cy="508.4" r="3" fill="#ff7f0e"/>
+<circle cx="257.5" cy="299.6" r="3" fill="#ff7f0e"/>
+<circle cx="425.0" cy="255.1" r="3" fill="#ff7f0e"/>
+<circle cx="592.5" cy="215.8" r="3" fill="#ff7f0e"/>
+<circle cx="760.0" cy="244.2" r="3" fill="#ff7f0e"/>
+<line x1="790" y1="170" x2="814" y2="170" stroke="#ff7f0e" stroke-width="3"/>
+<text x="824" y="174" font-family="Arial" font-size="13">D_b=1024, G=4, epochs=2</text>
+<polyline points="90.0,504.7 257.5,244.1 425.0,217.7 592.5,282.1 760.0,317.0" fill="none" stroke="#17becf" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="90.0" cy="504.7" r="3" fill="#17becf"/>
+<circle cx="257.5" cy="244.1" r="3" fill="#17becf"/>
+<circle cx="425.0" cy="217.7" r="3" fill="#17becf"/>
+<circle cx="592.5" cy="282.1" r="3" fill="#17becf"/>
+<circle cx="760.0" cy="317.0" r="3" fill="#17becf"/>
+<line x1="790" y1="195" x2="814" y2="195" stroke="#17becf" stroke-width="3"/>
+<text x="824" y="199" font-family="Arial" font-size="13">D_b=1024, G=8, epochs=2</text>
+<polyline points="90.0,511.3 257.5,235.5 425.0,186.6 592.5,221.9 760.0,256.0" fill="none" stroke="#8c564b" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="90.0" cy="511.3" r="3" fill="#8c564b"/>
+<circle cx="257.5" cy="235.5" r="3" fill="#8c564b"/>
+<circle cx="425.0" cy="186.6" r="3" fill="#8c564b"/>
+<circle cx="592.5" cy="221.9" r="3" fill="#8c564b"/>
+<circle cx="760.0" cy="256.0" r="3" fill="#8c564b"/>
+<line x1="790" y1="220" x2="814" y2="220" stroke="#8c564b" stroke-width="3"/>
+<text x="824" y="224" font-family="Arial" font-size="13">D_b=2048, G=4, epochs=2</text>
+<polyline points="90.0,511.3 257.5,213.1 425.0,156.6 592.5,154.0 760.0,127.9" fill="none" stroke="#e377c2" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="90.0" cy="511.3" r="3" fill="#e377c2"/>
+<circle cx="257.5" cy="213.1" r="3" fill="#e377c2"/>
+<circle cx="425.0" cy="156.6" r="3" fill="#e377c2"/>
+<circle cx="592.5" cy="154.0" r="3" fill="#e377c2"/>
+<circle cx="760.0" cy="127.9" r="3" fill="#e377c2"/>
+<line x1="790" y1="245" x2="814" y2="245" stroke="#e377c2" stroke-width="3"/>
+<text x="824" y="249" font-family="Arial" font-size="13">D_b=2048, G=4, epochs=3</text>
+<text x="425.0" y="596" text-anchor="middle" font-family="Arial" font-size="15">EI step</text>
+<text transform="translate(24 305.0) rotate(-90)" text-anchor="middle" font-family="Arial" font-size="15">Accepted rollout fraction</text>
+</svg>

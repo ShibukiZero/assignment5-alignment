@@ -1,0 +1,80 @@
+[
+  {
+    "run": "size128_bs16_micro4_lr5e-5",
+    "label": "128",
+    "train_examples": "128",
+    "effective_epochs": "112.50",
+    "best_answer_accuracy_percent": "41.14",
+    "best_step": "200",
+    "best_format_accuracy_percent": "97.72",
+    "final_answer_accuracy_percent": "31.48",
+    "final_step": "900",
+    "final_format_accuracy_percent": "91.22",
+    "final_train_loss": "5.1406"
+  },
+  {
+    "run": "size256_bs16_micro4_lr5e-5",
+    "label": "256",
+    "train_examples": "256",
+    "effective_epochs": "56.25",
+    "best_answer_accuracy_percent": "42.20",
+    "best_step": "500",
+    "best_format_accuracy_percent": "98.06",
+    "final_answer_accuracy_percent": "38.26",
+    "final_step": "900",
+    "final_format_accuracy_percent": "97.66",
+    "final_train_loss": "2.7031"
+  },
+  {
+    "run": "size512_bs16_micro4_lr5e-5",
+    "label": "512",
+    "train_examples": "512",
+    "effective_epochs": "28.12",
+    "best_answer_accuracy_percent": "41.64",
+    "best_step": "900",
+    "best_format_accuracy_percent": "98.16",
+    "final_answer_accuracy_percent": "41.64",
+    "final_step": "900",
+    "final_format_accuracy_percent": "98.16",
+    "final_train_loss": "3.8833"
+  },
+  {
+    "run": "size1024_bs16_micro4_lr5e-5",
+    "label": "1024",
+    "train_examples": "1024",
+    "effective_epochs": "14.06",
+    "best_answer_accuracy_percent": "37.86",
+    "best_step": "900",
+    "best_format_accuracy_percent": "97.22",
+    "final_answer_accuracy_percent": "37.86",
+    "final_step": "900",
+    "final_format_accuracy_percent": "97.22",
+    "final_train_loss": "2.5723"
+  },
+  {
+    "run": "sizefull_bs16_micro4_lr5e-5",
+    "label": "Noisy full",
+    "train_examples": "4866",
+    "effective_epochs": "2.96",
+    "best_answer_accuracy_percent": "26.07",
+    "best_step": "700",
+    "best_format_accuracy_percent": "92.97",
+    "final_answer_accuracy_percent": "22.01",
+    "final_step": "900",
+    "final_format_accuracy_percent": "92.37",
+    "final_train_loss": "58.4375"
+  },
+  {
+    "run": "filtered_full_bs16_micro4_lr5e-5",
+    "label": "Filtered full",
+    "train_examples": "4136",
+    "effective_epochs": "3.48",
+    "best_answer_accuracy_percent": "35.79",
+    "best_step": "800",
+    "best_format_accuracy_percent": "95.53",
+    "final_answer_accuracy_percent": "35.10",
+    "final_step": "900",
+    "final_format_accuracy_percent": "95.19",
+    "final_train_loss": "62.6875"
+  }
+]
