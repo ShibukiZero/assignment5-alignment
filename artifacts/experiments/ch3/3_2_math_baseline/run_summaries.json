@@ -1,0 +1,24 @@
+[
+  {
+    "experiment": "math_baseline",
+    "run_name": "math_baseline_competition_math_numeric",
+    "status": "completed",
+    "num_examples": 3199,
+    "accuracy": 0.03251015942482026,
+    "format_accuracy": 0.17599249765551736,
+    "answer_accuracy": 0.03251015942482026,
+    "correct_format_correct_answer": 104,
+    "correct_format_wrong_answer": 459,
+    "wrong_format_wrong_answer": 2636,
+    "input_path": "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl",
+    "output_path": "/root/autodl-tmp/a5-alignment/runs/math_baseline_competition_math_numeric.jsonl",
+    "model": "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B",
+    "prompt_template": "cs336_alignment/prompts/r1_zero.prompt",
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "max_tokens": 1024,
+    "stop": "</answer>",
+    "include_stop_str_in_output": true,
+    "source_summary_path": ".agents/logs/ch3/3_2_math_baseline/math_baseline_competition_math_numeric.summary.json"
+  }
+]

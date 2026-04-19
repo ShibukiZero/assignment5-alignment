@@ -18,7 +18,10 @@ self-hosted environment, we ran this analysis on the converted
 104 had both `format_reward = 1` and `answer_reward = 1`, 459 had
 `format_reward = 1` and `answer_reward = 0`, and 2,636 had both rewards equal
 to 0. We archived the summary and sampled examples under
-`artifacts/experiments/ch3/3_2_math_baseline/`.
+`artifacts/experiments/ch3/3_2_math_baseline/`; the run summary is archived in
+`artifacts/experiments/ch3/3_2_math_baseline/run_summaries_archive.md` and
+`artifacts/experiments/ch3/3_2_math_baseline/run_summaries.json`; the raw run
+data are archived under `artifacts/experiments/ch3/3_2_math_baseline/runs/`.
 
 In the inspected `format_reward = 0` examples, the main issue was usually model
 behavior under the strict R1-Zero output protocol rather than a vLLM failure.
@@ -131,6 +134,11 @@ The validation accuracy curves for the SFT dataset-size sweep are shown below.
 
 ![Validation accuracy for the noisy SFT dataset-size sweep](artifacts/experiments/ch4/sft_experiment/sft_size_sweep_accuracy.svg)
 
+The run summaries used by this section are archived in
+`artifacts/experiments/ch4/sft_experiment/run_summaries_archive.md` and
+`artifacts/experiments/ch4/sft_experiment/run_summaries.json`; the raw per-run
+data are archived under `artifacts/experiments/ch4/sft_experiment/runs/`.
+
 The main results are:
 
 | setting | train examples | effective epochs | best answer acc | best step | final answer acc | final step |
@@ -201,6 +209,11 @@ answer reward.
 ![Expert Iteration validation accuracy](artifacts/experiments/ch5/expert_iteration/ei_validation_accuracy.svg)
 
 ![Expert Iteration response entropy](artifacts/experiments/ch5/expert_iteration/ei_rollout_entropy.svg)
+
+The run summaries used by this section are archived in
+`artifacts/experiments/ch5/expert_iteration/run_summaries_archive.md` and
+`artifacts/experiments/ch5/expert_iteration/run_summaries.json`; the raw
+per-run data are archived under `artifacts/experiments/ch5/expert_iteration/runs/`.
 
 The table below summarizes the EI runs.
 
