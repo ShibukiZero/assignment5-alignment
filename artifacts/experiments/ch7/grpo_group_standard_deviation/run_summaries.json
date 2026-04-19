@@ -1,0 +1,82 @@
+[
+  {
+    "run_name": "std_normalization",
+    "use_std_normalization": true,
+    "loss_normalization": "masked_mean",
+    "learning_rate": 4e-05,
+    "status": "completed",
+    "archived_run_dir": "artifacts/experiments/ch7/grpo_group_standard_deviation/runs/std_normalization",
+    "best_eval": {
+      "grpo_step": 75,
+      "answer_accuracy": 0.744140625,
+      "format_accuracy": 0.9501953125
+    },
+    "final_eval": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.7001953125,
+      "format_accuracy": 0.876953125
+    },
+    "final_rollout": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.6484375,
+      "format_accuracy": 0.7421875,
+      "avg_response_token_length": 393.625
+    },
+    "final_train": {
+      "grpo_step": 200,
+      "token_entropy": 0.05519247055053711,
+      "grad_norm": 1.0234375,
+      "loss": -0.0028545452441903763
+    },
+    "run_summary": {
+      "best_answer_accuracy": 0.744140625,
+      "final_optimizer_step": 200,
+      "n_grpo_steps": 200,
+      "rollout_batch_size": 256,
+      "group_size": 8,
+      "loss_type": "reinforce_with_baseline",
+      "use_std_normalization": true
+    }
+  },
+  {
+    "run_name": "no_std_normalization",
+    "use_std_normalization": false,
+    "loss_normalization": "masked_mean",
+    "learning_rate": 4e-05,
+    "status": "completed",
+    "archived_run_dir": "artifacts/experiments/ch7/grpo_group_standard_deviation/runs/no_std_normalization",
+    "best_eval": {
+      "grpo_step": 95,
+      "answer_accuracy": 0.80078125,
+      "format_accuracy": 0.9814453125
+    },
+    "final_eval": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.7763671875,
+      "format_accuracy": 0.9697265625
+    },
+    "final_rollout": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.69921875,
+      "format_accuracy": 0.91015625,
+      "avg_response_token_length": 332.65234375
+    },
+    "final_train": {
+      "grpo_step": 200,
+      "token_entropy": 0.043761253356933594,
+      "grad_norm": 32.0,
+      "loss": -0.23465553174173692
+    },
+    "run_summary": {
+      "best_answer_accuracy": 0.80078125,
+      "final_optimizer_step": 200,
+      "n_grpo_steps": 200,
+      "rollout_batch_size": 256,
+      "group_size": 8,
+      "loss_type": "reinforce_with_baseline",
+      "loss_normalization": "masked_mean",
+      "loss_normalize_constant": 1.0,
+      "use_std_normalization": false
+    }
+  }
+]

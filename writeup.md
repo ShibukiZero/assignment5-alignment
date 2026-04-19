@@ -549,7 +549,47 @@ benefit from separate tuning in later exploratory or leaderboard runs.
 
 **Deliverable:** Compare the performance of `use_std_normalization == True` and `use_std_normalization == False`. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
-**Answer:** TODO.
+**Answer:** We compared the selected `masked_mean` on-policy configuration with
+and without group standard-deviation normalization, keeping the learning rate at
+`4e-5` and all other settings fixed. Removing the group standard deviation
+normalization performed better: `use_std_normalization=False` reached a best
+validation answer reward of 80.08% at step 95 and ended at 77.64%, while
+`use_std_normalization=True` reached a best validation answer reward of 74.41%
+at step 75 and ended at 70.02%.
+
+![GRPO validation answer reward by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_validation_reward.svg)
+
+The validation format accuracy also favored removing standard-deviation
+normalization. The `std=False` run ended at 96.97% validation format accuracy,
+compared with 87.70% for `std=True`, so the improvement was not just better
+answer parsing on similarly formatted outputs; the generations were also more
+reliably in the requested answer format.
+
+![GRPO validation format accuracy by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_format_accuracy.svg)
+
+The rollout metrics show a similar pattern. At the final step, `std=False` had
+69.92% rollout answer reward and 91.02% rollout format reward, with an average
+response length of 332.7 tokens. The `std=True` run ended lower, with 64.84%
+rollout answer reward, 74.22% rollout format reward, and a longer average
+response length of 393.6 tokens.
+
+![GRPO rollout response length by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_response_length.svg)
+
+The gradient norm trend is more nuanced. The logged gradient norm is the
+pre-clipping norm returned by `clip_grad_norm_`; `std=False` had a larger final
+pre-clip norm of 32.00, compared with 1.02 for `std=True`, and also had a
+larger maximum spike. Since the actual update is clipped to max norm 1.0, this
+does not mean the full raw norm was applied directly. In this run, the larger
+pre-clip gradient norms did not correspond to worse training behavior: the
+answer reward, format reward, and response lengths were all better for
+`std=False`.
+
+![GRPO gradient norm by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_grad_norm.svg)
+
+This result is consistent with the concern that dividing by the within-group
+reward standard deviation can reweight groups in a way that is not always
+desirable. Based on this experiment, we fixed `use_std_normalization=False` for
+the following on-policy experiments.
 
 ---
 
