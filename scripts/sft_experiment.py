@@ -174,8 +174,19 @@ def init_vllm(
         )
 
 
+def sync_policy_cuda_devices(policy: PreTrainedModel) -> None:
+    devices = {
+        parameter.device
+        for parameter in policy.parameters()
+        if parameter.device.type == "cuda"
+    }
+    for device in devices:
+        torch.cuda.synchronize(device)
+
+
 def load_policy_into_vllm_instance(policy: PreTrainedModel, llm: LLM) -> None:
     """Copy the current HF policy weights into the already-running vLLM model."""
+    sync_policy_cuda_devices(policy)
     state_dict = policy.state_dict()
     llm_engine = getattr(llm, "llm_engine", getattr(llm, "engine", None))
     if llm_engine is None:
