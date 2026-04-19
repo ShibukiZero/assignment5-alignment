@@ -420,7 +420,43 @@ final checkpoint for model selection.
 
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
-**Answer:** TODO.
+**Answer:** I compared the selected `4e-5` on-policy run from the learning-rate
+sweep against a matching `no_baseline` run, keeping the prompt, rollout batch
+size, group size, standard-deviation normalization, and loss normalization fixed.
+Both runs completed 200 GRPO steps on the converted
+`competition_math_numeric` validation set.
+
+![GRPO validation answer reward by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_validation_reward.svg)
+
+The run summaries are archived in
+`artifacts/experiments/ch7/grpo_baselines/run_summaries_archive.md` and
+`artifacts/experiments/ch7/grpo_baselines/run_summaries.json`, with the full eval
+points in `artifacts/experiments/ch7/grpo_baselines/grpo_baselines_eval_points.csv`.
+The raw run data used for this comparison are archived under
+`artifacts/experiments/ch7/grpo_baselines/runs/`.
+
+| loss type | best answer reward | best step | final answer reward | final format accuracy | final rollout answer reward | final rollout average length |
+|---|---:|---:|---:|---:|---:|---:|
+| `reinforce_with_baseline` | **74.41%** | 75 | **70.02%** | 87.70% | **64.84%** | 393.6 |
+| `no_baseline` | 25.68% | 135 | 24.61% | **98.54%** | 39.45% | 20.9 |
+
+Baselining made a large difference: `reinforce_with_baseline` reached 74.41%
+best validation answer reward and ended at 70.02%, while `no_baseline` plateaued
+near 25% despite using the same learning rate. This supports the intuition that
+the group-relative baseline is doing more than cosmetic variance reduction in
+this sparse reward setting: it gives each rollout a relative signal within its
+group, whereas `no_baseline` mostly reinforces already-rewarded samples and gives
+little corrective pressure to wrong responses.
+
+The clearest side trend is that `no_baseline` learns the answer format very
+quickly, ending with 98.54% validation format accuracy, but its final rollout
+responses are extremely short on average at 20.9 tokens. In contrast,
+`reinforce_with_baseline` produces much longer final rollout responses, averaging
+393.6 tokens, and has much higher answer reward; the baseline appears to help the
+policy learn useful reasoning behavior rather than only a concise answer
+template.
+
+![GRPO validation format accuracy by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_format_accuracy.svg)
 
 ---
 
