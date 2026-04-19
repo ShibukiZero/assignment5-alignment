@@ -450,7 +450,48 @@ template.
 
 **Deliverable:** Compare the two approaches (without running experiments yet). What are the pros and cons of each approach? Are there any specific settings or examples where one approach seems better?
 
-**Answer:** TODO.
+**Answer:** The two approaches differ in how they assign credit across
+responses of different lengths. With `masked_mean`, a per-token loss sequence
+for completion \(i\) is aggregated as
+
+\[
+L_i = \frac{1}{T_i}\sum_{t=1}^{T_i} \ell_{it},
+\]
+
+where \(T_i\) is the number of response tokens. This makes each completion have
+roughly comparable total weight in the batch, regardless of whether it is short
+or long. The main benefit is stability: a long, noisy, or malformed response
+does not dominate the gradient just because it contains many tokens. The
+downside is that each token in a long reasoning trace receives less credit or
+blame than each token in a short response, so `masked_mean` can dilute the
+learning signal for long chains of reasoning.
+
+With `masked_normalize`, the same per-token losses are summed over the response
+tokens and divided by a fixed constant \(C\), such as the maximum generation
+length:
+
+\[
+L_i = \frac{1}{C}\sum_{t=1}^{T_i} \ell_{it}.
+\]
+
+This is closer to the policy-gradient objective based on the log-probability of
+a trajectory, since the trajectory log-probability itself is a sum over token
+log-probabilities. Its main advantage is that it does not give short responses a
+larger per-token gradient simply because they have fewer tokens. This can be
+preferable when correct solutions genuinely require multi-step reasoning, since
+the tokens in a long solution are not averaged away. The tradeoff is higher
+length-dependent variance: longer responses receive larger total weight, so long
+incorrect, rambling, or format-breaking completions can have a larger effect on
+the update.
+
+Thus, `masked_mean` is a safer choice when response lengths vary widely or when
+the model tends to generate long low-quality outputs, because it treats each
+completion more like one training example. `masked_normalize` is more appealing
+when the task rewards long, useful reasoning traces and we want the optimization
+to treat each generated action more uniformly. In short, this choice is not just
+a harmless rescaling of the loss: `masked_mean` is closer to weighting each
+completion equally, while `masked_normalize` is closer to weighting each
+response token equally.
 
 ---
 
@@ -460,7 +501,45 @@ template.
 
 **Deliverable:** Compare normalization with `masked_mean` and `masked_normalize` with an end-to-end GRPO training run. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
-**Answer:** TODO.
+**Answer:** We compared the selected `masked_mean` reference run against a
+`masked_normalize` run with the same on-policy setup, learning rate `4e-5`,
+group size 8, standard-deviation-normalized advantages, and
+`loss_normalize_constant=1024`. The `masked_mean` run performed better in this
+controlled setting: it reached a best validation answer reward of 74.41% at
+step 75 and ended at 70.02%, while `masked_normalize` reached a lower best
+validation answer reward of 68.95% at step 130 and ended at 44.92%.
+
+![GRPO validation answer reward by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_validation_reward.svg)
+
+The noticeable stability metrics point in the same direction. The validation
+format accuracy for `masked_mean` ended at 87.70%, compared with 56.84% for
+`masked_normalize`, so the weaker answer reward was coupled with a substantial
+format collapse rather than only more arithmetic mistakes.
+
+![GRPO validation format accuracy by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_format_accuracy.svg)
+
+The rollout response lengths make the failure mode clearer. By the final step,
+`masked_normalize` had an average rollout response length of 688.7 tokens,
+compared with 393.6 tokens for `masked_mean`; during steps 190-200,
+`masked_normalize` repeatedly produced average lengths above 630 tokens while
+rollout answer and format reward were both low.
+
+![GRPO rollout response length by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_response_length.svg)
+
+The gradient-norm curve also suggests less stable optimization under
+`masked_normalize`. Our logged gradient norm is the pre-clipping norm returned
+by `clip_grad_norm_`; the final value was 4.22 for `masked_normalize` versus
+1.02 for `masked_mean`, and `masked_normalize` had larger spikes during
+training. Since the actual update is clipped, these spikes should be interpreted
+as evidence that the raw gradient direction was more volatile, not that the full
+large norm was applied directly.
+
+![GRPO gradient norm by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_grad_norm.svg)
+
+Based on this experiment, we fixed `masked_mean` as the better-performing
+length-normalization choice for the following on-policy ablations. This result
+is specific to our current on-policy configuration; `masked_normalize` may still
+benefit from separate tuning in later exploratory or leaderboard runs.
 
 ---
 
