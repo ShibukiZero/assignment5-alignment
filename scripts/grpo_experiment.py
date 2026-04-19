@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run on-policy GRPO on MATH-style reasoning tasks."""
+"""Run GRPO on MATH-style reasoning tasks."""
 
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ DEFAULT_LOG_DIR = ".agents/logs/ch7/grpo_on_policy"
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run on-policy GRPO on MATH reasoning tasks.")
+    parser = argparse.ArgumentParser(description="Run GRPO on MATH reasoning tasks.")
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--train-path", default=DEFAULT_TRAIN_PATH)
     parser.add_argument("--val-path", default=DEFAULT_VAL_PATH)
@@ -87,19 +87,25 @@ def parse_args() -> argparse.Namespace:
         "--epochs-per-rollout-batch",
         type=int,
         default=1,
-        help="On-policy GRPO keeps this at 1.",
+        help="Number of training epochs to run over each rollout batch.",
     )
     parser.add_argument(
         "--train-batch-size",
         type=int,
         default=256,
-        help="On-policy GRPO keeps this equal to rollout_batch_size.",
+        help="Number of rollout responses used for each optimizer update.",
     )
     parser.add_argument("--gradient-accumulation-steps", type=int, default=128)
     parser.add_argument(
         "--loss-type",
         choices=["no_baseline", "reinforce_with_baseline", "grpo_clip"],
         default="reinforce_with_baseline",
+    )
+    parser.add_argument(
+        "--cliprange",
+        type=float,
+        default=0.2,
+        help="PPO/GRPO clipping range used with --loss-type grpo_clip.",
     )
     parser.add_argument(
         "--loss-normalization",
@@ -375,16 +381,58 @@ def iter_chunks(indices: list[int], chunk_size: int):
         yield indices[start : start + chunk_size]
 
 
+def tokenize_rollout_records(
+    records: list[dict[str, Any]],
+    tokenizer: Any,
+) -> dict[str, torch.Tensor]:
+    return tokenize_prompt_and_output(
+        [record["prompt"] for record in records],
+        [record["response"] for record in records],
+        tokenizer,
+    )
+
+
+def compute_old_log_probs(
+    policy: torch.nn.Module,
+    rollout_tensors: dict[str, torch.Tensor],
+    device: str,
+    microbatch_size: int,
+) -> torch.Tensor:
+    was_training = policy.training
+    policy.eval()
+    input_ids = rollout_tensors["input_ids"]
+    labels = rollout_tensors["labels"]
+    old_log_probs: list[torch.Tensor] = []
+
+    with torch.inference_mode():
+        for start in range(0, input_ids.shape[0], microbatch_size):
+            end = start + microbatch_size
+            scored = get_response_log_probs(
+                model=policy,
+                input_ids=input_ids[start:end].to(device),
+                labels=labels[start:end].to(device),
+                return_token_entropy=False,
+            )
+            old_log_probs.append(scored["log_probs"].detach().cpu())
+
+    if was_training:
+        policy.train()
+    return torch.cat(old_log_probs, dim=0)
+
+
 def train_on_rollout_batch(
     policy: torch.nn.Module,
-    tokenizer: Any,
     optimizer: AdamW,
     records: list[dict[str, Any]],
+    rollout_tensors: dict[str, torch.Tensor],
     advantages: torch.Tensor,
     raw_rewards: torch.Tensor,
+    old_log_probs: torch.Tensor | None,
+    epochs_per_rollout_batch: int,
     train_batch_size: int,
     gradient_accumulation_steps: int,
     loss_type: str,
+    cliprange: float,
     device: str,
     rng: random.Random,
     metrics_path: Path,
@@ -394,112 +442,160 @@ def train_on_rollout_batch(
     loss_normalization: str,
     loss_normalize_constant: float,
 ) -> int:
-    if train_batch_size != len(records):
-        raise ValueError("On-policy GRPO expects train_batch_size == rollout_batch_size.")
     if train_batch_size % gradient_accumulation_steps != 0:
         raise ValueError("train_batch_size must be divisible by gradient_accumulation_steps.")
+    if len(records) % train_batch_size != 0:
+        raise ValueError("rollout batch size must be divisible by train_batch_size.")
 
     microbatch_size = train_batch_size // gradient_accumulation_steps
-    order = list(range(len(records)))
-    rng.shuffle(order)
-    microbatches = list(iter_chunks(order, microbatch_size))
+    num_train_batches = len(records) // train_batch_size
 
     policy.train()
-    optimizer.zero_grad(set_to_none=True)
-    if device.startswith("cuda"):
-        torch.cuda.reset_peak_memory_stats(torch.device(device))
 
-    micro_scaled_losses: list[float] = []
-    micro_losses: list[float] = []
-    micro_entropies: list[float] = []
+    for rollout_epoch in range(1, epochs_per_rollout_batch + 1):
+        order = list(range(len(records)))
+        rng.shuffle(order)
+        train_batches = list(iter_chunks(order, train_batch_size))
 
-    for micro_indices in microbatches:
-        micro_records = [records[index] for index in micro_indices]
-        tokenized = tokenize_prompt_and_output(
-            [record["prompt"] for record in micro_records],
-            [record["response"] for record in micro_records],
-            tokenizer,
-        )
-        input_ids = tokenized["input_ids"].to(device)
-        labels = tokenized["labels"].to(device)
-        response_mask = tokenized["response_mask"].to(device)
+        for train_batch_index, train_indices in enumerate(train_batches, start=1):
+            optimizer.zero_grad(set_to_none=True)
+            if device.startswith("cuda"):
+                torch.cuda.reset_peak_memory_stats(torch.device(device))
 
-        scored = get_response_log_probs(
-            model=policy,
-            input_ids=input_ids,
-            labels=labels,
-            return_token_entropy=True,
-        )
-        micro_advantages = advantages[micro_indices].view(-1, 1).to(device)
-        micro_raw_rewards = raw_rewards[micro_indices].view(-1, 1).to(device)
-        loss, metadata = grpo_microbatch_train_step(
-            policy_log_probs=scored["log_probs"],
-            response_mask=response_mask,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            loss_type=loss_type,
-            raw_rewards=micro_raw_rewards,
-            advantages=micro_advantages,
-            loss_normalization=loss_normalization,
-            loss_normalize_constant=loss_normalize_constant,
-        )
-        token_entropy = masked_mean(
-            tensor=scored["token_entropy"],
-            mask=response_mask,
-            dim=None,
-        )
-        micro_scaled_losses.append(float(loss.detach().cpu().item()))
-        micro_losses.append(float(metadata["loss"].detach().cpu().item()))
-        micro_entropies.append(float(token_entropy.detach().cpu().item()))
+            micro_scaled_losses: list[float] = []
+            micro_losses: list[float] = []
+            micro_entropies: list[float] = []
+            micro_clip_fractions: list[float] = []
+            micro_approx_kls: list[float] = []
 
-        del input_ids, labels, response_mask, tokenized, scored
-        del micro_advantages, micro_raw_rewards, loss, metadata, token_entropy
+            for micro_indices in iter_chunks(train_indices, microbatch_size):
+                input_ids = rollout_tensors["input_ids"][micro_indices].to(device)
+                labels = rollout_tensors["labels"][micro_indices].to(device)
+                response_mask = rollout_tensors["response_mask"][micro_indices].to(device)
 
-    grad_norm = torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=1.0)
-    optimizer.step()
-    optimizer.zero_grad(set_to_none=True)
+                scored = get_response_log_probs(
+                    model=policy,
+                    input_ids=input_ids,
+                    labels=labels,
+                    return_token_entropy=True,
+                )
+                micro_advantages = advantages[micro_indices].view(-1, 1).to(device)
+                micro_raw_rewards = raw_rewards[micro_indices].view(-1, 1).to(device)
+                micro_old_log_probs = (
+                    old_log_probs[micro_indices].to(device)
+                    if old_log_probs is not None
+                    else None
+                )
+                loss, metadata = grpo_microbatch_train_step(
+                    policy_log_probs=scored["log_probs"],
+                    response_mask=response_mask,
+                    gradient_accumulation_steps=gradient_accumulation_steps,
+                    loss_type=loss_type,
+                    raw_rewards=micro_raw_rewards,
+                    advantages=micro_advantages,
+                    old_log_probs=micro_old_log_probs,
+                    cliprange=cliprange,
+                    loss_normalization=loss_normalization,
+                    loss_normalize_constant=loss_normalize_constant,
+                )
+                token_entropy = masked_mean(
+                    tensor=scored["token_entropy"],
+                    mask=response_mask,
+                    dim=None,
+                )
+                micro_scaled_losses.append(float(loss.detach().cpu().item()))
+                micro_losses.append(float(metadata["loss"].detach().cpu().item()))
+                micro_entropies.append(float(token_entropy.detach().cpu().item()))
 
-    optimizer_step += 1
-    append_jsonl(
-        metrics_path,
-        {
-            "type": "train",
-            "grpo_step": grpo_step,
-            "optimizer_step": optimizer_step,
-            "loss": mean(micro_losses),
-            "scaled_loss": mean(micro_scaled_losses),
-            "grad_norm": float(grad_norm.detach().cpu().item()),
-            "token_entropy": mean(micro_entropies),
-            "train_reward": mean(record["reward"] for record in records),
-            "train_format_accuracy": mean(record["format_reward"] for record in records),
-            "train_answer_accuracy": mean(record["answer_reward"] for record in records),
-            "learning_rate": learning_rate,
-            "loss_type": loss_type,
-            "loss_normalization": loss_normalization,
-            "loss_normalize_constant": loss_normalize_constant,
-            "train_batch_size": train_batch_size,
-            "microbatch_size": microbatch_size,
-            "gradient_accumulation_steps": gradient_accumulation_steps,
-            **cuda_memory_metrics(device),
-        },
-    )
+                if micro_old_log_probs is not None:
+                    approx_kl = masked_mean(
+                        tensor=micro_old_log_probs - scored["log_probs"],
+                        mask=response_mask,
+                        dim=None,
+                    )
+                    micro_approx_kls.append(float(approx_kl.detach().cpu().item()))
+                if "is_clipped" in metadata:
+                    clip_fraction = masked_mean(
+                        tensor=metadata["is_clipped"].to(dtype=torch.float32),
+                        mask=response_mask,
+                        dim=None,
+                    )
+                    micro_clip_fractions.append(float(clip_fraction.detach().cpu().item()))
+
+                del input_ids, labels, response_mask, scored
+                del micro_advantages, micro_raw_rewards, micro_old_log_probs
+                del loss, metadata, token_entropy
+
+            grad_norm = torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=1.0)
+            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
+
+            train_records = [records[index] for index in train_indices]
+            optimizer_step += 1
+            append_jsonl(
+                metrics_path,
+                {
+                    "type": "train",
+                    "grpo_step": grpo_step,
+                    "optimizer_step": optimizer_step,
+                    "rollout_epoch": rollout_epoch,
+                    "epochs_per_rollout_batch": epochs_per_rollout_batch,
+                    "train_batch_index": train_batch_index,
+                    "num_train_batches": num_train_batches,
+                    "loss": mean(micro_losses),
+                    "scaled_loss": mean(micro_scaled_losses),
+                    "grad_norm": float(grad_norm.detach().cpu().item()),
+                    "token_entropy": mean(micro_entropies),
+                    "clip_fraction": mean_or_none(micro_clip_fractions),
+                    "approx_kl": mean_or_none(micro_approx_kls),
+                    "train_reward": mean(record["reward"] for record in train_records),
+                    "train_format_accuracy": mean(
+                        record["format_reward"] for record in train_records
+                    ),
+                    "train_answer_accuracy": mean(
+                        record["answer_reward"] for record in train_records
+                    ),
+                    "learning_rate": learning_rate,
+                    "loss_type": loss_type,
+                    "cliprange": cliprange,
+                    "loss_normalization": loss_normalization,
+                    "loss_normalize_constant": loss_normalize_constant,
+                    "rollout_batch_size": len(records),
+                    "train_batch_size": train_batch_size,
+                    "microbatch_size": microbatch_size,
+                    "gradient_accumulation_steps": gradient_accumulation_steps,
+                    "old_log_probs_cached": old_log_probs is not None,
+                    **cuda_memory_metrics(device),
+                },
+            )
     return optimizer_step
 
 
-def validate_on_policy_args(args: argparse.Namespace) -> None:
+def validate_grpo_args(args: argparse.Namespace) -> None:
     if args.rollout_batch_size % args.group_size != 0:
         raise ValueError("rollout_batch_size must be divisible by group_size.")
+    if args.train_batch_size <= 0:
+        raise ValueError("train_batch_size must be positive.")
+    if args.gradient_accumulation_steps <= 0:
+        raise ValueError("gradient_accumulation_steps must be positive.")
+    if args.epochs_per_rollout_batch <= 0:
+        raise ValueError("epochs_per_rollout_batch must be positive.")
+    if args.train_batch_size > args.rollout_batch_size:
+        raise ValueError("train_batch_size must be less than or equal to rollout_batch_size.")
+    if args.rollout_batch_size % args.train_batch_size != 0:
+        raise ValueError("rollout_batch_size must be divisible by train_batch_size.")
     if args.train_batch_size % args.gradient_accumulation_steps != 0:
         raise ValueError("train_batch_size must be divisible by gradient_accumulation_steps.")
-    if args.train_batch_size < args.group_size:
-        raise ValueError("train_batch_size must be greater than or equal to group_size.")
-    if args.epochs_per_rollout_batch != 1:
-        raise ValueError("This script currently implements on-policy GRPO only; use one epoch.")
-    if args.train_batch_size != args.rollout_batch_size:
-        raise ValueError(
-            "This on-policy version expects train_batch_size == rollout_batch_size."
-        )
-    if args.loss_type == "grpo_clip":
-        raise ValueError("GRPO-Clip is reserved for the later off-policy implementation.")
+    if args.train_batch_size < args.gradient_accumulation_steps:
+        raise ValueError("gradient_accumulation_steps must be no larger than train_batch_size.")
+    is_off_policy = (
+        args.epochs_per_rollout_batch > 1
+        or args.train_batch_size != args.rollout_batch_size
+    )
+    if is_off_policy and args.loss_type != "grpo_clip":
+        raise ValueError("Off-policy GRPO should use loss_type='grpo_clip'.")
+    if args.cliprange < 0:
+        raise ValueError("cliprange must be non-negative.")
     if args.loss_normalization == "masked_normalize":
         if args.loss_normalize_constant is None:
             args.loss_normalize_constant = float(args.max_new_tokens)
@@ -511,9 +607,17 @@ def validate_on_policy_args(args: argparse.Namespace) -> None:
         raise ValueError("eval_every must be positive.")
 
 
+def expected_optimizer_updates_per_rollout(
+    rollout_batch_size: int,
+    train_batch_size: int,
+    epochs_per_rollout_batch: int,
+) -> int:
+    return epochs_per_rollout_batch * (rollout_batch_size // train_batch_size)
+
+
 def main() -> None:
     args = parse_args()
-    validate_on_policy_args(args)
+    validate_grpo_args(args)
     random.seed(args.seed)
     torch.manual_seed(args.seed)
 
@@ -546,6 +650,11 @@ def main() -> None:
     optimizer_step = 0
     best_answer_accuracy = -1.0
     n_prompts_per_rollout_batch = args.rollout_batch_size // args.group_size
+    optimizer_updates_per_rollout = expected_optimizer_updates_per_rollout(
+        rollout_batch_size=args.rollout_batch_size,
+        train_batch_size=args.train_batch_size,
+        epochs_per_rollout_batch=args.epochs_per_rollout_batch,
+    )
 
     logger.info("train question pool: %d", len(train_examples))
     logger.info("validation examples: %d", len(val_examples))
@@ -553,7 +662,12 @@ def main() -> None:
     logger.info("rollout responses per step: %d", args.rollout_batch_size)
     logger.info("questions per rollout batch: %d", n_prompts_per_rollout_batch)
     logger.info("group size: %d", args.group_size)
+    logger.info("epochs per rollout batch: %d", args.epochs_per_rollout_batch)
+    logger.info("train batch size: %d", args.train_batch_size)
+    logger.info("gradient accumulation steps: %d", args.gradient_accumulation_steps)
+    logger.info("optimizer updates per rollout: %d", optimizer_updates_per_rollout)
     logger.info("loss type: %s", args.loss_type)
+    logger.info("cliprange: %.4f", args.cliprange)
     logger.info("loss normalization: %s", args.loss_normalization)
     logger.info("loss normalize constant: %.4f", args.loss_normalize_constant)
     logger.info("std normalization: %s", args.use_std_normalization)
@@ -622,16 +736,29 @@ def main() -> None:
         append_jsonl(metrics_path, rollout_summary)
         write_json(step_log_dir / "rollout_summary.json", rollout_summary)
 
+        rollout_tensors = tokenize_rollout_records(rollout_records, tokenizer)
+        old_log_probs = None
+        if args.loss_type == "grpo_clip":
+            old_log_probs = compute_old_log_probs(
+                policy=policy,
+                rollout_tensors=rollout_tensors,
+                device=args.policy_device,
+                microbatch_size=args.train_batch_size // args.gradient_accumulation_steps,
+            )
+
         optimizer_step = train_on_rollout_batch(
             policy=policy,
-            tokenizer=tokenizer,
             optimizer=optimizer,
             records=rollout_records,
+            rollout_tensors=rollout_tensors,
             advantages=advantages,
             raw_rewards=raw_rewards,
+            old_log_probs=old_log_probs,
+            epochs_per_rollout_batch=args.epochs_per_rollout_batch,
             train_batch_size=args.train_batch_size,
             gradient_accumulation_steps=args.gradient_accumulation_steps,
             loss_type=args.loss_type,
+            cliprange=args.cliprange,
             device=args.policy_device,
             rng=rng,
             metrics_path=metrics_path,
@@ -672,6 +799,7 @@ def main() -> None:
                 "optimizer_step": optimizer_step,
                 "step_seconds": time.time() - step_start,
                 "best_answer_accuracy": best_answer_accuracy,
+                "optimizer_updates_per_rollout_batch": optimizer_updates_per_rollout,
             },
         )
 
@@ -703,7 +831,13 @@ def main() -> None:
         "n_grpo_steps": args.n_grpo_steps,
         "rollout_batch_size": args.rollout_batch_size,
         "group_size": args.group_size,
+        "epochs_per_rollout_batch": args.epochs_per_rollout_batch,
+        "train_batch_size": args.train_batch_size,
+        "gradient_accumulation_steps": args.gradient_accumulation_steps,
+        "optimizer_updates_per_rollout_batch": optimizer_updates_per_rollout,
+        "expected_total_optimizer_steps": args.n_grpo_steps * optimizer_updates_per_rollout,
         "loss_type": args.loss_type,
+        "cliprange": args.cliprange,
         "loss_normalization": args.loss_normalization,
         "loss_normalize_constant": args.loss_normalize_constant,
         "use_std_normalization": args.use_std_normalization,
