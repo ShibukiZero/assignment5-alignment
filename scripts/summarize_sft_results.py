@@ -14,7 +14,7 @@ from typing import Any
 
 DEFAULT_SIZE_SWEEP_LOG_ROOT = ".agents/logs/ch4/sft_noisy_size_sweep_bs16_lr5e-5"
 DEFAULT_FILTERED_LOG_ROOT = ".agents/logs/ch4/sft_noisy_filtered_bs16_lr5e-5"
-DEFAULT_OUTPUT_DIR = "artifacts/ch4/sft_experiment"
+DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch4/sft_experiment"
 
 
 @dataclass(frozen=True)
@@ -189,7 +189,11 @@ def write_csv(path: Path, summaries: list[RunSummary]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     rows = [summary_to_csv_row(summary) for summary in summaries]
     with path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(
+            f,
+            fieldnames=list(rows[0].keys()),
+            lineterminator="\n",
+        )
         writer.writeheader()
         writer.writerows(rows)
 

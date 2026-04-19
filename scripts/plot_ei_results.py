@@ -18,7 +18,7 @@ DEFAULT_LOG_ROOTS = [
     ".agents/logs/ch5/ei_first_grid_db512_lr5e-5_bs16",
     ".agents/logs/ch5/ei_supplement_db1024_2048_budget4_lr5e-5_bs16",
 ]
-DEFAULT_OUTPUT_DIR = "artifacts/ch5/expert_iteration"
+DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch5/expert_iteration"
 
 COLORS = [
     "#1f77b4",
@@ -420,6 +420,7 @@ def write_summary_csv(runs: list[RunData], output_path: Path) -> None:
                 "final_accepted_fraction",
                 "final_rollout_entropy",
             ],
+            lineterminator="\n",
         )
         writer.writeheader()
         for run in runs:

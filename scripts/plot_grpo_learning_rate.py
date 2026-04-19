@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_OUTPUT_DIR = "artifacts/ch7/grpo_learning_rate"
+DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_learning_rate"
 TARGET_STEPS = 200
 
 COLORS = [
@@ -386,7 +386,7 @@ def render_svg_line_plot(
 
 def write_eval_points_csv(runs: list[RunData], output_path: Path) -> None:
     with output_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator="\n")
         writer.writerow(
             [
                 "label",
@@ -431,7 +431,7 @@ def write_summary(runs: list[RunData], csv_path: Path, md_path: Path) -> None:
         "log_dir",
     ]
     with csv_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, lineterminator="\n")
         writer.writerow(headers)
         for run in runs:
             best = run.best_eval

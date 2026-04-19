@@ -18,7 +18,7 @@ self-hosted environment, we ran this analysis on the converted
 104 had both `format_reward = 1` and `answer_reward = 1`, 459 had
 `format_reward = 1` and `answer_reward = 0`, and 2,636 had both rewards equal
 to 0. We archived the summary and sampled examples under
-`artifacts/ch3/3_2_math_baseline/`.
+`artifacts/experiments/ch3/3_2_math_baseline/`.
 
 In the inspected `format_reward = 0` examples, the main issue was usually model
 behavior under the strict R1-Zero output protocol rather than a vLLM failure.
@@ -129,7 +129,7 @@ optimizer steps total.
 
 The validation accuracy curves for the SFT dataset-size sweep are shown below.
 
-![Validation accuracy for the noisy SFT dataset-size sweep](artifacts/ch4/sft_experiment/sft_size_sweep_accuracy.svg)
+![Validation accuracy for the noisy SFT dataset-size sweep](artifacts/experiments/ch4/sft_experiment/sft_size_sweep_accuracy.svg)
 
 The main results are:
 
@@ -152,7 +152,7 @@ underperformed the smaller subsets.
 For the filtered SFT experiment, filtering retained 4,136 of the 4,866 noisy
 SFT examples. The filtered-vs-noisy validation curve is shown below.
 
-![Validation accuracy for noisy full SFT versus reward-filtered full SFT](artifacts/ch4/sft_experiment/sft_filtered_vs_noisy_full_accuracy.svg)
+![Validation accuracy for noisy full SFT versus reward-filtered full SFT](artifacts/experiments/ch4/sft_experiment/sft_filtered_vs_noisy_full_accuracy.svg)
 
 The comparison is:
 
@@ -198,9 +198,9 @@ Validation was run on the full 3199-example validation set with the R1-Zero
 prompt, temperature 1.0, max tokens 1024, and the `r1_zero_reward_fn`-based
 answer reward.
 
-![Expert Iteration validation accuracy](artifacts/ch5/expert_iteration/ei_validation_accuracy.svg)
+![Expert Iteration validation accuracy](artifacts/experiments/ch5/expert_iteration/ei_validation_accuracy.svg)
 
-![Expert Iteration response entropy](artifacts/ch5/expert_iteration/ei_rollout_entropy.svg)
+![Expert Iteration response entropy](artifacts/experiments/ch5/expert_iteration/ei_rollout_entropy.svg)
 
 The table below summarizes the EI runs.
 
@@ -328,12 +328,12 @@ size 8, `reinforce_with_baseline`, standard-deviation-normalized advantages,
 and validation every 5 GRPO steps; I stopped the clearly bad high-learning-rate
 runs early once the validation curve showed collapse or severe instability.
 
-![GRPO validation answer reward for learning-rate sweep](artifacts/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
+![GRPO validation answer reward for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
 
 The run summaries are archived in
-`artifacts/ch7/grpo_learning_rate/run_summaries_archive.md` and
-`artifacts/ch7/grpo_learning_rate/run_summaries.json`, with the full eval
-points in `artifacts/ch7/grpo_learning_rate/grpo_learning_rate_eval_points.csv`.
+`artifacts/experiments/ch7/grpo_learning_rate/run_summaries_archive.md` and
+`artifacts/experiments/ch7/grpo_learning_rate/run_summaries.json`, with the full eval
+points in `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_eval_points.csv`.
 
 | learning rate | status | best answer reward | best step | final answer reward | final step | final format accuracy |
 |---:|---|---:|---:|---:|---:|---:|
@@ -359,7 +359,7 @@ regression, dropping from the 95-98% format-accuracy range in the middle of
 training to 87.70% at step 200, so the best checkpoint is preferable to the
 final checkpoint for model selection.
 
-![GRPO validation format accuracy for learning-rate sweep](artifacts/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg)
+![GRPO validation format accuracy for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg)
 
 ---
 

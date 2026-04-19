@@ -16,9 +16,9 @@ This archive summarizes every learning-rate run used for the `grpo_learning_rate
 
 Additional generated artifacts:
 
-- `artifacts/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg`
-- `artifacts/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg`
-- `artifacts/ch7/grpo_learning_rate/grpo_learning_rate_eval_points.csv`
-- `artifacts/ch7/grpo_learning_rate/grpo_learning_rate_summary.csv`
-- `artifacts/ch7/grpo_learning_rate/grpo_learning_rate_summary.md`
-- `artifacts/ch7/grpo_learning_rate/run_summaries.json`
+- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg`
+- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg`
+- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_eval_points.csv`
+- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_summary.csv`
+- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_summary.md`
+- `artifacts/experiments/ch7/grpo_learning_rate/run_summaries.json`
