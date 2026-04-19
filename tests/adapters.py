@@ -263,6 +263,8 @@ def run_grpo_microbatch_train_step(
     advantages: torch.Tensor | None = None,
     old_log_probs: torch.Tensor | None = None,
     cliprange: float | None = None,
+    loss_normalization: Literal["masked_mean", "masked_normalize"] = "masked_mean",
+    loss_normalize_constant: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
     """Compute the policy gradient loss and backprop its gradients for a microbatch.
 
@@ -282,9 +284,8 @@ def run_grpo_microbatch_train_step(
             Needed for loss_type="grpo_clip".
         cliprange: float | None, the clip range for the ratio. 
             Needed for loss_type="grpo_clip".
-        constant_normalize_factor: int | None, provided if we want to sum over 
-            the sequence dimension and normalize by this constant factor
-            (as in Dr. GRPO).
+        loss_normalization: how to aggregate token losses into per-example losses.
+        loss_normalize_constant: fixed denominator used with masked_normalize.
 
     Returns:
         tuple[torch.Tensor, dict[str, torch.Tensor]]: 
@@ -299,6 +300,8 @@ def run_grpo_microbatch_train_step(
         advantages=advantages,
         old_log_probs=old_log_probs,
         cliprange=cliprange,
+        loss_normalization=loss_normalization,
+        loss_normalize_constant=loss_normalize_constant,
     )
 
 

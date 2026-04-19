@@ -101,6 +101,21 @@ def parse_args() -> argparse.Namespace:
         choices=["no_baseline", "reinforce_with_baseline", "grpo_clip"],
         default="reinforce_with_baseline",
     )
+    parser.add_argument(
+        "--loss-normalization",
+        choices=["masked_mean", "masked_normalize"],
+        default="masked_mean",
+        help="How to aggregate per-token policy-gradient loss into a per-example loss.",
+    )
+    parser.add_argument(
+        "--loss-normalize-constant",
+        type=float,
+        default=None,
+        help=(
+            "Fixed denominator for --loss-normalization masked_normalize. "
+            "Defaults to --max-new-tokens."
+        ),
+    )
     parser.add_argument("--use-std-normalization", dest="use_std_normalization", action="store_true")
     parser.add_argument(
         "--no-use-std-normalization",
@@ -376,6 +391,8 @@ def train_on_rollout_batch(
     grpo_step: int,
     optimizer_step: int,
     learning_rate: float,
+    loss_normalization: str,
+    loss_normalize_constant: float,
 ) -> int:
     if train_batch_size != len(records):
         raise ValueError("On-policy GRPO expects train_batch_size == rollout_batch_size.")
@@ -422,6 +439,8 @@ def train_on_rollout_batch(
             loss_type=loss_type,
             raw_rewards=micro_raw_rewards,
             advantages=micro_advantages,
+            loss_normalization=loss_normalization,
+            loss_normalize_constant=loss_normalize_constant,
         )
         token_entropy = masked_mean(
             tensor=scored["token_entropy"],
@@ -455,6 +474,8 @@ def train_on_rollout_batch(
             "train_answer_accuracy": mean(record["answer_reward"] for record in records),
             "learning_rate": learning_rate,
             "loss_type": loss_type,
+            "loss_normalization": loss_normalization,
+            "loss_normalize_constant": loss_normalize_constant,
             "train_batch_size": train_batch_size,
             "microbatch_size": microbatch_size,
             "gradient_accumulation_steps": gradient_accumulation_steps,
@@ -479,6 +500,13 @@ def validate_on_policy_args(args: argparse.Namespace) -> None:
         )
     if args.loss_type == "grpo_clip":
         raise ValueError("GRPO-Clip is reserved for the later off-policy implementation.")
+    if args.loss_normalization == "masked_normalize":
+        if args.loss_normalize_constant is None:
+            args.loss_normalize_constant = float(args.max_new_tokens)
+        if args.loss_normalize_constant <= 0:
+            raise ValueError("loss_normalize_constant must be positive.")
+    elif args.loss_normalize_constant is None:
+        args.loss_normalize_constant = 1.0
     if args.eval_every <= 0:
         raise ValueError("eval_every must be positive.")
 
@@ -526,6 +554,8 @@ def main() -> None:
     logger.info("questions per rollout batch: %d", n_prompts_per_rollout_batch)
     logger.info("group size: %d", args.group_size)
     logger.info("loss type: %s", args.loss_type)
+    logger.info("loss normalization: %s", args.loss_normalization)
+    logger.info("loss normalize constant: %.4f", args.loss_normalize_constant)
     logger.info("std normalization: %s", args.use_std_normalization)
 
     initial_summary = evaluate_policy(
@@ -608,6 +638,8 @@ def main() -> None:
             grpo_step=grpo_step,
             optimizer_step=optimizer_step,
             learning_rate=args.learning_rate,
+            loss_normalization=args.loss_normalization,
+            loss_normalize_constant=args.loss_normalize_constant,
         )
 
         if grpo_step % args.eval_every == 0:
@@ -672,6 +704,8 @@ def main() -> None:
         "rollout_batch_size": args.rollout_batch_size,
         "group_size": args.group_size,
         "loss_type": args.loss_type,
+        "loss_normalization": args.loss_normalization,
+        "loss_normalize_constant": args.loss_normalize_constant,
         "use_std_normalization": args.use_std_normalization,
     }
     write_json(log_dir / "run_summary.json", run_summary)

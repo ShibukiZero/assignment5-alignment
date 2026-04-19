@@ -6,6 +6,8 @@ from typing import Literal
 import torch
 from torch import Tensor
 
+from cs336_alignment.sft import masked_normalize
+
 
 def compute_group_normalized_rewards(
     reward_fn: Callable[[str, str], dict[str, float]],
@@ -162,12 +164,16 @@ def grpo_microbatch_train_step(
     advantages: Tensor | None = None,
     old_log_probs: Tensor | None = None,
     cliprange: float | None = None,
+    loss_normalization: Literal["masked_mean", "masked_normalize"] = "masked_mean",
+    loss_normalize_constant: float = 1.0,
 ) -> tuple[Tensor, dict[str, Tensor]]:
     """Backpropagate one GRPO microbatch loss."""
     if response_mask.shape != policy_log_probs.shape:
         raise ValueError("response_mask must have the same shape as policy_log_probs.")
     if gradient_accumulation_steps <= 0:
         raise ValueError("gradient_accumulation_steps must be positive.")
+    if loss_normalization == "masked_normalize" and loss_normalize_constant <= 0:
+        raise ValueError("loss_normalize_constant must be positive.")
 
     if loss_type == "no_baseline":
         if raw_rewards is None:
@@ -205,7 +211,18 @@ def grpo_microbatch_train_step(
         old_log_probs=loss_old_log_probs,
         cliprange=loss_cliprange,
     )
-    per_example_loss = masked_mean(tensor=per_token_loss, mask=response_mask, dim=-1)
+    if loss_normalization == "masked_mean":
+        per_example_loss = masked_mean(tensor=per_token_loss, mask=response_mask, dim=-1)
+    elif loss_normalization == "masked_normalize":
+        per_example_loss = masked_normalize(
+            tensor=per_token_loss,
+            mask=response_mask,
+            dim=-1,
+            normalize_constant=loss_normalize_constant,
+        )
+    else:
+        raise ValueError(f"Unknown loss_normalization: {loss_normalization}")
+
     loss = per_example_loss.mean()
     scaled_loss = loss / gradient_accumulation_steps
     scaled_loss.backward()

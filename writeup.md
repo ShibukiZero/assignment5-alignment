@@ -320,7 +320,46 @@ stable runs are expected.
 
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
-**Answer:** TODO.
+**Answer:** The official course MATH files were not available in this
+environment, so I ran this sweep on the same converted
+`competition_math_numeric` MATH-like validation set used in the previous
+experiments. All runs used the R1-Zero prompt, rollout batch size 256, group
+size 8, `reinforce_with_baseline`, standard-deviation-normalized advantages,
+and validation every 5 GRPO steps; I stopped the clearly bad high-learning-rate
+runs early once the validation curve showed collapse or severe instability.
+
+![GRPO validation answer reward for learning-rate sweep](artifacts/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
+
+The run summaries are archived in
+`artifacts/ch7/grpo_learning_rate/run_summaries_archive.md` and
+`artifacts/ch7/grpo_learning_rate/run_summaries.json`, with the full eval
+points in `artifacts/ch7/grpo_learning_rate/grpo_learning_rate_eval_points.csv`.
+
+| learning rate | status | best answer reward | best step | final answer reward | final step | final format accuracy |
+|---:|---|---:|---:|---:|---:|---:|
+| `3e-6` | stopped early | 4.49% | 35 | 4.49% | 35 | 25.10% |
+| `5e-6` | completed | 14.65% | 200 | 14.65% | 200 | 53.91% |
+| `1e-5` | completed | 29.30% | 180 | 27.15% | 200 | 73.34% |
+| `2e-5` | completed | 37.21% | 155 | 34.18% | 200 | 75.29% |
+| `3e-5` | completed | 55.76% | 190 | 54.98% | 200 | 84.96% |
+| `4e-5` | completed | **74.41%** | 75 | **70.02%** | 200 | 87.70% |
+| `5e-5` | completed | 64.94% | 160 | 62.40% | 200 | 83.79% |
+| `7e-5` | stopped early | 13.09% | 5 | 7.52% | 20 | 36.43% |
+| `2e-4` | collapsed | 3.81% | 0 | 0.00% | 5 | 0.00% |
+
+The best learning rate was `4e-5`, whose best checkpoint reached 74.41%
+validation answer reward at step 75 and whose final checkpoint still reached
+70.02%, comfortably exceeding the 25% target. I use `4e-5` for the remaining
+on-policy GRPO experiments.
+
+Other metrics followed the same stability pattern: successful runs improved
+format accuracy as answer reward increased, while `7e-5` and `2e-4` quickly
+lost formatting and reward. The `4e-5` run showed a mild late-training format
+regression, dropping from the 95-98% format-accuracy range in the middle of
+training to 87.70% at step 200, so the best checkpoint is preferable to the
+final checkpoint for model selection.
+
+![GRPO validation format accuracy for learning-rate sweep](artifacts/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg)
 
 ---
 
