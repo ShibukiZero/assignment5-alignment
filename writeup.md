@@ -318,7 +318,40 @@ stable runs are expected.
 
 **Deliverable:** Implement a complete train loop for GRPO. Begin training a policy on MATH and confirm that you see validation rewards improving, along with sensible rollouts over time. Provide a plot with the validation rewards with respect to steps, and a few example rollouts over time.
 
-**Answer:** TODO.
+**Answer:** I used the on-policy configuration from the GRPO train-loop
+implementation as a first end-to-end sanity run: `rollout_batch_size=256`,
+`group_size=8`, `train_batch_size=256`, `epochs_per_rollout_batch=1`,
+`loss_type=reinforce_with_baseline`, standard group-normalized advantages, and
+`lr=1e-5`. The run completed 200 GRPO steps and evaluated on 1024 validation
+examples every 5 steps.
+
+![On-policy GRPO validation answer reward](artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_validation_reward.svg)
+
+The validation answer reward improved from 3.81% at step 0 to a best value of
+29.30% at step 180, ending at 27.15% at step 200. Format accuracy also improved
+from 18.07% to 73.34%, which is important here because the reward parser depends
+on the `<think>` and `<answer>` structure. The final rollout batch had 33.98%
+answer reward, 87.11% format reward, and an average response length of 168.5
+tokens. These trends confirm that the loop is updating the policy in the right
+direction rather than only passing unit tests.
+
+![On-policy GRPO validation format accuracy](artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_format_accuracy.svg)
+
+Sample rollouts over time are archived in
+`artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_rollout_examples.md`.
+The selected examples show the policy increasingly producing concise, correctly
+tagged answers. One useful caveat is that answer-only reward can still accept
+rollouts whose reasoning is not fully reliable; for example, a later octagon
+diagonals sample gets the final answer right even though part of the reasoning is
+messy. That is a limitation of this reward design rather than a train-loop bug.
+
+Summary files are archived in
+`artifacts/experiments/ch7/grpo_train_loop/run_summaries_archive.md` and
+`artifacts/experiments/ch7/grpo_train_loop/run_summaries.json`, with the full
+eval curve in
+`artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_eval_points.csv`.
+The raw run data used for this answer are archived under
+`artifacts/experiments/ch7/grpo_train_loop/runs/grpo_on_policy_lr1e-5/`.
 
 ---
 
