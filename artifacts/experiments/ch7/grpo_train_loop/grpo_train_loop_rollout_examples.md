@@ -6,7 +6,7 @@ Question: The number $n$ is a prime number between 20 and 30. If you divide $n$ 
 
 Ground truth: `29`
 
-Reward: 1, format reward: 1, answer reward: 1, response tokens: 46
+Reward: 1.0, format reward: 1.0, answer reward: 1.0, response tokens: 46
 
 Response:
 
@@ -20,7 +20,7 @@ Question: Points $A$, $B$, $C$, and $T$ are in space such that each of $\overlin
 
 Ground truth: `150`
 
-Reward: 1, format reward: 1, answer reward: 1, response tokens: 304
+Reward: 1.0, format reward: 1.0, answer reward: 1.0, response tokens: 304
 
 Response:
 
@@ -34,7 +34,7 @@ Question: In a certain city the rate of taxation is the following: $x\%$ tax is 
 
 Ground truth: `50000`
 
-Reward: 1, format reward: 1, answer reward: 1, response tokens: 213
+Reward: 1.0, format reward: 1.0, answer reward: 1.0, response tokens: 213
 
 Response:
 
@@ -48,7 +48,7 @@ Question: My three friends and I have dinner together every weekend. Each weeken
 
 Ground truth: `6`
 
-Reward: 1, format reward: 1, answer reward: 1, response tokens: 52
+Reward: 1.0, format reward: 1.0, answer reward: 1.0, response tokens: 52
 
 Response:
 
@@ -62,7 +62,7 @@ Question: A diagonal of a polygon is a segment joining two nonconsecutive vertic
 
 Ground truth: `20`
 
-Reward: 1, format reward: 1, answer reward: 1, response tokens: 97
+Reward: 1.0, format reward: 1.0, answer reward: 1.0, response tokens: 97
 
 Response:
 

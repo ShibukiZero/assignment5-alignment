@@ -28,46 +28,46 @@
   <line x1="72" y1="372" x2="784" y2="372" stroke="#111827" stroke-width="1.4" />
   <polyline fill="none" stroke="#2563eb" stroke-width="3" points="72.00,359.89 89.80,352.44 107.60,352.44 125.40,339.70 143.20,342.81 161.00,336.29 178.80,330.39 196.60,329.46 214.40,321.38 232.20,322.93 250.00,316.41 267.80,308.03 285.60,311.44 303.40,309.27 321.20,311.13 339.00,299.33 356.80,302.13 374.60,304.30 392.40,300.26 410.20,300.57 428.00,294.36 445.80,296.23 463.60,303.99 481.40,288.46 499.20,297.47 517.00,295.92 534.80,297.78 552.60,297.47 570.40,286.29 588.20,292.50 606.00,288.46 623.80,290.33 641.60,293.74 659.40,281.01 677.20,293.12 695.00,286.60 712.80,278.84 730.60,290.64 748.40,288.15 766.20,279.46 784.00,285.67" />
   <circle cx="72.00" cy="359.89" r="3" fill="#2563eb"><title>step 0: 3.81%</title></circle>
-<circle cx="89.80" cy="352.44" r="3" fill="#2563eb"><title>step 5: 6.15%</title></circle>
-<circle cx="107.60" cy="352.44" r="3" fill="#2563eb"><title>step 10: 6.15%</title></circle>
-<circle cx="125.40" cy="339.70" r="3" fill="#2563eb"><title>step 15: 10.16%</title></circle>
-<circle cx="143.20" cy="342.81" r="3" fill="#2563eb"><title>step 20: 9.18%</title></circle>
-<circle cx="161.00" cy="336.29" r="3" fill="#2563eb"><title>step 25: 11.23%</title></circle>
-<circle cx="178.80" cy="330.39" r="3" fill="#2563eb"><title>step 30: 13.09%</title></circle>
-<circle cx="196.60" cy="329.46" r="3" fill="#2563eb"><title>step 35: 13.38%</title></circle>
-<circle cx="214.40" cy="321.38" r="3" fill="#2563eb"><title>step 40: 15.92%</title></circle>
-<circle cx="232.20" cy="322.93" r="3" fill="#2563eb"><title>step 45: 15.43%</title></circle>
-<circle cx="250.00" cy="316.41" r="3" fill="#2563eb"><title>step 50: 17.48%</title></circle>
-<circle cx="267.80" cy="308.03" r="3" fill="#2563eb"><title>step 55: 20.12%</title></circle>
-<circle cx="285.60" cy="311.44" r="3" fill="#2563eb"><title>step 60: 19.04%</title></circle>
-<circle cx="303.40" cy="309.27" r="3" fill="#2563eb"><title>step 65: 19.73%</title></circle>
-<circle cx="321.20" cy="311.13" r="3" fill="#2563eb"><title>step 70: 19.14%</title></circle>
-<circle cx="339.00" cy="299.33" r="3" fill="#2563eb"><title>step 75: 22.85%</title></circle>
-<circle cx="356.80" cy="302.13" r="3" fill="#2563eb"><title>step 80: 21.97%</title></circle>
-<circle cx="374.60" cy="304.30" r="3" fill="#2563eb"><title>step 85: 21.29%</title></circle>
-<circle cx="392.40" cy="300.26" r="3" fill="#2563eb"><title>step 90: 22.56%</title></circle>
-<circle cx="410.20" cy="300.57" r="3" fill="#2563eb"><title>step 95: 22.46%</title></circle>
-<circle cx="428.00" cy="294.36" r="3" fill="#2563eb"><title>step 100: 24.41%</title></circle>
-<circle cx="445.80" cy="296.23" r="3" fill="#2563eb"><title>step 105: 23.83%</title></circle>
-<circle cx="463.60" cy="303.99" r="3" fill="#2563eb"><title>step 110: 21.39%</title></circle>
-<circle cx="481.40" cy="288.46" r="3" fill="#2563eb"><title>step 115: 26.27%</title></circle>
-<circle cx="499.20" cy="297.47" r="3" fill="#2563eb"><title>step 120: 23.44%</title></circle>
-<circle cx="517.00" cy="295.92" r="3" fill="#2563eb"><title>step 125: 23.93%</title></circle>
-<circle cx="534.80" cy="297.78" r="3" fill="#2563eb"><title>step 130: 23.34%</title></circle>
-<circle cx="552.60" cy="297.47" r="3" fill="#2563eb"><title>step 135: 23.44%</title></circle>
-<circle cx="570.40" cy="286.29" r="3" fill="#2563eb"><title>step 140: 26.95%</title></circle>
-<circle cx="588.20" cy="292.50" r="3" fill="#2563eb"><title>step 145: 25.00%</title></circle>
-<circle cx="606.00" cy="288.46" r="3" fill="#2563eb"><title>step 150: 26.27%</title></circle>
-<circle cx="623.80" cy="290.33" r="3" fill="#2563eb"><title>step 155: 25.68%</title></circle>
-<circle cx="641.60" cy="293.74" r="3" fill="#2563eb"><title>step 160: 24.61%</title></circle>
-<circle cx="659.40" cy="281.01" r="3" fill="#2563eb"><title>step 165: 28.61%</title></circle>
-<circle cx="677.20" cy="293.12" r="3" fill="#2563eb"><title>step 170: 24.80%</title></circle>
-<circle cx="695.00" cy="286.60" r="3" fill="#2563eb"><title>step 175: 26.86%</title></circle>
-<circle cx="712.80" cy="278.84" r="3" fill="#2563eb"><title>step 180: 29.30%</title></circle>
-<circle cx="730.60" cy="290.64" r="3" fill="#2563eb"><title>step 185: 25.59%</title></circle>
-<circle cx="748.40" cy="288.15" r="3" fill="#2563eb"><title>step 190: 26.37%</title></circle>
-<circle cx="766.20" cy="279.46" r="3" fill="#2563eb"><title>step 195: 29.10%</title></circle>
-<circle cx="784.00" cy="285.67" r="3" fill="#2563eb"><title>step 200: 27.15%</title></circle>
-  <text x="428" y="424" text-anchor="middle" font-size="13" fill="#111827">GRPO step</text>
-  <text x="18" y="213" text-anchor="middle" font-size="13" fill="#111827" transform="rotate(-90 18 213)">validation answer reward</text>
+  <circle cx="89.80" cy="352.44" r="3" fill="#2563eb"><title>step 5: 6.15%</title></circle>
+  <circle cx="107.60" cy="352.44" r="3" fill="#2563eb"><title>step 10: 6.15%</title></circle>
+  <circle cx="125.40" cy="339.70" r="3" fill="#2563eb"><title>step 15: 10.16%</title></circle>
+  <circle cx="143.20" cy="342.81" r="3" fill="#2563eb"><title>step 20: 9.18%</title></circle>
+  <circle cx="161.00" cy="336.29" r="3" fill="#2563eb"><title>step 25: 11.23%</title></circle>
+  <circle cx="178.80" cy="330.39" r="3" fill="#2563eb"><title>step 30: 13.09%</title></circle>
+  <circle cx="196.60" cy="329.46" r="3" fill="#2563eb"><title>step 35: 13.38%</title></circle>
+  <circle cx="214.40" cy="321.38" r="3" fill="#2563eb"><title>step 40: 15.92%</title></circle>
+  <circle cx="232.20" cy="322.93" r="3" fill="#2563eb"><title>step 45: 15.43%</title></circle>
+  <circle cx="250.00" cy="316.41" r="3" fill="#2563eb"><title>step 50: 17.48%</title></circle>
+  <circle cx="267.80" cy="308.03" r="3" fill="#2563eb"><title>step 55: 20.12%</title></circle>
+  <circle cx="285.60" cy="311.44" r="3" fill="#2563eb"><title>step 60: 19.04%</title></circle>
+  <circle cx="303.40" cy="309.27" r="3" fill="#2563eb"><title>step 65: 19.73%</title></circle>
+  <circle cx="321.20" cy="311.13" r="3" fill="#2563eb"><title>step 70: 19.14%</title></circle>
+  <circle cx="339.00" cy="299.33" r="3" fill="#2563eb"><title>step 75: 22.85%</title></circle>
+  <circle cx="356.80" cy="302.13" r="3" fill="#2563eb"><title>step 80: 21.97%</title></circle>
+  <circle cx="374.60" cy="304.30" r="3" fill="#2563eb"><title>step 85: 21.29%</title></circle>
+  <circle cx="392.40" cy="300.26" r="3" fill="#2563eb"><title>step 90: 22.56%</title></circle>
+  <circle cx="410.20" cy="300.57" r="3" fill="#2563eb"><title>step 95: 22.46%</title></circle>
+  <circle cx="428.00" cy="294.36" r="3" fill="#2563eb"><title>step 100: 24.41%</title></circle>
+  <circle cx="445.80" cy="296.23" r="3" fill="#2563eb"><title>step 105: 23.83%</title></circle>
+  <circle cx="463.60" cy="303.99" r="3" fill="#2563eb"><title>step 110: 21.39%</title></circle>
+  <circle cx="481.40" cy="288.46" r="3" fill="#2563eb"><title>step 115: 26.27%</title></circle>
+  <circle cx="499.20" cy="297.47" r="3" fill="#2563eb"><title>step 120: 23.44%</title></circle>
+  <circle cx="517.00" cy="295.92" r="3" fill="#2563eb"><title>step 125: 23.93%</title></circle>
+  <circle cx="534.80" cy="297.78" r="3" fill="#2563eb"><title>step 130: 23.34%</title></circle>
+  <circle cx="552.60" cy="297.47" r="3" fill="#2563eb"><title>step 135: 23.44%</title></circle>
+  <circle cx="570.40" cy="286.29" r="3" fill="#2563eb"><title>step 140: 26.95%</title></circle>
+  <circle cx="588.20" cy="292.50" r="3" fill="#2563eb"><title>step 145: 25.00%</title></circle>
+  <circle cx="606.00" cy="288.46" r="3" fill="#2563eb"><title>step 150: 26.27%</title></circle>
+  <circle cx="623.80" cy="290.33" r="3" fill="#2563eb"><title>step 155: 25.68%</title></circle>
+  <circle cx="641.60" cy="293.74" r="3" fill="#2563eb"><title>step 160: 24.61%</title></circle>
+  <circle cx="659.40" cy="281.01" r="3" fill="#2563eb"><title>step 165: 28.61%</title></circle>
+  <circle cx="677.20" cy="293.12" r="3" fill="#2563eb"><title>step 170: 24.80%</title></circle>
+  <circle cx="695.00" cy="286.60" r="3" fill="#2563eb"><title>step 175: 26.86%</title></circle>
+  <circle cx="712.80" cy="278.84" r="3" fill="#2563eb"><title>step 180: 29.30%</title></circle>
+  <circle cx="730.60" cy="290.64" r="3" fill="#2563eb"><title>step 185: 25.59%</title></circle>
+  <circle cx="748.40" cy="288.15" r="3" fill="#2563eb"><title>step 190: 26.37%</title></circle>
+  <circle cx="766.20" cy="279.46" r="3" fill="#2563eb"><title>step 195: 29.10%</title></circle>
+  <circle cx="784.00" cy="285.67" r="3" fill="#2563eb"><title>step 200: 27.15%</title></circle>
+  <text x="428.0" y="424" text-anchor="middle" font-size="13" fill="#111827">GRPO step</text>
+  <text x="18" y="213.0" text-anchor="middle" font-size="13" fill="#111827" transform="rotate(-90 18 213.0)">validation answer reward</text>
 </svg>

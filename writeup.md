@@ -345,7 +345,9 @@ rollouts whose reasoning is not fully reliable; for example, a later octagon
 diagonals sample gets the final answer right even though part of the reasoning is
 messy. That is a limitation of this reward design rather than a train-loop bug.
 
-Summary files are archived in
+The writeup artifacts were generated from the remote run with
+`scripts/plot_grpo_train_loop.py` and then synced back into
+`artifacts/experiments/ch7/grpo_train_loop/`. Summary files are archived in
 `artifacts/experiments/ch7/grpo_train_loop/run_summaries_archive.md` and
 `artifacts/experiments/ch7/grpo_train_loop/run_summaries.json`, with the full
 eval curve in

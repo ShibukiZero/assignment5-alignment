@@ -2,7 +2,7 @@
   {
     "run_name": "grpo_on_policy_lr1e-5",
     "archived_run_dir": "artifacts/experiments/ch7/grpo_train_loop/runs/grpo_on_policy_lr1e-5",
-    "learning_rate": 0.00001,
+    "learning_rate": 1e-05,
     "n_grpo_steps": 200,
     "rollout_batch_size": 256,
     "group_size": 8,

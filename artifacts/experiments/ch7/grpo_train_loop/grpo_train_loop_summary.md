@@ -10,4 +10,4 @@
 | final rollout format accuracy | 87.11% |
 | final average response token length | 168.5 |
 | final token entropy | 0.1698 |
-| final gradient norm | 4.6563 |
+| final gradient norm | 4.6562 |
