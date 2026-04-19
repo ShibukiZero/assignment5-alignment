@@ -120,8 +120,8 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 **Deliverable:** Report the size of the dataset and the validation accuracy curve you achieve.
 
 **Answer:** The official `/data/a5-alignment/MATH` files were not available in
-our self-hosted environment, so I ran this experiment on the converted
-`competition_math_numeric` MATH-like substitute dataset. I used the noisy SFT
+our self-hosted environment, so we ran this experiment on the converted
+`competition_math_numeric` MATH-like substitute dataset. We used the noisy SFT
 split from this substitute data for the dataset-size sweep, and used the reward
 function to construct a filtered version for the second experiment. The reward
 filter removed 730 of 4,866 examples, so the observed contamination rate in
@@ -200,7 +200,7 @@ begin to overfit, while the full noisy dataset is both harder and noisier.
 **Deliverable:** A plot of the entropy of the model's responses over training.
 
 **Answer:** Because the official course MATH files were not available in this
-environment, I ran EI on the same substitute MATH-like
+environment, we ran EI on the same substitute MATH-like
 `competition_math_numeric_noisy` split used in the previous experiments.
 Validation was run on the full 3199-example validation set with the R1-Zero
 prompt, temperature 1.0, max tokens 1024, and the `r1_zero_reward_fn`-based
@@ -318,7 +318,7 @@ stable runs are expected.
 
 **Deliverable:** Implement a complete train loop for GRPO. Begin training a policy on MATH and confirm that you see validation rewards improving, along with sensible rollouts over time. Provide a plot with the validation rewards with respect to steps, and a few example rollouts over time.
 
-**Answer:** I used the on-policy configuration from the GRPO train-loop
+**Answer:** We used the on-policy configuration from the GRPO train-loop
 implementation as a first end-to-end sanity run: `rollout_batch_size=256`,
 `group_size=8`, `train_batch_size=256`, `epochs_per_rollout_batch=1`,
 `loss_type=reinforce_with_baseline`, standard group-normalized advantages, and
@@ -369,11 +369,11 @@ The raw run data used for this answer are archived under
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
 **Answer:** The official course MATH files were not available in this
-environment, so I ran this sweep on the same converted
+environment, so we ran this sweep on the same converted
 `competition_math_numeric` MATH-like validation set used in the previous
 experiments. All runs used the R1-Zero prompt, rollout batch size 256, group
 size 8, `reinforce_with_baseline`, standard-deviation-normalized advantages,
-and validation every 5 GRPO steps; I stopped the clearly bad high-learning-rate
+and validation every 5 GRPO steps; we stopped the clearly bad high-learning-rate
 runs early once the validation curve showed collapse or severe instability.
 
 ![GRPO validation answer reward for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
@@ -397,7 +397,7 @@ points in `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_eval_
 
 The best learning rate was `4e-5`, whose best checkpoint reached 74.41%
 validation answer reward at step 75 and whose final checkpoint still reached
-70.02%, comfortably exceeding the 25% target. I use `4e-5` for the remaining
+70.02%, comfortably exceeding the 25% target. We use `4e-5` for the remaining
 on-policy GRPO experiments.
 
 Other metrics followed the same stability pattern: successful runs improved
@@ -420,7 +420,7 @@ final checkpoint for model selection.
 
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
-**Answer:** I compared the selected `4e-5` on-policy run from the learning-rate
+**Answer:** We compared the selected `4e-5` on-policy run from the learning-rate
 sweep against a matching `no_baseline` run, keeping the prompt, rollout batch
 size, group size, standard-deviation normalization, and loss normalization fixed.
 Both runs completed 200 GRPO steps on the converted
