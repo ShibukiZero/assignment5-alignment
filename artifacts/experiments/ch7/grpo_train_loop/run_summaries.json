@@ -37,6 +37,7 @@
     },
     "final_train": {
       "grpo_step": 200,
+      "optimizer_step": 200,
       "token_entropy": 0.16975784301757812,
       "grad_norm": 4.65625,
       "loss": -0.10538554677623324

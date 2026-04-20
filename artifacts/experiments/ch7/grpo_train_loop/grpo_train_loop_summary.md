@@ -11,3 +11,4 @@
 | final average response token length | 168.5 |
 | final token entropy | 0.1698 |
 | final gradient norm | 4.6562 |
+| final loss | -0.1054 |

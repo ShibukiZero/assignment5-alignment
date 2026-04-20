@@ -1,73 +1,76 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="820" height="430" viewBox="0 0 820 430" role="img" aria-label="On-policy GRPO validation format accuracy">
-  <rect width="100%" height="100%" fill="#ffffff" />
-  <text x="72" y="30" font-size="20" font-weight="700" fill="#111827">On-policy GRPO validation format accuracy</text>
-  <line x1="72" y1="372.00" x2="784.00" y2="372.00" stroke="#d8dee9" stroke-width="1" />
-  <text x="60" y="376.00" text-anchor="end" font-size="12" fill="#4b5563">0%</text>
-  <line x1="72" y1="308.40" x2="784.00" y2="308.40" stroke="#d8dee9" stroke-width="1" />
-  <text x="60" y="312.40" text-anchor="end" font-size="12" fill="#4b5563">20%</text>
-  <line x1="72" y1="244.80" x2="784.00" y2="244.80" stroke="#d8dee9" stroke-width="1" />
-  <text x="60" y="248.80" text-anchor="end" font-size="12" fill="#4b5563">40%</text>
-  <line x1="72" y1="181.20" x2="784.00" y2="181.20" stroke="#d8dee9" stroke-width="1" />
-  <text x="60" y="185.20" text-anchor="end" font-size="12" fill="#4b5563">60%</text>
-  <line x1="72" y1="117.60" x2="784.00" y2="117.60" stroke="#d8dee9" stroke-width="1" />
-  <text x="60" y="121.60" text-anchor="end" font-size="12" fill="#4b5563">80%</text>
-  <line x1="72" y1="54.00" x2="784.00" y2="54.00" stroke="#d8dee9" stroke-width="1" />
-  <text x="60" y="58.00" text-anchor="end" font-size="12" fill="#4b5563">100%</text>
-  <line x1="72.00" y1="54" x2="72.00" y2="372.00" stroke="#edf2f7" stroke-width="1" />
-  <text x="72.00" y="408" text-anchor="middle" font-size="12" fill="#4b5563">0</text>
-  <line x1="250.00" y1="54" x2="250.00" y2="372.00" stroke="#edf2f7" stroke-width="1" />
-  <text x="250.00" y="408" text-anchor="middle" font-size="12" fill="#4b5563">50</text>
-  <line x1="428.00" y1="54" x2="428.00" y2="372.00" stroke="#edf2f7" stroke-width="1" />
-  <text x="428.00" y="408" text-anchor="middle" font-size="12" fill="#4b5563">100</text>
-  <line x1="606.00" y1="54" x2="606.00" y2="372.00" stroke="#edf2f7" stroke-width="1" />
-  <text x="606.00" y="408" text-anchor="middle" font-size="12" fill="#4b5563">150</text>
-  <line x1="784.00" y1="54" x2="784.00" y2="372.00" stroke="#edf2f7" stroke-width="1" />
-  <text x="784.00" y="408" text-anchor="middle" font-size="12" fill="#4b5563">200</text>
-  <line x1="72" y1="54" x2="72" y2="372" stroke="#111827" stroke-width="1.4" />
-  <line x1="72" y1="372" x2="784" y2="372" stroke="#111827" stroke-width="1.4" />
-  <polyline fill="none" stroke="#2563eb" stroke-width="3" points="72.00,314.55 89.80,273.56 107.60,268.59 125.40,247.78 143.20,231.01 161.00,219.21 178.80,203.68 196.60,199.03 214.40,173.87 232.20,169.52 250.00,162.38 267.80,149.03 285.60,155.86 303.40,150.58 321.20,146.85 339.00,139.71 356.80,147.47 374.60,145.92 392.40,144.99 410.20,149.03 428.00,140.95 445.80,136.92 463.60,143.13 481.40,138.78 499.20,139.09 517.00,146.54 534.80,141.88 552.60,138.78 570.40,137.85 588.20,144.37 606.00,132.26 623.80,136.61 641.60,140.02 659.40,132.26 677.20,133.81 695.00,134.74 712.80,132.88 730.60,142.51 748.40,140.33 766.20,130.08 784.00,138.78" />
-  <circle cx="72.00" cy="314.55" r="3" fill="#2563eb"><title>step 0: 18.07%</title></circle>
-  <circle cx="89.80" cy="273.56" r="3" fill="#2563eb"><title>step 5: 30.96%</title></circle>
-  <circle cx="107.60" cy="268.59" r="3" fill="#2563eb"><title>step 10: 32.52%</title></circle>
-  <circle cx="125.40" cy="247.78" r="3" fill="#2563eb"><title>step 15: 39.06%</title></circle>
-  <circle cx="143.20" cy="231.01" r="3" fill="#2563eb"><title>step 20: 44.34%</title></circle>
-  <circle cx="161.00" cy="219.21" r="3" fill="#2563eb"><title>step 25: 48.05%</title></circle>
-  <circle cx="178.80" cy="203.68" r="3" fill="#2563eb"><title>step 30: 52.93%</title></circle>
-  <circle cx="196.60" cy="199.03" r="3" fill="#2563eb"><title>step 35: 54.39%</title></circle>
-  <circle cx="214.40" cy="173.87" r="3" fill="#2563eb"><title>step 40: 62.30%</title></circle>
-  <circle cx="232.20" cy="169.52" r="3" fill="#2563eb"><title>step 45: 63.67%</title></circle>
-  <circle cx="250.00" cy="162.38" r="3" fill="#2563eb"><title>step 50: 65.92%</title></circle>
-  <circle cx="267.80" cy="149.03" r="3" fill="#2563eb"><title>step 55: 70.12%</title></circle>
-  <circle cx="285.60" cy="155.86" r="3" fill="#2563eb"><title>step 60: 67.97%</title></circle>
-  <circle cx="303.40" cy="150.58" r="3" fill="#2563eb"><title>step 65: 69.63%</title></circle>
-  <circle cx="321.20" cy="146.85" r="3" fill="#2563eb"><title>step 70: 70.80%</title></circle>
-  <circle cx="339.00" cy="139.71" r="3" fill="#2563eb"><title>step 75: 73.05%</title></circle>
-  <circle cx="356.80" cy="147.47" r="3" fill="#2563eb"><title>step 80: 70.61%</title></circle>
-  <circle cx="374.60" cy="145.92" r="3" fill="#2563eb"><title>step 85: 71.09%</title></circle>
-  <circle cx="392.40" cy="144.99" r="3" fill="#2563eb"><title>step 90: 71.39%</title></circle>
-  <circle cx="410.20" cy="149.03" r="3" fill="#2563eb"><title>step 95: 70.12%</title></circle>
-  <circle cx="428.00" cy="140.95" r="3" fill="#2563eb"><title>step 100: 72.66%</title></circle>
-  <circle cx="445.80" cy="136.92" r="3" fill="#2563eb"><title>step 105: 73.93%</title></circle>
-  <circle cx="463.60" cy="143.13" r="3" fill="#2563eb"><title>step 110: 71.97%</title></circle>
-  <circle cx="481.40" cy="138.78" r="3" fill="#2563eb"><title>step 115: 73.34%</title></circle>
-  <circle cx="499.20" cy="139.09" r="3" fill="#2563eb"><title>step 120: 73.24%</title></circle>
-  <circle cx="517.00" cy="146.54" r="3" fill="#2563eb"><title>step 125: 70.90%</title></circle>
-  <circle cx="534.80" cy="141.88" r="3" fill="#2563eb"><title>step 130: 72.36%</title></circle>
-  <circle cx="552.60" cy="138.78" r="3" fill="#2563eb"><title>step 135: 73.34%</title></circle>
-  <circle cx="570.40" cy="137.85" r="3" fill="#2563eb"><title>step 140: 73.63%</title></circle>
-  <circle cx="588.20" cy="144.37" r="3" fill="#2563eb"><title>step 145: 71.58%</title></circle>
-  <circle cx="606.00" cy="132.26" r="3" fill="#2563eb"><title>step 150: 75.39%</title></circle>
-  <circle cx="623.80" cy="136.61" r="3" fill="#2563eb"><title>step 155: 74.02%</title></circle>
-  <circle cx="641.60" cy="140.02" r="3" fill="#2563eb"><title>step 160: 72.95%</title></circle>
-  <circle cx="659.40" cy="132.26" r="3" fill="#2563eb"><title>step 165: 75.39%</title></circle>
-  <circle cx="677.20" cy="133.81" r="3" fill="#2563eb"><title>step 170: 74.90%</title></circle>
-  <circle cx="695.00" cy="134.74" r="3" fill="#2563eb"><title>step 175: 74.61%</title></circle>
-  <circle cx="712.80" cy="132.88" r="3" fill="#2563eb"><title>step 180: 75.20%</title></circle>
-  <circle cx="730.60" cy="142.51" r="3" fill="#2563eb"><title>step 185: 72.17%</title></circle>
-  <circle cx="748.40" cy="140.33" r="3" fill="#2563eb"><title>step 190: 72.85%</title></circle>
-  <circle cx="766.20" cy="130.08" r="3" fill="#2563eb"><title>step 195: 76.07%</title></circle>
-  <circle cx="784.00" cy="138.78" r="3" fill="#2563eb"><title>step 200: 73.34%</title></circle>
-  <text x="428.0" y="424" text-anchor="middle" font-size="13" fill="#111827">GRPO step</text>
-  <text x="18" y="213.0" text-anchor="middle" font-size="13" fill="#111827" transform="rotate(-90 18 213.0)">validation format accuracy</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="660" viewBox="0 0 1100 660">
+<rect width="100%" height="100%" fill="white"/>
+<text x="550.0" y="36" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700">On-policy GRPO train loop: validation format accuracy</text>
+<line x1="95" y1="578" x2="800" y2="578" stroke="#222" stroke-width="1.5"/>
+<line x1="95" y1="74" x2="95" y2="578" stroke="#222" stroke-width="1.5"/>
+<line x1="90" y1="578.0" x2="800" y2="578.0" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="582.0" text-anchor="end" font-family="Arial" font-size="12">0.00%</text>
+<line x1="90" y1="477.2" x2="800" y2="477.2" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="481.2" text-anchor="end" font-family="Arial" font-size="12">16.00%</text>
+<line x1="90" y1="376.4" x2="800" y2="376.4" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="380.4" text-anchor="end" font-family="Arial" font-size="12">32.00%</text>
+<line x1="90" y1="275.6" x2="800" y2="275.6" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="279.6" text-anchor="end" font-family="Arial" font-size="12">48.00%</text>
+<line x1="90" y1="174.8" x2="800" y2="174.8" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="178.8" text-anchor="end" font-family="Arial" font-size="12">64.00%</text>
+<line x1="90" y1="74.0" x2="800" y2="74.0" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="78.0" text-anchor="end" font-family="Arial" font-size="12">80.00%</text>
+<line x1="95.0" y1="578" x2="95.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="95.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">0</text>
+<line x1="236.0" y1="578" x2="236.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="236.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">40</text>
+<line x1="377.0" y1="578" x2="377.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="377.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">80</text>
+<line x1="518.0" y1="578" x2="518.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="518.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">120</text>
+<line x1="659.0" y1="578" x2="659.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="659.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">160</text>
+<line x1="800.0" y1="578" x2="800.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="800.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">200</text>
+<polyline fill="none" stroke="#1f77b4" stroke-width="2.3" points="95.0,464.2 112.6,383.0 130.2,373.1 147.9,331.9 165.5,298.7 183.1,275.3 200.8,244.5 218.4,235.3 236.0,185.5 253.6,176.9 271.2,162.7 288.9,136.3 306.5,149.8 324.1,139.3 341.8,132.0 359.4,117.8 377.0,133.2 394.6,130.1 412.2,128.3 429.9,136.3 447.5,120.3 465.1,112.3 482.8,124.6 500.4,116.0 518.0,116.6 535.6,131.3 553.2,122.1 570.9,116.0 588.5,114.1 606.1,127.0 623.8,103.0 641.4,111.7 659.0,118.4 676.6,103.0 694.2,106.1 711.9,108.0 729.5,104.3 747.1,123.3 764.8,119.0 782.4,98.7 800.0,116.0"/>
+<circle cx="95.0" cy="464.2" r="3" fill="#1f77b4"/>
+<circle cx="112.6" cy="383.0" r="3" fill="#1f77b4"/>
+<circle cx="130.2" cy="373.1" r="3" fill="#1f77b4"/>
+<circle cx="147.9" cy="331.9" r="3" fill="#1f77b4"/>
+<circle cx="165.5" cy="298.7" r="3" fill="#1f77b4"/>
+<circle cx="183.1" cy="275.3" r="3" fill="#1f77b4"/>
+<circle cx="200.8" cy="244.5" r="3" fill="#1f77b4"/>
+<circle cx="218.4" cy="235.3" r="3" fill="#1f77b4"/>
+<circle cx="236.0" cy="185.5" r="3" fill="#1f77b4"/>
+<circle cx="253.6" cy="176.9" r="3" fill="#1f77b4"/>
+<circle cx="271.2" cy="162.7" r="3" fill="#1f77b4"/>
+<circle cx="288.9" cy="136.3" r="3" fill="#1f77b4"/>
+<circle cx="306.5" cy="149.8" r="3" fill="#1f77b4"/>
+<circle cx="324.1" cy="139.3" r="3" fill="#1f77b4"/>
+<circle cx="341.8" cy="132.0" r="3" fill="#1f77b4"/>
+<circle cx="359.4" cy="117.8" r="3" fill="#1f77b4"/>
+<circle cx="377.0" cy="133.2" r="3" fill="#1f77b4"/>
+<circle cx="394.6" cy="130.1" r="3" fill="#1f77b4"/>
+<circle cx="412.2" cy="128.3" r="3" fill="#1f77b4"/>
+<circle cx="429.9" cy="136.3" r="3" fill="#1f77b4"/>
+<circle cx="447.5" cy="120.3" r="3" fill="#1f77b4"/>
+<circle cx="465.1" cy="112.3" r="3" fill="#1f77b4"/>
+<circle cx="482.8" cy="124.6" r="3" fill="#1f77b4"/>
+<circle cx="500.4" cy="116.0" r="3" fill="#1f77b4"/>
+<circle cx="518.0" cy="116.6" r="3" fill="#1f77b4"/>
+<circle cx="535.6" cy="131.3" r="3" fill="#1f77b4"/>
+<circle cx="553.2" cy="122.1" r="3" fill="#1f77b4"/>
+<circle cx="570.9" cy="116.0" r="3" fill="#1f77b4"/>
+<circle cx="588.5" cy="114.1" r="3" fill="#1f77b4"/>
+<circle cx="606.1" cy="127.0" r="3" fill="#1f77b4"/>
+<circle cx="623.8" cy="103.0" r="3" fill="#1f77b4"/>
+<circle cx="641.4" cy="111.7" r="3" fill="#1f77b4"/>
+<circle cx="659.0" cy="118.4" r="3" fill="#1f77b4"/>
+<circle cx="676.6" cy="103.0" r="3" fill="#1f77b4"/>
+<circle cx="694.2" cy="106.1" r="3" fill="#1f77b4"/>
+<circle cx="711.9" cy="108.0" r="3" fill="#1f77b4"/>
+<circle cx="729.5" cy="104.3" r="3" fill="#1f77b4"/>
+<circle cx="747.1" cy="123.3" r="3" fill="#1f77b4"/>
+<circle cx="764.8" cy="119.0" r="3" fill="#1f77b4"/>
+<circle cx="782.4" cy="98.7" r="3" fill="#1f77b4"/>
+<circle cx="800.0" cy="116.0" r="3" fill="#1f77b4"/>
+<line x1="828" y1="96" x2="850" y2="96" stroke="#1f77b4" stroke-width="2.5"/>
+<text x="858" y="100" font-family="Arial" font-size="13">grpo_on_policy_lr1e-5</text>
+<text x="447.5" y="638" text-anchor="middle" font-family="Arial" font-size="15">GRPO step</text>
+<text x="24" y="326.0" text-anchor="middle" font-family="Arial" font-size="15" transform="rotate(-90 24 326.0)">Validation format accuracy</text>
 </svg>
