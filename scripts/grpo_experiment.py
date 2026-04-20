@@ -98,7 +98,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gradient-accumulation-steps", type=int, default=128)
     parser.add_argument(
         "--loss-type",
-        choices=["no_baseline", "reinforce_with_baseline", "grpo_clip"],
+        choices=["no_baseline", "reinforce_with_baseline", "grpo_clip", "grpo_no_clip"],
         default="reinforce_with_baseline",
     )
     parser.add_argument(
@@ -592,8 +592,8 @@ def validate_grpo_args(args: argparse.Namespace) -> None:
         args.epochs_per_rollout_batch > 1
         or args.train_batch_size != args.rollout_batch_size
     )
-    if is_off_policy and args.loss_type != "grpo_clip":
-        raise ValueError("Off-policy GRPO should use loss_type='grpo_clip'.")
+    if is_off_policy and args.loss_type not in {"grpo_clip", "grpo_no_clip"}:
+        raise ValueError("Off-policy GRPO should use loss_type in {'grpo_clip', 'grpo_no_clip'}.")
     if args.cliprange < 0:
         raise ValueError("cliprange must be non-negative.")
     if args.loss_normalization == "masked_normalize":
@@ -738,7 +738,7 @@ def main() -> None:
 
         rollout_tensors = tokenize_rollout_records(rollout_records, tokenizer)
         old_log_probs = None
-        if args.loss_type == "grpo_clip":
+        if args.loss_type in {"grpo_clip", "grpo_no_clip"}:
             old_log_probs = compute_old_log_probs(
                 policy=policy,
                 rollout_tensors=rollout_tensors,

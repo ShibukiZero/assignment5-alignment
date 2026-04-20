@@ -110,9 +110,32 @@ def compute_grpo_clip_loss(
     return per_token_loss, metadata
 
 
+def compute_grpo_no_clip_loss(
+    advantages: Tensor,
+    policy_log_probs: Tensor,
+    old_log_probs: Tensor,
+) -> tuple[Tensor, dict[str, Tensor]]:
+    """Compute the unclipped GRPO surrogate used for the clip ablation."""
+    if advantages.ndim != 2 or advantages.shape[-1] != 1:
+        raise ValueError("advantages must have shape (batch_size, 1).")
+    if policy_log_probs.ndim != 2:
+        raise ValueError("policy_log_probs must have shape (batch_size, sequence_length).")
+    if old_log_probs.shape != policy_log_probs.shape:
+        raise ValueError("old_log_probs must have the same shape as policy_log_probs.")
+    if advantages.shape[0] != policy_log_probs.shape[0]:
+        raise ValueError("advantages and policy_log_probs batch sizes must match.")
+
+    ratio = torch.exp(policy_log_probs - old_log_probs)
+    per_token_loss = -(ratio * advantages)
+    metadata = {
+        "ratio": ratio,
+    }
+    return per_token_loss, metadata
+
+
 def compute_policy_gradient_loss(
     policy_log_probs: Tensor,
-    loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip"],
+    loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip", "grpo_no_clip"],
     raw_rewards: Tensor,
     advantages: Tensor,
     old_log_probs: Tensor,
@@ -141,6 +164,13 @@ def compute_policy_gradient_loss(
             cliprange=cliprange,
         )
 
+    if loss_type == "grpo_no_clip":
+        return compute_grpo_no_clip_loss(
+            advantages=advantages,
+            policy_log_probs=policy_log_probs,
+            old_log_probs=old_log_probs,
+        )
+
     raise ValueError(f"Unknown policy-gradient loss_type: {loss_type}")
 
 
@@ -159,7 +189,7 @@ def grpo_microbatch_train_step(
     policy_log_probs: Tensor,
     response_mask: Tensor,
     gradient_accumulation_steps: int,
-    loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip"],
+    loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip", "grpo_no_clip"],
     raw_rewards: Tensor | None = None,
     advantages: Tensor | None = None,
     old_log_probs: Tensor | None = None,
@@ -200,6 +230,15 @@ def grpo_microbatch_train_step(
         loss_advantages = advantages
         loss_old_log_probs = old_log_probs
         loss_cliprange = cliprange
+    elif loss_type == "grpo_no_clip":
+        if advantages is None:
+            raise ValueError("advantages is required for loss_type='grpo_no_clip'.")
+        if old_log_probs is None:
+            raise ValueError("old_log_probs is required for loss_type='grpo_no_clip'.")
+        loss_raw_rewards = raw_rewards if raw_rewards is not None else advantages
+        loss_advantages = advantages
+        loss_old_log_probs = old_log_probs
+        loss_cliprange = 0.0
     else:
         raise ValueError(f"Unknown policy-gradient loss_type: {loss_type}")
 
