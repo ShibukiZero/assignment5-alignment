@@ -48,10 +48,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--stop-on-failure",
+        dest="stop_on_failure",
         action="store_true",
-        default=True,
-        help="Stop immediately when a run fails or fails verification.",
+        help="Stop immediately when a run fails or fails verification (default).",
     )
+    parser.add_argument(
+        "--no-stop-on-failure",
+        dest="stop_on_failure",
+        action="store_false",
+        help="Continue through the selected sweep even if a run fails verification.",
+    )
+    parser.set_defaults(stop_on_failure=True)
     parser.add_argument(
         "--shutdown",
         action="store_true",
