@@ -124,8 +124,20 @@ def parse_args() -> argparse.Namespace:
         help="PPO/GRPO clipping range used with --loss-type grpo_clip.",
     )
     parser.add_argument(
+        "--cliprange-low",
+        type=float,
+        default=None,
+        help="Lower clipping width for GRPO-Clip, giving ratio lower bound 1 - cliprange_low.",
+    )
+    parser.add_argument(
+        "--cliprange-high",
+        type=float,
+        default=None,
+        help="Upper clipping width for GRPO-Clip, giving ratio upper bound 1 + cliprange_high.",
+    )
+    parser.add_argument(
         "--loss-normalization",
-        choices=["masked_mean", "masked_normalize"],
+        choices=["masked_mean", "masked_normalize", "batch_token_mean"],
         default="masked_mean",
         help="How to aggregate per-token policy-gradient loss into a per-example loss.",
     )
@@ -463,6 +475,8 @@ def train_on_rollout_batch(
     gradient_accumulation_steps: int,
     loss_type: str,
     cliprange: float,
+    cliprange_low: float | None,
+    cliprange_high: float | None,
     device: str,
     rng: random.Random,
     metrics_path: Path,
@@ -497,6 +511,11 @@ def train_on_rollout_batch(
             micro_entropies: list[float] = []
             micro_clip_fractions: list[float] = []
             micro_approx_kls: list[float] = []
+            batch_token_denominator = 1.0
+            if loss_normalization == "batch_token_mean":
+                batch_token_denominator = float(
+                    rollout_tensors["response_mask"][train_indices].sum().item()
+                )
 
             for micro_indices in iter_chunks(train_indices, microbatch_size):
                 input_ids = rollout_tensors["input_ids"][micro_indices].to(device)
@@ -525,8 +544,14 @@ def train_on_rollout_batch(
                     advantages=micro_advantages,
                     old_log_probs=micro_old_log_probs,
                     cliprange=cliprange,
+                    cliprange_low=cliprange_low,
+                    cliprange_high=cliprange_high,
                     loss_normalization=loss_normalization,
-                    loss_normalize_constant=loss_normalize_constant,
+                    loss_normalize_constant=(
+                        batch_token_denominator
+                        if loss_normalization == "batch_token_mean"
+                        else loss_normalize_constant
+                    ),
                 )
                 token_entropy = masked_mean(
                     tensor=scored["token_entropy"],
@@ -561,6 +586,16 @@ def train_on_rollout_batch(
             optimizer.zero_grad(set_to_none=True)
 
             train_records = [records[index] for index in train_indices]
+            logged_loss = (
+                sum(micro_losses)
+                if loss_normalization == "batch_token_mean"
+                else mean(micro_losses)
+            )
+            logged_scaled_loss = (
+                sum(micro_scaled_losses)
+                if loss_normalization == "batch_token_mean"
+                else mean(micro_scaled_losses)
+            )
             optimizer_step += 1
             append_jsonl(
                 metrics_path,
@@ -572,8 +607,8 @@ def train_on_rollout_batch(
                     "epochs_per_rollout_batch": epochs_per_rollout_batch,
                     "train_batch_index": train_batch_index,
                     "num_train_batches": num_train_batches,
-                    "loss": mean(micro_losses),
-                    "scaled_loss": mean(micro_scaled_losses),
+                    "loss": logged_loss,
+                    "scaled_loss": logged_scaled_loss,
                     "grad_norm": float(grad_norm.detach().cpu().item()),
                     "token_entropy": mean(micro_entropies),
                     "clip_fraction": mean_or_none(micro_clip_fractions),
@@ -588,6 +623,8 @@ def train_on_rollout_batch(
                     "learning_rate": learning_rate,
                     "loss_type": loss_type,
                     "cliprange": cliprange,
+                    "cliprange_low": cliprange_low,
+                    "cliprange_high": cliprange_high,
                     "loss_normalization": loss_normalization,
                     "loss_normalize_constant": loss_normalize_constant,
                     "rollout_batch_size": len(records),
@@ -626,11 +663,22 @@ def validate_grpo_args(args: argparse.Namespace) -> None:
         raise ValueError("Off-policy GRPO should use loss_type in {'grpo_clip', 'grpo_no_clip'}.")
     if args.cliprange < 0:
         raise ValueError("cliprange must be non-negative.")
+    if args.cliprange_low is not None and args.cliprange_low < 0:
+        raise ValueError("cliprange_low must be non-negative.")
+    if args.cliprange_high is not None and args.cliprange_high < 0:
+        raise ValueError("cliprange_high must be non-negative.")
+    if args.cliprange_low is None:
+        args.cliprange_low = args.cliprange
+    if args.cliprange_high is None:
+        args.cliprange_high = args.cliprange
     if args.loss_normalization == "masked_normalize":
         if args.loss_normalize_constant is None:
             args.loss_normalize_constant = float(args.max_new_tokens)
         if args.loss_normalize_constant <= 0:
             raise ValueError("loss_normalize_constant must be positive.")
+    elif args.loss_normalization == "batch_token_mean":
+        if args.loss_normalize_constant is None:
+            args.loss_normalize_constant = 1.0
     elif args.loss_normalize_constant is None:
         args.loss_normalize_constant = 1.0
     if args.eval_every <= 0:
@@ -700,6 +748,7 @@ def main() -> None:
     logger.info("optimizer updates per rollout: %d", optimizer_updates_per_rollout)
     logger.info("loss type: %s", args.loss_type)
     logger.info("cliprange: %.4f", args.cliprange)
+    logger.info("cliprange low/high: %.4f / %.4f", args.cliprange_low, args.cliprange_high)
     logger.info("loss normalization: %s", args.loss_normalization)
     logger.info("loss normalize constant: %.4f", args.loss_normalize_constant)
     logger.info("std normalization: %s", args.use_std_normalization)
@@ -805,6 +854,8 @@ def main() -> None:
             learning_rate=args.learning_rate,
             loss_normalization=args.loss_normalization,
             loss_normalize_constant=args.loss_normalize_constant,
+            cliprange_low=args.cliprange_low,
+            cliprange_high=args.cliprange_high,
         )
 
         if grpo_step % args.eval_every == 0:
@@ -882,6 +933,8 @@ def main() -> None:
         "expected_total_optimizer_steps": args.n_grpo_steps * optimizer_updates_per_rollout,
         "loss_type": args.loss_type,
         "cliprange": args.cliprange,
+        "cliprange_low": args.cliprange_low,
+        "cliprange_high": args.cliprange_high,
         "loss_normalization": args.loss_normalization,
         "loss_normalize_constant": args.loss_normalize_constant,
         "use_std_normalization": args.use_std_normalization,
