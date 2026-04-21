@@ -136,6 +136,23 @@ def parse_args() -> argparse.Namespace:
         help="Upper clipping width for GRPO-Clip, giving ratio upper bound 1 + cliprange_high.",
     )
     parser.add_argument(
+        "--kl-coef",
+        type=float,
+        default=0.0,
+        help=(
+            "Optional coefficient for a token-level KL penalty against a frozen reference model. "
+            "Set to 0.0 to disable KL and keep the original training objective."
+        ),
+    )
+    parser.add_argument(
+        "--kl-ref-model",
+        default=None,
+        help=(
+            "Optional reference model checkpoint/path used when --kl-coef > 0. "
+            "Defaults to --model."
+        ),
+    )
+    parser.add_argument(
         "--loss-normalization",
         choices=["masked_mean", "masked_normalize", "batch_token_mean"],
         default="masked_mean",
@@ -434,32 +451,32 @@ def tokenize_rollout_records(
     )
 
 
-def compute_old_log_probs(
-    policy: torch.nn.Module,
+def compute_rollout_log_probs(
+    model: torch.nn.Module,
     rollout_tensors: dict[str, torch.Tensor],
     device: str,
     microbatch_size: int,
 ) -> torch.Tensor:
-    was_training = policy.training
-    policy.eval()
+    was_training = model.training
+    model.eval()
     input_ids = rollout_tensors["input_ids"]
     labels = rollout_tensors["labels"]
-    old_log_probs: list[torch.Tensor] = []
+    cached_log_probs: list[torch.Tensor] = []
 
     with torch.inference_mode():
         for start in range(0, input_ids.shape[0], microbatch_size):
             end = start + microbatch_size
             scored = get_response_log_probs(
-                model=policy,
+                model=model,
                 input_ids=input_ids[start:end].to(device),
                 labels=labels[start:end].to(device),
                 return_token_entropy=False,
             )
-            old_log_probs.append(scored["log_probs"].detach().cpu())
+            cached_log_probs.append(scored["log_probs"].detach().cpu())
 
     if was_training:
-        policy.train()
-    return torch.cat(old_log_probs, dim=0)
+        model.train()
+    return torch.cat(cached_log_probs, dim=0)
 
 
 def train_on_rollout_batch(
@@ -470,6 +487,7 @@ def train_on_rollout_batch(
     advantages: torch.Tensor,
     raw_rewards: torch.Tensor,
     old_log_probs: torch.Tensor | None,
+    ref_log_probs: torch.Tensor | None,
     epochs_per_rollout_batch: int,
     train_batch_size: int,
     gradient_accumulation_steps: int,
@@ -477,6 +495,7 @@ def train_on_rollout_batch(
     cliprange: float,
     cliprange_low: float | None,
     cliprange_high: float | None,
+    kl_coef: float,
     device: str,
     rng: random.Random,
     metrics_path: Path,
@@ -511,6 +530,8 @@ def train_on_rollout_batch(
             micro_entropies: list[float] = []
             micro_clip_fractions: list[float] = []
             micro_approx_kls: list[float] = []
+            micro_reference_kls: list[float] = []
+            micro_kl_penalties: list[float] = []
             batch_token_denominator = 1.0
             if loss_normalization == "batch_token_mean":
                 batch_token_denominator = float(
@@ -535,6 +556,11 @@ def train_on_rollout_batch(
                     if old_log_probs is not None
                     else None
                 )
+                micro_ref_log_probs = (
+                    ref_log_probs[micro_indices].to(device)
+                    if ref_log_probs is not None
+                    else None
+                )
                 loss, metadata = grpo_microbatch_train_step(
                     policy_log_probs=scored["log_probs"],
                     response_mask=response_mask,
@@ -546,6 +572,8 @@ def train_on_rollout_batch(
                     cliprange=cliprange,
                     cliprange_low=cliprange_low,
                     cliprange_high=cliprange_high,
+                    ref_log_probs=micro_ref_log_probs,
+                    kl_coef=kl_coef,
                     loss_normalization=loss_normalization,
                     loss_normalize_constant=(
                         batch_token_denominator
@@ -569,6 +597,20 @@ def train_on_rollout_batch(
                         dim=None,
                     )
                     micro_approx_kls.append(float(approx_kl.detach().cpu().item()))
+                if "kl" in metadata:
+                    reference_kl = masked_mean(
+                        tensor=metadata["kl"],
+                        mask=response_mask,
+                        dim=None,
+                    )
+                    micro_reference_kls.append(float(reference_kl.detach().cpu().item()))
+                if "kl_penalty" in metadata:
+                    weighted_kl_penalty = masked_mean(
+                        tensor=metadata["kl_penalty"],
+                        mask=response_mask,
+                        dim=None,
+                    )
+                    micro_kl_penalties.append(float(weighted_kl_penalty.detach().cpu().item()))
                 if "is_clipped" in metadata:
                     clip_fraction = masked_mean(
                         tensor=metadata["is_clipped"].to(dtype=torch.float32),
@@ -578,7 +620,7 @@ def train_on_rollout_batch(
                     micro_clip_fractions.append(float(clip_fraction.detach().cpu().item()))
 
                 del input_ids, labels, response_mask, scored
-                del micro_advantages, micro_raw_rewards, micro_old_log_probs
+                del micro_advantages, micro_raw_rewards, micro_old_log_probs, micro_ref_log_probs
                 del loss, metadata, token_entropy
 
             grad_norm = torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=1.0)
@@ -613,6 +655,8 @@ def train_on_rollout_batch(
                     "token_entropy": mean(micro_entropies),
                     "clip_fraction": mean_or_none(micro_clip_fractions),
                     "approx_kl": mean_or_none(micro_approx_kls),
+                    "reference_kl": mean_or_none(micro_reference_kls),
+                    "kl_penalty": mean_or_none(micro_kl_penalties),
                     "train_reward": mean(record["reward"] for record in train_records),
                     "train_format_accuracy": mean(
                         record["format_reward"] for record in train_records
@@ -625,6 +669,8 @@ def train_on_rollout_batch(
                     "cliprange": cliprange,
                     "cliprange_low": cliprange_low,
                     "cliprange_high": cliprange_high,
+                    "kl_coef": kl_coef,
+                    "reference_model_cached": ref_log_probs is not None,
                     "loss_normalization": loss_normalization,
                     "loss_normalize_constant": loss_normalize_constant,
                     "rollout_batch_size": len(records),
@@ -667,6 +713,8 @@ def validate_grpo_args(args: argparse.Namespace) -> None:
         raise ValueError("cliprange_low must be non-negative.")
     if args.cliprange_high is not None and args.cliprange_high < 0:
         raise ValueError("cliprange_high must be non-negative.")
+    if args.kl_coef < 0:
+        raise ValueError("kl_coef must be non-negative.")
     if args.cliprange_low is None:
         args.cliprange_low = args.cliprange
     if args.cliprange_high is None:
@@ -714,6 +762,13 @@ def main() -> None:
     stop_sequences, include_stop_str_in_output = resolve_sampling_stop(args.reward_fn)
 
     policy, tokenizer = init_policy(args.model, args.policy_device)
+    reference_policy = None
+    if args.kl_coef > 0.0:
+        reference_model_id = args.kl_ref_model or args.model
+        reference_policy, _ = init_policy(reference_model_id, args.policy_device)
+        reference_policy.eval()
+        for parameter in reference_policy.parameters():
+            parameter.requires_grad_(False)
     llm = init_vllm(
         model_id=args.model,
         device=args.vllm_device,
@@ -749,6 +804,8 @@ def main() -> None:
     logger.info("loss type: %s", args.loss_type)
     logger.info("cliprange: %.4f", args.cliprange)
     logger.info("cliprange low/high: %.4f / %.4f", args.cliprange_low, args.cliprange_high)
+    logger.info("kl coef: %.6f", args.kl_coef)
+    logger.info("kl reference model: %s", args.kl_ref_model or args.model)
     logger.info("loss normalization: %s", args.loss_normalization)
     logger.info("loss normalize constant: %.4f", args.loss_normalize_constant)
     logger.info("std normalization: %s", args.use_std_normalization)
@@ -826,8 +883,16 @@ def main() -> None:
         rollout_tensors = tokenize_rollout_records(rollout_records, tokenizer)
         old_log_probs = None
         if args.loss_type in {"grpo_clip", "grpo_no_clip"}:
-            old_log_probs = compute_old_log_probs(
-                policy=policy,
+            old_log_probs = compute_rollout_log_probs(
+                model=policy,
+                rollout_tensors=rollout_tensors,
+                device=args.policy_device,
+                microbatch_size=args.train_batch_size // args.gradient_accumulation_steps,
+            )
+        ref_log_probs = None
+        if reference_policy is not None:
+            ref_log_probs = compute_rollout_log_probs(
+                model=reference_policy,
                 rollout_tensors=rollout_tensors,
                 device=args.policy_device,
                 microbatch_size=args.train_batch_size // args.gradient_accumulation_steps,
@@ -841,11 +906,13 @@ def main() -> None:
             advantages=advantages,
             raw_rewards=raw_rewards,
             old_log_probs=old_log_probs,
+            ref_log_probs=ref_log_probs,
             epochs_per_rollout_batch=args.epochs_per_rollout_batch,
             train_batch_size=args.train_batch_size,
             gradient_accumulation_steps=args.gradient_accumulation_steps,
             loss_type=args.loss_type,
             cliprange=args.cliprange,
+            kl_coef=args.kl_coef,
             device=args.policy_device,
             rng=rng,
             metrics_path=metrics_path,
@@ -935,6 +1002,8 @@ def main() -> None:
         "cliprange": args.cliprange,
         "cliprange_low": args.cliprange_low,
         "cliprange_high": args.cliprange_high,
+        "kl_coef": args.kl_coef,
+        "kl_ref_model": args.kl_ref_model or args.model,
         "loss_normalization": args.loss_normalization,
         "loss_normalize_constant": args.loss_normalize_constant,
         "use_std_normalization": args.use_std_normalization,
