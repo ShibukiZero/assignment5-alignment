@@ -1,0 +1,55 @@
+[
+  {
+    "run_name": "grpo_on_policy_lr1e-5",
+    "archived_run_dir": "artifacts/experiments/ch7/grpo_train_loop/runs/grpo_on_policy_lr1e-5",
+    "learning_rate": 1e-05,
+    "n_grpo_steps": 200,
+    "rollout_batch_size": 256,
+    "group_size": 8,
+    "loss_type": "reinforce_with_baseline",
+    "use_std_normalization": true,
+    "first_eval": {
+      "grpo_step": 0,
+      "answer_accuracy": 0.0380859375,
+      "format_accuracy": 0.1806640625
+    },
+    "best_eval": {
+      "grpo_step": 180,
+      "answer_accuracy": 0.29296875,
+      "format_accuracy": 0.751953125
+    },
+    "final_eval": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.271484375,
+      "format_accuracy": 0.7333984375
+    },
+    "first_rollout": {
+      "grpo_step": 1,
+      "answer_accuracy": 0.015625,
+      "format_accuracy": 0.1796875,
+      "avg_response_token_length": 305.171875
+    },
+    "final_rollout": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.33984375,
+      "format_accuracy": 0.87109375,
+      "avg_response_token_length": 168.5390625
+    },
+    "final_train": {
+      "grpo_step": 200,
+      "optimizer_step": 200,
+      "token_entropy": 0.16975784301757812,
+      "grad_norm": 4.65625,
+      "loss": -0.10538554677623324
+    },
+    "run_summary": {
+      "best_answer_accuracy": 0.29296875,
+      "final_optimizer_step": 200,
+      "n_grpo_steps": 200,
+      "rollout_batch_size": 256,
+      "group_size": 8,
+      "loss_type": "reinforce_with_baseline",
+      "use_std_normalization": true
+    }
+  }
+]

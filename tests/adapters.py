@@ -9,8 +9,12 @@ from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizerBase
 
 from cs336_alignment.grpo import (
+    compute_grpo_clip_loss,
     compute_group_normalized_rewards,
     compute_naive_policy_gradient_loss,
+    compute_policy_gradient_loss,
+    grpo_microbatch_train_step,
+    masked_mean,
 )
 from cs336_alignment.sft import (
     compute_entropy,
@@ -167,7 +171,9 @@ def run_compute_grpo_clip_loss(
     advantages: torch.Tensor,
     policy_log_probs: torch.Tensor,
     old_log_probs: torch.Tensor,
-    cliprange: float,
+    cliprange: float | None = None,
+    cliprange_low: float | None = None,
+    cliprange_high: float | None = None,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
     """Compute the GRPO-Clip loss.
 
@@ -178,7 +184,9 @@ def run_compute_grpo_clip_loss(
             the log-probs of the policy.
         old_log_probs: torch.Tensor of shape (batch_size, sequence_length): 
             the log-probs of the old policy.
-        cliprange: float, the clip range for the ratio.
+        cliprange: float | None, symmetric clip range for the ratio.
+        cliprange_low: float | None, lower clipping width.
+        cliprange_high: float | None, upper clipping width.
 
     Returns:
         tuple[torch.Tensor, dict[str, torch.Tensor]]:
@@ -187,7 +195,14 @@ def run_compute_grpo_clip_loss(
             dict[str, torch.Tensor]: metadata for the GRPO-Clip loss 
                 (used to compute clip fraction).
     """
-    raise NotImplementedError
+    return compute_grpo_clip_loss(
+        advantages=advantages,
+        policy_log_probs=policy_log_probs,
+        old_log_probs=old_log_probs,
+        cliprange=cliprange,
+        cliprange_low=cliprange_low,
+        cliprange_high=cliprange_high,
+    )
 
 
 def run_compute_policy_gradient_loss(
@@ -197,11 +212,22 @@ def run_compute_policy_gradient_loss(
     advantages: torch.Tensor,
     old_log_probs: torch.Tensor,
     cliprange: float,
+    cliprange_low: float | None = None,
+    cliprange_high: float | None = None,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
     """
     Wrapper that delegates to the appropriate policy gradient loss function above.
     """
-    raise NotImplementedError
+    return compute_policy_gradient_loss(
+        policy_log_probs=policy_log_probs,
+        loss_type=loss_type,
+        raw_rewards=raw_rewards,
+        advantages=advantages,
+        old_log_probs=old_log_probs,
+        cliprange=cliprange,
+        cliprange_low=cliprange_low,
+        cliprange_high=cliprange_high,
+    )
 
 
 def run_masked_mean(tensor: torch.Tensor, mask: torch.Tensor, dim: int | None = None) -> torch.Tensor:
@@ -220,7 +246,7 @@ def run_masked_mean(tensor: torch.Tensor, mask: torch.Tensor, dim: int | None = 
         torch.Tensor, the mean of the tensor along the specified
             dimension, considering only the elements with mask value 1.
     """
-    raise NotImplementedError
+    return masked_mean(tensor=tensor, mask=mask, dim=dim)
 
 def run_sft_microbatch_train_step(
     policy_log_probs: torch.Tensor,
@@ -242,11 +268,15 @@ def run_grpo_microbatch_train_step(
     policy_log_probs: torch.Tensor,
     response_mask: torch.Tensor,
     gradient_accumulation_steps: int,
-    loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip"],
+    loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip", "grpo_no_clip"],
     raw_rewards: torch.Tensor | None = None,
     advantages: torch.Tensor | None = None,
     old_log_probs: torch.Tensor | None = None,
     cliprange: float | None = None,
+    cliprange_low: float | None = None,
+    cliprange_high: float | None = None,
+    loss_normalization: Literal["masked_mean", "masked_normalize", "batch_token_mean"] = "masked_mean",
+    loss_normalize_constant: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
     """Compute the policy gradient loss and backprop its gradients for a microbatch.
 
@@ -256,25 +286,39 @@ def run_grpo_microbatch_train_step(
         response_mask: torch.Tensor of shape (batch_size, sequence_length): 
             the mask for the response.
         gradient_accumulation_steps: int, the number of gradient accumulation steps.
-        loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip"], 
+        loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip", "grpo_no_clip"], 
             the type of loss function to use.
         raw_rewards: torch.Tensor | None, the raw rewards for each rollout response.
             Needed for loss_type="no_baseline".
         advantages: torch.Tensor | None, the advantages for each rollout response.
-            Needed for loss_type in {"reinforce_with_baseline", "grpo_clip"}.
+            Needed for loss_type in {"reinforce_with_baseline", "grpo_clip", "grpo_no_clip"}.
         old_log_probs: torch.Tensor | None, the log-probs of the old policy.
-            Needed for loss_type="grpo_clip".
+            Needed for loss_type in {"grpo_clip", "grpo_no_clip"}.
         cliprange: float | None, the clip range for the ratio. 
             Needed for loss_type="grpo_clip".
-        constant_normalize_factor: int | None, provided if we want to sum over 
-            the sequence dimension and normalize by this constant factor
-            (as in Dr. GRPO).
+        cliprange_low: float | None, lower clipping width for GRPO-Clip.
+        cliprange_high: float | None, upper clipping width for GRPO-Clip.
+        loss_normalization: how to aggregate token losses into per-example losses.
+        loss_normalize_constant: fixed denominator used with masked_normalize.
 
     Returns:
         tuple[torch.Tensor, dict[str, torch.Tensor]]: 
             the policy gradient loss and its metadata.
     """
-    raise NotImplementedError
+    return grpo_microbatch_train_step(
+        policy_log_probs=policy_log_probs,
+        response_mask=response_mask,
+        gradient_accumulation_steps=gradient_accumulation_steps,
+        loss_type=loss_type,
+        raw_rewards=raw_rewards,
+        advantages=advantages,
+        old_log_probs=old_log_probs,
+        cliprange=cliprange,
+        cliprange_low=cliprange_low,
+        cliprange_high=cliprange_high,
+        loss_normalization=loss_normalization,
+        loss_normalize_constant=loss_normalize_constant,
+    )
 
 
 def run_masked_normalize(

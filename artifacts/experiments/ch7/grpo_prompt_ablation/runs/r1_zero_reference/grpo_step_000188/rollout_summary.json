@@ -1,0 +1,19 @@
+{
+  "type": "rollout",
+  "grpo_step": 188,
+  "num_questions": 32,
+  "group_size": 8.0,
+  "num_rollouts": 256,
+  "reward": 0.703125,
+  "format_accuracy": 0.94921875,
+  "answer_accuracy": 0.703125,
+  "avg_response_token_length": 325.4609375,
+  "rollout_seconds": 12.189523696899414,
+  "mean_reward": 0.703125,
+  "std_reward": 0.45777595043182373,
+  "min_reward": 0.0,
+  "max_reward": 1.0,
+  "mean_advantage": 0.0,
+  "std_advantage": 0.24852506816387177,
+  "num_groups": 32.0
+}

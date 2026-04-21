@@ -1,0 +1,12 @@
+{
+  "input_path": "/root/autodl-tmp/a5-alignment/runs/math_baseline_competition_math_numeric.jsonl",
+  "seen_records": 189,
+  "samples_per_bucket": 10,
+  "output_jsonl": ".agents/logs/ch3/3_2_math_baseline/category_samples.jsonl",
+  "output_md": ".agents/logs/ch3/3_2_math_baseline/category_samples.md",
+  "bucket_counts": {
+    "correct_format_correct_answer": 10,
+    "correct_format_wrong_answer": 10,
+    "wrong_format_wrong_answer": 10
+  }
+}

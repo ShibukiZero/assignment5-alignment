@@ -1,0 +1,17 @@
+{
+  "best_answer_accuracy": 0.185546875,
+  "final_optimizer_step": 80,
+  "n_grpo_steps": 40,
+  "rollout_batch_size": 256,
+  "group_size": 8,
+  "epochs_per_rollout_batch": 2,
+  "train_batch_size": 256,
+  "gradient_accumulation_steps": 128,
+  "optimizer_updates_per_rollout_batch": 2,
+  "expected_total_optimizer_steps": 80,
+  "loss_type": "grpo_clip",
+  "cliprange": 0.2,
+  "loss_normalization": "masked_mean",
+  "loss_normalize_constant": 1.0,
+  "use_std_normalization": false
+}

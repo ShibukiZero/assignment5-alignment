@@ -1,0 +1,11 @@
+{
+  "best_answer_accuracy": 0.80078125,
+  "final_optimizer_step": 200,
+  "n_grpo_steps": 200,
+  "rollout_batch_size": 256,
+  "group_size": 8,
+  "loss_type": "reinforce_with_baseline",
+  "loss_normalization": "masked_mean",
+  "loss_normalize_constant": 1.0,
+  "use_std_normalization": false
+}

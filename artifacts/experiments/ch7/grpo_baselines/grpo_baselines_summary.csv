@@ -1,0 +1,3 @@
+run,loss_type,learning_rate,status,best_answer_accuracy,best_step,final_answer_accuracy,final_step,final_format_accuracy,final_rollout_answer_accuracy,final_rollout_format_accuracy,final_rollout_avg_response_token_length,final_token_entropy,final_grad_norm
+reinforce_with_baseline,reinforce_with_baseline,4e-05,completed,0.744140625,75,0.7001953125,200,0.876953125,0.6484375,0.7421875,393.625,0.05519247055053711,1.0234375
+no_baseline,no_baseline,4e-05,completed,0.2568359375,135,0.24609375,200,0.9853515625,0.39453125,0.98046875,20.9296875,0.3955841064453125,0.8828125

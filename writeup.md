@@ -18,7 +18,10 @@ self-hosted environment, we ran this analysis on the converted
 104 had both `format_reward = 1` and `answer_reward = 1`, 459 had
 `format_reward = 1` and `answer_reward = 0`, and 2,636 had both rewards equal
 to 0. We archived the summary and sampled examples under
-`artifacts/ch3/3_2_math_baseline/`.
+`artifacts/experiments/ch3/3_2_math_baseline/`; the run summary is archived in
+`artifacts/experiments/ch3/3_2_math_baseline/run_summaries_archive.md` and
+`artifacts/experiments/ch3/3_2_math_baseline/run_summaries.json`; the raw run
+data are archived under `artifacts/experiments/ch3/3_2_math_baseline/runs/`.
 
 In the inspected `format_reward = 0` examples, the main issue was usually model
 behavior under the strict R1-Zero output protocol rather than a vLLM failure.
@@ -52,7 +55,6 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 
 ## Problem `tokenize_prompt_and_output`: Prompt and Output Tokenization (2 points)
 
-### Implementation
 **Question:** Tokenize the prompt and output strings, and construct a mask that is 1 for the response tokens and 0 for other tokens (prompt or padding).
 
 **Deliverable:** Implement a method `tokenize_prompt_and_output` that tokenizes the question and output separately, concatenates them together, and constructs a `response_mask`. The following interface is recommended: `def tokenize_prompt_and_output(prompt_strs, output_strs, tokenizer): Tokenize the prompt and output strings, and construct a mask that is 1 for the response tokens and 0 for other tokens (prompt or padding).` To test your code, implement `[adapters.run_tokenize_prompt_and_output]`. Then, run the test with `uv run pytest -k test_tokenize_prompt_and_output` and make sure your implementation passes it.
@@ -61,7 +63,6 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 
 ## Problem `compute_entropy`: Per-Token Entropy (1 point)
 
-### Implementation
 **Question:** Get the entropy of the next-token predictions (i.e., entropy over the vocabulary dimension).
 
 **Deliverable:** Implement a method `compute_entropy` that computes the per-token entropy of next-token predictions. Note: you should use a numerically stable method (e.g., using `logsumexp`) to avoid overflow. To test your code, implement `[adapters.run_compute_entropy]`. Then run `uv run pytest -k test_compute_entropy` and ensure your implementation passes.
@@ -70,7 +71,6 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 
 ## Problem `get_response_log_probs`: Response Log-Probabilities and Entropy (2 points)
 
-### Implementation
 **Question:** Getting log-probabilities from a model. Obtaining log-probabilities from a model is a primitive that we will need in both SFT and RL. You will want to use a numerically stable method to compute this, and are free to use methods from `torch.nn.functional`. We also suggest including an argument to optionally compute and return token entropies.
 
 **Deliverable:** Implement a method `get_response_log_probs` that gets per-token conditional log-probabilities (given the previous tokens) from a causal language model, and optionally the entropy of the model's next-token distribution. To test your code, implement `[adapters.run_get_response_log_probs]`. Then run `uv run pytest -k test_get_response_log_probs` and ensure the test passes.
@@ -79,7 +79,6 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 
 ## Problem `masked_normalize`: Masked Normalize (1 point)
 
-### Implementation
 **Question:** Sum over a dimension and normalize by a constant, considering only those elements where `mask == 1`.
 
 **Deliverable:** Implement a method `masked_normalize` that sums over tensor elements and normalizes by a constant while respecting a boolean mask. To test your code, implement `[adapters.run_masked_normalize]`. Then run `uv run pytest -k test_masked_normalize` and ensure it passes.
@@ -88,7 +87,6 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 
 ## Problem `sft_microbatch_train_step`: SFT Microbatch Train Step (3 points)
 
-### Implementation
 **Question:** Execute a forward-and-backward pass on a microbatch.
 
 **Deliverable:** Implement a single micro-batch update for SFT, including cross-entropy loss, summing with a mask, and gradient scaling. To test your code, implement `[adapters.run_sft_microbatch_train_step]`. Then run `uv run pytest -k test_sft_microbatch_train_step` and confirm it passes.
@@ -97,7 +95,6 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 
 ## Problem `log_generations`: Logging Generations (1 point)
 
-### Implementation
 **Question:** Logging generations in-the-loop. It’s always good practice to do some in-the-loop logging that involves generation from your model, and reasoning SFT/RL is no exception. Write a function `log_generations` that will prompt your model to generate responses for some given prompts (e.g., sampled from the validation set). It’s a good idea to log at least the following for each example: the input prompt, the response generated by the SFT/RL model, the ground-truth answer, the reward information, including format, answer, and total reward, the average token entropy of the response, and the average response length, average response length for correct responses, and average response length for incorrect responses.
 
 **Deliverable:** Implement a function `log_generations` that can be used to log generations from your model.
@@ -117,8 +114,8 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 **Deliverable:** Report the size of the dataset and the validation accuracy curve you achieve.
 
 **Answer:** The official `/data/a5-alignment/MATH` files were not available in
-our self-hosted environment, so I ran this experiment on the converted
-`competition_math_numeric` MATH-like substitute dataset. I used the noisy SFT
+our self-hosted environment, so we ran this experiment on the converted
+`competition_math_numeric` MATH-like substitute dataset. We used the noisy SFT
 split from this substitute data for the dataset-size sweep, and used the reward
 function to construct a filtered version for the second experiment. The reward
 filter removed 730 of 4,866 examples, so the observed contamination rate in
@@ -129,7 +126,12 @@ optimizer steps total.
 
 The validation accuracy curves for the SFT dataset-size sweep are shown below.
 
-![Validation accuracy for the noisy SFT dataset-size sweep](artifacts/ch4/sft_experiment/sft_size_sweep_accuracy.svg)
+![Validation accuracy for the noisy SFT dataset-size sweep](artifacts/experiments/ch4/sft_experiment/sft_size_sweep_accuracy.svg)
+
+The run summaries used by this section are archived in
+`artifacts/experiments/ch4/sft_experiment/run_summaries_archive.md` and
+`artifacts/experiments/ch4/sft_experiment/run_summaries.json`; the raw per-run
+data are archived under `artifacts/experiments/ch4/sft_experiment/runs/`.
 
 The main results are:
 
@@ -152,7 +154,7 @@ underperformed the smaller subsets.
 For the filtered SFT experiment, filtering retained 4,136 of the 4,866 noisy
 SFT examples. The filtered-vs-noisy validation curve is shown below.
 
-![Validation accuracy for noisy full SFT versus reward-filtered full SFT](artifacts/ch4/sft_experiment/sft_filtered_vs_noisy_full_accuracy.svg)
+![Validation accuracy for noisy full SFT versus reward-filtered full SFT](artifacts/experiments/ch4/sft_experiment/sft_filtered_vs_noisy_full_accuracy.svg)
 
 The comparison is:
 
@@ -180,7 +182,6 @@ begin to overfit, while the full noisy dataset is both harder and noisier.
 
 ## Problem `expert_iteration_experiment`: Run Expert Iteration on MATH (2 points, 6 H100 hrs)
 
-### Experiment
 **Question:** Run expert iteration on the MATH dataset (provided at `/data/a5-alignment/MATH/train.jsonl`) using the Qwen 2.5 Math 1.5B Base model, varying the number of rollouts `G` per question and the number of epochs used in the SFT step, and using `n_ei_steps = 5`. Vary the batch size for each expert iteration step (i.e., the size of `D_b`) in `{512, 1024, 2048}`. You do not need to try all possible combinations of these hyperparameters. Just enough to draw conclusions about each is fine. Log the entropy of the model's responses over training. Make sure to have vLLM terminate generations at the second answer tag `</answer>`, as done in the SFT section.
 
 **Deliverable:** Validation accuracy curves associated with different rollout configurations. Try at least 2 different rollout counts and epoch counts.
@@ -192,15 +193,20 @@ begin to overfit, while the full noisy dataset is both harder and noisier.
 **Deliverable:** A plot of the entropy of the model's responses over training.
 
 **Answer:** Because the official course MATH files were not available in this
-environment, I ran EI on the same substitute MATH-like
+environment, we ran EI on the same substitute MATH-like
 `competition_math_numeric_noisy` split used in the previous experiments.
 Validation was run on the full 3199-example validation set with the R1-Zero
 prompt, temperature 1.0, max tokens 1024, and the `r1_zero_reward_fn`-based
 answer reward.
 
-![Expert Iteration validation accuracy](artifacts/ch5/expert_iteration/ei_validation_accuracy.svg)
+![Expert Iteration validation accuracy](artifacts/experiments/ch5/expert_iteration/ei_validation_accuracy.svg)
 
-![Expert Iteration response entropy](artifacts/ch5/expert_iteration/ei_rollout_entropy.svg)
+![Expert Iteration response entropy](artifacts/experiments/ch5/expert_iteration/ei_rollout_entropy.svg)
+
+The run summaries used by this section are archived in
+`artifacts/experiments/ch5/expert_iteration/run_summaries_archive.md` and
+`artifacts/experiments/ch5/expert_iteration/run_summaries.json`; the raw
+per-run data are archived under `artifacts/experiments/ch5/expert_iteration/runs/`.
 
 The table below summarizes the EI runs.
 
@@ -246,7 +252,6 @@ stable runs are expected.
 
 ## Problem `compute_group_normalized_rewards`: Group Normalization (2 points)
 
-### Implementation
 **Question:** Compute rewards for each group of rollout responses, normalized by the group size.
 
 **Deliverable:** Implement a method `compute_group_normalized_rewards` that calculates raw rewards for each rollout response, normalizes them within their groups, and returns both the normalized and raw rewards along with any metadata you think is useful. To test your code, implement `[adapters.run_compute_group_normalized_rewards]`. Then, run the test with `uv run pytest -k test_compute_group_normalized_rewards` and make sure your implementation passes it.
@@ -255,7 +260,6 @@ stable runs are expected.
 
 ## Problem `compute_naive_policy_gradient_loss`: Naive Policy Gradient (1 point)
 
-### Implementation
 **Question:** Compute the policy-gradient loss at every token, where `raw_rewards_or_advantages` is either the raw reward or an already-normalized advantage.
 
 **Deliverable:** Implement a method `compute_naive_policy_gradient_loss` that computes the per-token policy-gradient loss using raw rewards or pre-computed advantages. To test your code, implement `[adapters.run_compute_naive_policy_gradient_loss]`. Then run `uv run pytest -k test_compute_naive_policy_gradient_loss` and ensure the test passes.
@@ -264,7 +268,6 @@ stable runs are expected.
 
 ## Problem `compute_grpo_clip_loss`: GRPO-Clip Loss (2 points)
 
-### Implementation
 **Question:** Compute the per-token GRPO-Clip loss.
 
 **Deliverable:** Implement a method `compute_grpo_clip_loss` that computes the per-token GRPO-Clip loss. To test your code, implement `[adapters.run_compute_grpo_clip_loss]`. Then run `uv run pytest -k test_compute_grpo_clip_loss` and ensure the test passes.
@@ -273,7 +276,6 @@ stable runs are expected.
 
 ## Problem `compute_policy_gradient_loss`: Policy-Gradient Wrapper (1 point)
 
-### Implementation
 **Question:** Select and compute the desired policy-gradient loss.
 
 **Deliverable:** Implement `compute_policy_gradient_loss`, a convenience wrapper that dispatches to the correct loss routine (`no_baseline`, `reinforce_with_baseline`, or `grpo_clip`) and returns both the per-token loss and any auxiliary statistics. To test your code, implement `[adapters.run_compute_policy_gradient_loss]`. Then run `uv run pytest -k test_compute_policy_gradient_loss` and verify it passes.
@@ -282,7 +284,6 @@ stable runs are expected.
 
 ## Problem `masked_mean`: Masked Mean (1 point)
 
-### Implementation
 **Question:** Compute the mean of `tensor` along a given dimension, considering only those elements where `mask == 1`.
 
 **Deliverable:** Implement a method `masked_mean` that averages tensor elements while respecting a boolean mask. To test your code, implement `[adapters.run_masked_mean]`. Then run `uv run pytest -k test_masked_mean` and ensure it passes.
@@ -291,7 +292,6 @@ stable runs are expected.
 
 ## Problem `grpo_microbatch_train_step`: GRPO Microbatch Train Step (3 points)
 
-### Implementation
 **Question:** Execute a forward-and-backward pass on a microbatch.
 
 **Deliverable:** Implement a single micro-batch update for GRPO, including policy-gradient loss, averaging with a mask, and gradient scaling. To test your code, implement `[adapters.run_grpo_microbatch_train_step]`. Then run `uv run pytest -k test_grpo_microbatch_train_step` and confirm it passes.
@@ -300,18 +300,51 @@ stable runs are expected.
 
 ## Problem `grpo_train_loop`: GRPO Train Loop (5 points)
 
-### Implementation and Experiment
 **Question:** Put together a complete train loop for GRPO. You should refer to the algorithm in Section 7.1 for the overall structure, using the methods we've implemented where appropriate.
 
 **Deliverable:** Implement a complete train loop for GRPO. Begin training a policy on MATH and confirm that you see validation rewards improving, along with sensible rollouts over time. Provide a plot with the validation rewards with respect to steps, and a few example rollouts over time.
 
-**Answer:** TODO.
+**Answer:** We used the on-policy configuration from the GRPO train-loop
+implementation as a first end-to-end sanity run: `rollout_batch_size=256`,
+`group_size=8`, `train_batch_size=256`, `epochs_per_rollout_batch=1`,
+`loss_type=reinforce_with_baseline`, standard group-normalized advantages, and
+`lr=1e-5`. The run completed 200 GRPO steps and evaluated on 1024 validation
+examples every 5 steps.
+
+![On-policy GRPO validation answer reward](artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_validation_reward.svg)
+
+The validation answer reward improved from 3.81% at step 0 to a best value of
+29.30% at step 180, ending at 27.15% at step 200. Format accuracy also improved
+from 18.07% to 73.34%, which is important here because the reward parser depends
+on the `<think>` and `<answer>` structure. The final rollout batch had 33.98%
+answer reward, 87.11% format reward, and an average response length of 168.5
+tokens. These trends confirm that the loop is updating the policy in the right
+direction rather than only passing unit tests.
+
+![On-policy GRPO validation format accuracy](artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_format_accuracy.svg)
+
+Sample rollouts over time are archived in
+`artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_rollout_examples.md`.
+The selected examples show the policy increasingly producing concise, correctly
+tagged answers. One useful caveat is that answer-only reward can still accept
+rollouts whose reasoning is not fully reliable; for example, a later octagon
+diagonals sample gets the final answer right even though part of the reasoning is
+messy. That is a limitation of this reward design rather than a train-loop bug.
+
+The writeup artifacts were generated from the remote run with
+`scripts/plot_grpo_train_loop.py` and then synced back into
+`artifacts/experiments/ch7/grpo_train_loop/`. Summary files are archived in
+`artifacts/experiments/ch7/grpo_train_loop/run_summaries_archive.md` and
+`artifacts/experiments/ch7/grpo_train_loop/run_summaries.json`, with the full
+eval curve in
+`artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_eval_points.csv`.
+The raw run data used for this answer are archived under
+`artifacts/experiments/ch7/grpo_train_loop/runs/grpo_on_policy_lr1e-5/`.
 
 ---
 
 ## Problem `grpo_learning_rate`: Tune the Learning Rate (2 points, 6 H100 hrs)
 
-### Experiment
 **Question:** Starting with the suggested hyperparameters above, perform a sweep over the learning rates and report the final validation answer rewards (or note divergence if the optimizer diverges).
 
 **Deliverable:** Validation reward curves associated with multiple learning rates.
@@ -320,68 +353,266 @@ stable runs are expected.
 
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
-**Answer:** TODO.
+**Answer:** The official course MATH files were not available in this
+environment, so we ran this sweep on the same converted
+`competition_math_numeric` MATH-like validation set used in the previous
+experiments. All runs used the R1-Zero prompt, rollout batch size 256, group
+size 8, `reinforce_with_baseline`, standard-deviation-normalized advantages,
+and validation every 5 GRPO steps; we stopped the clearly bad high-learning-rate
+runs early once the validation curve showed collapse or severe instability.
+
+![GRPO validation answer reward for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
+
+The run summaries are archived in
+`artifacts/experiments/ch7/grpo_learning_rate/run_summaries_archive.md` and
+`artifacts/experiments/ch7/grpo_learning_rate/run_summaries.json`, with the full eval
+points in `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_eval_points.csv`.
+
+| learning rate | status | best answer reward | best step | final answer reward | final step | final format accuracy |
+|---:|---|---:|---:|---:|---:|---:|
+| `3e-6` | stopped early | 4.49% | 35 | 4.49% | 35 | 25.10% |
+| `5e-6` | completed | 14.65% | 200 | 14.65% | 200 | 53.91% |
+| `1e-5` | completed | 29.30% | 180 | 27.15% | 200 | 73.34% |
+| `2e-5` | completed | 37.21% | 155 | 34.18% | 200 | 75.29% |
+| `3e-5` | completed | 55.76% | 190 | 54.98% | 200 | 84.96% |
+| `4e-5` | completed | **74.41%** | 75 | **70.02%** | 200 | 87.70% |
+| `5e-5` | completed | 64.94% | 160 | 62.40% | 200 | 83.79% |
+| `7e-5` | stopped early | 13.09% | 5 | 7.52% | 20 | 36.43% |
+| `2e-4` | collapsed | 3.81% | 0 | 0.00% | 5 | 0.00% |
+
+The best learning rate was `4e-5`, whose best checkpoint reached 74.41%
+validation answer reward at step 75 and whose final checkpoint still reached
+70.02%, comfortably exceeding the 25% target. We use `4e-5` for the remaining
+on-policy GRPO experiments.
+
+Other metrics followed the same stability pattern: successful runs improved
+format accuracy as answer reward increased, while `7e-5` and `2e-4` quickly
+lost formatting and reward. The `4e-5` run showed a mild late-training format
+regression, dropping from the 95-98% format-accuracy range in the middle of
+training to 87.70% at step 200, so the best checkpoint is preferable to the
+final checkpoint for model selection.
+
+![GRPO validation format accuracy for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg)
 
 ---
 
 ## Problem `grpo_baselines`: Effect of Baselining (2 points, 2 H100 hrs)
 
-### Experiment
 **Question:** Train a policy with `reinforce_with_baseline` and with `no_baseline`.
 
 **Deliverable:** Validation reward curves associated with each loss type.
 
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
-**Answer:** TODO.
+**Answer:** We compared the selected `4e-5` on-policy run from the learning-rate
+sweep against a matching `no_baseline` run, keeping the prompt, rollout batch
+size, group size, standard-deviation normalization, and loss normalization fixed.
+Both runs completed 200 GRPO steps on the converted
+`competition_math_numeric` validation set.
+
+![GRPO validation answer reward by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_validation_reward.svg)
+
+The run summaries are archived in
+`artifacts/experiments/ch7/grpo_baselines/run_summaries_archive.md` and
+`artifacts/experiments/ch7/grpo_baselines/run_summaries.json`, with the full eval
+points in `artifacts/experiments/ch7/grpo_baselines/grpo_baselines_eval_points.csv`.
+The raw run data used for this comparison are archived under
+`artifacts/experiments/ch7/grpo_baselines/runs/`.
+
+| loss type | best answer reward | best step | final answer reward | final format accuracy | final rollout answer reward | final rollout average length |
+|---|---:|---:|---:|---:|---:|---:|
+| `reinforce_with_baseline` | **74.41%** | 75 | **70.02%** | 87.70% | **64.84%** | 393.6 |
+| `no_baseline` | 25.68% | 135 | 24.61% | **98.54%** | 39.45% | 20.9 |
+
+Baselining made a large difference: `reinforce_with_baseline` reached 74.41%
+best validation answer reward and ended at 70.02%, while `no_baseline` plateaued
+near 25% despite using the same learning rate. This supports the intuition that
+the group-relative baseline is doing more than cosmetic variance reduction in
+this sparse reward setting: it gives each rollout a relative signal within its
+group, whereas `no_baseline` mostly reinforces already-rewarded samples and gives
+little corrective pressure to wrong responses.
+
+The clearest side trend is that `no_baseline` learns the answer format very
+quickly, ending with 98.54% validation format accuracy, but its final rollout
+responses are extremely short on average at 20.9 tokens. In contrast,
+`reinforce_with_baseline` produces much longer final rollout responses, averaging
+393.6 tokens, and has much higher answer reward; the baseline appears to help the
+policy learn useful reasoning behavior rather than only a concise answer
+template.
+
+![GRPO validation format accuracy by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_format_accuracy.svg)
 
 ---
 
 ## Problem `think_about_length_normalization`: Think About Length Normalization (1 point)
 
-### Written
 **Question:** Compare the two approaches (without running experiments yet). What are the pros and cons of each approach? Are there any specific settings or examples where one approach seems better?
 
 **Deliverable:** Compare the two approaches (without running experiments yet). What are the pros and cons of each approach? Are there any specific settings or examples where one approach seems better?
 
-**Answer:** TODO.
+**Answer:** The two approaches differ in how they assign credit across
+responses of different lengths. With `masked_mean`, a per-token loss sequence
+for completion \(i\) is aggregated as
+
+\[
+L_i = \frac{1}{T_i}\sum_{t=1}^{T_i} \ell_{it},
+\]
+
+where \(T_i\) is the number of response tokens. This makes each completion have
+roughly comparable total weight in the batch, regardless of whether it is short
+or long. The main benefit is stability: a long, noisy, or malformed response
+does not dominate the gradient just because it contains many tokens. The
+downside is that each token in a long reasoning trace receives less credit or
+blame than each token in a short response, so `masked_mean` can dilute the
+learning signal for long chains of reasoning.
+
+With `masked_normalize`, the same per-token losses are summed over the response
+tokens and divided by a fixed constant \(C\), such as the maximum generation
+length:
+
+\[
+L_i = \frac{1}{C}\sum_{t=1}^{T_i} \ell_{it}.
+\]
+
+This is closer to the policy-gradient objective based on the log-probability of
+a trajectory, since the trajectory log-probability itself is a sum over token
+log-probabilities. Its main advantage is that it does not give short responses a
+larger per-token gradient simply because they have fewer tokens. This can be
+preferable when correct solutions genuinely require multi-step reasoning, since
+the tokens in a long solution are not averaged away. The tradeoff is higher
+length-dependent variance: longer responses receive larger total weight, so long
+incorrect, rambling, or format-breaking completions can have a larger effect on
+the update.
+
+Thus, `masked_mean` is a safer choice when response lengths vary widely or when
+the model tends to generate long low-quality outputs, because it treats each
+completion more like one training example. `masked_normalize` is more appealing
+when the task rewards long, useful reasoning traces and we want the optimization
+to treat each generated action more uniformly. In short, this choice is not just
+a harmless rescaling of the loss: `masked_mean` is closer to weighting each
+completion equally, while `masked_normalize` is closer to weighting each
+response token equally.
 
 ---
 
 ## Problem `grpo_length_normalization`: Effect of Length Normalization (2 points, 2 H100 hrs)
 
-### Experiment
 **Question:** Compare normalization with `masked_mean` and `masked_normalize` with an end-to-end GRPO training run. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
 **Deliverable:** Compare normalization with `masked_mean` and `masked_normalize` with an end-to-end GRPO training run. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
-**Answer:** TODO.
+**Answer:** We compared the selected `masked_mean` reference run against a
+`masked_normalize` run with the same on-policy setup, learning rate `4e-5`,
+group size 8, standard-deviation-normalized advantages, and
+`loss_normalize_constant=1024`. The `masked_mean` run performed better in this
+controlled setting: it reached a best validation answer reward of 74.41% at
+step 75 and ended at 70.02%, while `masked_normalize` reached a lower best
+validation answer reward of 68.95% at step 130 and ended at 44.92%.
+
+![GRPO validation answer reward by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_validation_reward.svg)
+
+The noticeable stability metrics point in the same direction. The validation
+format accuracy for `masked_mean` ended at 87.70%, compared with 56.84% for
+`masked_normalize`, so the weaker answer reward was coupled with a substantial
+format collapse rather than only more arithmetic mistakes.
+
+![GRPO validation format accuracy by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_format_accuracy.svg)
+
+The rollout response lengths make the failure mode clearer. By the final step,
+`masked_normalize` had an average rollout response length of 688.7 tokens,
+compared with 393.6 tokens for `masked_mean`; during steps 190-200,
+`masked_normalize` repeatedly produced average lengths above 630 tokens while
+rollout answer and format reward were both low.
+
+![GRPO rollout response length by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_response_length.svg)
+
+The gradient-norm curve also suggests less stable optimization under
+`masked_normalize`. Our logged gradient norm is the pre-clipping norm returned
+by `clip_grad_norm_`; the final value was 4.22 for `masked_normalize` versus
+1.02 for `masked_mean`, and `masked_normalize` had larger spikes during
+training. Since the actual update is clipped, these spikes should be interpreted
+as evidence that the raw gradient direction was more volatile, not that the full
+large norm was applied directly.
+
+![GRPO gradient norm by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_grad_norm.svg)
+
+Based on this experiment, we fixed `masked_mean` as the better-performing
+length-normalization choice for the following on-policy ablations. This result
+is specific to our current on-policy configuration; `masked_normalize` may still
+benefit from separate tuning in later exploratory or leaderboard runs.
 
 ---
 
 ## Problem `grpo_group_standard_deviation`: Effect of Standard Deviation Normalization (2 points, 2 H100 hrs)
 
-### Experiment
 **Question:** Compare the performance of `use_std_normalization == True` and `use_std_normalization == False`. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
 **Deliverable:** Compare the performance of `use_std_normalization == True` and `use_std_normalization == False`. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
-**Answer:** TODO.
+**Answer:** We compared the selected `masked_mean` on-policy configuration with
+and without group standard-deviation normalization, keeping the learning rate at
+`4e-5` and all other settings fixed. Removing the group standard deviation
+normalization performed better: `use_std_normalization=False` reached a best
+validation answer reward of 80.08% at step 95 and ended at 77.64%, while
+`use_std_normalization=True` reached a best validation answer reward of 74.41%
+at step 75 and ended at 70.02%.
+
+![GRPO validation answer reward by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_validation_reward.svg)
+
+The validation format accuracy also favored removing standard-deviation
+normalization. The `std=False` run ended at 96.97% validation format accuracy,
+compared with 87.70% for `std=True`, so the improvement was not just better
+answer parsing on similarly formatted outputs; the generations were also more
+reliably in the requested answer format.
+
+![GRPO validation format accuracy by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_format_accuracy.svg)
+
+The rollout metrics show a similar pattern. At the final step, `std=False` had
+69.92% rollout answer reward and 91.02% rollout format reward, with an average
+response length of 332.7 tokens. The `std=True` run ended lower, with 64.84%
+rollout answer reward, 74.22% rollout format reward, and a longer average
+response length of 393.6 tokens.
+
+![GRPO rollout response length by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_response_length.svg)
+
+The gradient norm trend is more nuanced. The logged gradient norm is the
+pre-clipping norm returned by `clip_grad_norm_`; `std=False` had a larger final
+pre-clip norm of 32.00, compared with 1.02 for `std=True`, and also had a
+larger maximum spike. Since the actual update is clipped to max norm 1.0, this
+does not mean the full raw norm was applied directly. In this run, the larger
+pre-clip gradient norms did not correspond to worse training behavior: the
+answer reward, format reward, and response lengths were all better for
+`std=False`.
+
+![GRPO gradient norm by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_grad_norm.svg)
+
+This result is consistent with the concern that dividing by the within-group
+reward standard deviation can reweight groups in a way that is not always
+desirable. Based on this experiment, we fixed `use_std_normalization=False` for
+the following on-policy experiments.
 
 ---
 
 ## Problem `grpo_off_policy`: Implement Off-Policy GRPO
 
-### Implementation
 **Question:** Depending on your implementation of the full GRPO train loop above, you may already have the infrastructure to do this. If not, you need to implement the following: you should be able to take multiple epochs of gradient steps per rollout batch, where the number of epochs and optimizer updates per rollout batch are controlled by `rollout_batch_size`, `epochs_per_rollout_batch`, and `train_batch_size`; edit your main training loop to get response logprobs from the policy after each rollout batch generation phase and before the inner loop of gradient steps, which will be the `old_log_probs`; and use the `"GRPO-Clip"` loss type.
 
 **Deliverable:** Implement off-policy GRPO training.
+
+**Answer:** We extended the GRPO training script to support true off-policy
+updates by (1) allowing multiple epochs of gradient steps over the same rollout
+batch, (2) computing and caching `old_log_probs` immediately after each rollout
+generation phase and before the inner optimization loop, and (3) enabling the
+`grpo_clip` loss for these reused rollouts. In our implementation, the total
+number of optimizer updates per rollout batch is controlled by
+`epochs_per_rollout_batch * rollout_batch_size / train_batch_size`, so the
+off-policy sweep below directly changes the reuse strength through these two
+hyperparameters.
 
 ---
 
 ## Problem `grpo_off_policy_sweep`: Off-Policy GRPO Hyperparameter Sweep (4 points, 12 H100 hrs)
 
-### Experiment
 **Question:** Fixing `rollout_batch_size = 256`, choose a range over `epochs_per_rollout_batch` and `train_batch_size` to sweep over. First do a broad sweep for a limited number of GRPO steps (`< 50`) to get a sense of the performance landscape, and then a more focused sweep for a larger number of GRPO steps (200). Provide a brief experiment log explaining the ranges you chose. Compare to your on-policy run with `epochs_per_rollout_batch = 1` and `train_batch_size = 256`, reporting plots with respect to number of validation steps as well as with respect to wall-clock time. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend such as entropy and response length. Compare the entropy of the model's responses over training to what you observed in the EI experiment.
 
 **Deliverable:** Fixing `rollout_batch_size = 256`, choose a range over `epochs_per_rollout_batch` and `train_batch_size` to sweep over. First do a broad sweep for a limited number of GRPO steps (`< 50`) to get a sense of the performance landscape, and then a more focused sweep for a larger number of GRPO steps (200). Provide a brief experiment log explaining the ranges you chose.
@@ -390,35 +621,214 @@ stable runs are expected.
 
 **Deliverable:** Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend such as entropy and response length. Compare the entropy of the model's responses over training to what you observed in the EI experiment.
 
-**Answer:** TODO.
+**Answer:** Because the official course MATH files were not available in our
+self-hosted environment, we ran this sweep on the same
+`competition_math_numeric` MATH-like substitute dataset used in the previous
+GRPO experiments. We fixed `rollout_batch_size = 256`,
+`learning_rate = 4e-5`, `loss_type = grpo_clip`,
+`loss_normalization = masked_mean`, and `use_std_normalization = false`, and
+then swept over `epochs_per_rollout_batch in {1, 2, 4}` and
+`train_batch_size in {256, 128}`. This gives `1`, `2`, `4`, or `8` optimizer
+updates per rollout batch. We kept the `e1, tb256` configuration in the broad
+sweep as an on-policy-style control because it uses the off-policy
+infrastructure but does not actually reuse rollout data.
+
+The broad validation answer-reward curves are shown below.
+
+![Off-policy GRPO broad sweep validation answer reward](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_validation_reward.svg)
+
+The broad-sweep summaries and archived logs are stored under
+`artifacts/experiments/ch7/grpo_off_policy_sweep/`, especially
+`grpo_off_policy_experiment_log.md`,
+`grpo_off_policy_broad_summary.csv`, `run_summaries.json`, and
+`runs/`. The broad-sweep results are:
+
+| run | role | optimizer updates / rollout batch | best answer acc | best step | final answer acc | final format acc |
+|---|---|---:|---:|---:|---:|---:|
+| `broad_e1_tb256` | on-policy-style control | 1 | 61.52% | 40 | 61.52% | 90.72% |
+| `broad_e2_tb256` | true off-policy | 2 | 18.55% | 20 | 13.96% | 79.00% |
+| `broad_e2_tb128` | true off-policy | 4 | 46.09% | 10 | 0.00% | 0.00% |
+| `broad_e4_tb256` | true off-policy | 4 | 22.17% | 10 | 16.99% | 44.14% |
+| `broad_e4_tb128` | true off-policy | 8 | 29.88% | 5 | 0.00% | 0.29% |
+
+The broad sweep shows a clear stability tradeoff. The most aggressive settings
+(`tb128`, especially combined with larger `epochs_per_rollout_batch`) can reach
+high early validation accuracy, but both `tb128` runs collapse by the end of
+the 40-step broad sweep. In contrast, the `tb256` runs stay finite throughout
+the broad sweep, although their peak performance is substantially weaker than
+the on-policy-style control. We therefore selected `e2_tb256` as the focused
+true off-policy configuration because it was the most stable genuinely
+off-policy setting in the broad sweep, even though it was not the best peak
+performer.
+
+For the focused 200-step comparison, we compared `focused_e2_tb256` against an
+on-policy reference run with the same `learning_rate = 4e-5`,
+`epochs_per_rollout_batch = 1`, `train_batch_size = 256`, and
+`use_std_normalization = false`.
+
+![Focused on-policy vs off-policy validation answer reward](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_validation_reward.svg)
+
+![Focused on-policy vs off-policy answer reward vs wall-clock time](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_validation_reward_wall_clock.svg)
+
+The focused comparison is:
+
+| run | role | status | best answer acc | best step | final answer acc | final format acc |
+|---|---|---|---:|---:|---:|---:|
+| `on_policy_reference_e1_tb256` | on-policy reference | completed | 80.08% | 95 | 77.64% | 96.97% |
+| `focused_e2_tb256` | true off-policy | late collapse | 34.38% | 65 | 0.00% | 0.00% |
+
+The validation-step and wall-clock plots both favor the on-policy reference by
+a wide margin. The focused off-policy run improves steadily at first, reaching
+34.38% validation answer accuracy at step 65, and then stays in roughly the
+28-34% range for much of training. However, it eventually suffers a late
+collapse near step 195 and finishes at 0% validation answer accuracy, whereas
+the on-policy reference remains strong through the full 200-step run. Because
+the off-policy run performs two optimizer updates per rollout batch, it is also
+slower in wall-clock time, so it underperforms both in final quality and in
+reward-vs-time efficiency.
+
+The entropy and response-length diagnostics are shown below.
+
+![Focused on-policy vs off-policy token entropy](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_token_entropy.svg)
+
+![Focused on-policy vs off-policy response length](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_response_length.svg)
+
+These diagnostics help explain the instability. In the on-policy reference, the
+token entropy decreases smoothly over training, ending around `0.04-0.05` nats,
+while response lengths remain in a reasonable few-hundred-token regime. This is
+qualitatively similar to the EI experiment, where entropy also decreased over
+training as the policy became more confident, although here the final on-policy
+GRPO entropy is even lower than the best EI entropy we observed. In the
+off-policy run, entropy also decreases at first, but late in training the
+second update on each rollout batch starts producing extremely large losses and
+gradient norms, eventually reaching `Infinity` and then `NaN`. Immediately
+after that numerical failure, rollout response length jumps to the
+`max_tokens = 1024` ceiling, and both format accuracy and answer accuracy drop
+to zero. This indicates that the failure is not a gentle degradation but a
+sharp instability tied to repeated reuse of stale rollout data.
+
+Overall, this sweep suggests that stronger off-policy reuse was not beneficial
+in our setting. The `tb128` settings were especially unstable, while the more
+conservative `tb256` settings were more stable but still weaker than the
+on-policy reference. Our best true off-policy focused run (`e2_tb256`) was able
+to learn nontrivially, but it was not competitive with the matched on-policy
+baseline and ultimately suffered a late numerical collapse.
 
 ---
 
 ## Problem `grpo_off_policy_clip_ablation`: Off-Policy GRPO-Clip Ablation (2 points, 2 H100 hrs)
 
-### Experiment
 **Question:** Implement the unclipped per-token loss as a new loss type `"GRPO-No-Clip"`. Take your best performing off-policy hyperparameters from the previous problem and run the unclipped version of the loss. Report the validation answer reward curves. Comment on the findings compared to your GRPO-Clip run, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm.
 
 **Deliverable:** Implement the unclipped per-token loss as a new loss type `"GRPO-No-Clip"`. Take your best performing off-policy hyperparameters from the previous problem and run the unclipped version of the loss. Report the validation answer reward curves. Comment on the findings compared to your GRPO-Clip run, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm.
 
-**Answer:** TODO.
+**Answer:** We implemented the unclipped off-policy surrogate as a new loss type
+`GRPO-No-Clip` and compared it against the previous `GRPO-Clip` run using the
+same selected true off-policy configuration from the broad sweep:
+`epochs_per_rollout_batch=2`, `train_batch_size=256`,
+`rollout_batch_size=256`, `learning_rate=4e-5`,
+`loss_normalization=masked_mean`, and `use_std_normalization=False`.
+
+The results were unexpectedly strong in favor of the unclipped objective.
+`GRPO-Clip` peaked at 34.38% validation answer reward on step 65 and then
+suffered a late collapse, finishing at 0.00%. In contrast, `GRPO-No-Clip`
+reached a best validation answer reward of 78.42% at step 195 and finished at
+78.22%.
+
+![Off-policy clip ablation: validation answer reward](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_validation_reward.svg)
+
+The wall-clock comparison tells the same story. The unclipped run is not only
+better at its peak, but remains strong all the way through the end of training,
+whereas the clipped run collapses late and loses all answer reward.
+
+![Off-policy clip ablation: validation answer reward vs wall-clock time](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_validation_reward_wall_clock.svg)
+
+The diagnostics suggest that clipping is the source of instability in this
+setting rather than the cure. The clipped run ends with zero format accuracy
+and an average rollout response length of 1024 tokens, indicating degenerate
+max-length outputs, while the unclipped run ends at 94.53% validation format
+accuracy and a much shorter average rollout response length of 491.9 tokens.
+
+![Off-policy clip ablation: rollout response length](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_response_length.svg)
+
+The entropy and gradient-norm curves reinforce this interpretation. Near the
+end of training, `GRPO-No-Clip` keeps finite token entropy (about `0.199`) and
+tiny gradient norm (about `0.083`), while the clipped run eventually reaches
+NaN train metrics and `clip_fraction=1.0`, which is consistent with the late
+collapse observed in the sweep logs.
+
+![Off-policy clip ablation: token entropy](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_token_entropy.svg)
+
+![Off-policy clip ablation: gradient norm](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_grad_norm.svg)
+
+In our setup, clipping was therefore not necessary for off-policy stability.
+Instead, the unclipped surrogate was dramatically better: it avoided the late
+collapse and reached performance competitive with the strongest on-policy
+reference. A plausible interpretation is that, for this `e2/tb256`
+configuration, the clip constraint interacts poorly with rollout reuse and
+pushes training into a pathological regime, while the unclipped objective
+remains well behaved.
 
 ---
 
 ## Problem `grpo_prompt_ablation`: Prompt Ablation (2 points, 2 H100 hrs)
 
-### Experiment
 **Question:** Report the validation answer reward curves for both the R1-Zero prompt and the question-only prompt. How do metrics compare, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm? Try to explain your findings.
 
 **Deliverable:** Report the validation answer reward curves for both the R1-Zero prompt and the question-only prompt. How do metrics compare, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm? Try to explain your findings.
 
-**Answer:** TODO.
+**Answer:** We compared two prompt-and-evaluation contracts under the same
+on-policy GRPO budget: the selected R1-Zero reference run
+(`r1_zero.prompt` with `r1_zero_reward_fn` and `</answer>` stopping) and a
+question-only run (`question_only.prompt` with `question_only_reward_fn` and
+no `</answer>` stop string). Both runs used `learning_rate=4e-5`,
+`rollout_batch_size=256`, `train_batch_size=256`,
+`epochs_per_rollout_batch=1`, `group_size=8`, `use_std_normalization=False`,
+and 200 GRPO steps.
+
+The question-only contract performed slightly better overall. It started much
+stronger before any RL updates, with 56.74% validation answer reward at step
+0, then reached a best validation answer reward of 82.81% at step 155 and
+finished at 80.27%. The R1-Zero reference peaked at 80.08% at step 95 and
+finished at 77.64%.
+
+![GRPO validation answer reward by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_validation_reward.svg)
+
+The format-accuracy curve tells a more nuanced story. Both contracts end with
+very high validation format accuracy, but the R1-Zero run is slightly higher
+at the end (96.97% versus 96.58%). So the gain from question-only is not
+coming from better adherence to a stricter output template. Instead, it seems
+to come from answer quality under a contract that is already more natural for
+the base model.
+
+![GRPO validation format accuracy by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_format_accuracy.svg)
+
+The rollout diagnostics support that interpretation. The question-only run
+maintains longer responses throughout training, ending at 475.8 rollout tokens
+on average versus 332.7 for R1-Zero, while also ending with higher rollout
+answer reward (80.47% versus 69.92%). Its late token entropy is higher
+(`0.106` versus `0.044`), but still stable rather than noisy, and its gradient
+norm stays tiny near the end (`0.044` versus `32.0` for the R1-Zero
+reference).
+
+![GRPO rollout response length by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_response_length.svg)
+
+![GRPO token entropy by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_token_entropy.svg)
+
+![GRPO gradient norm by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_grad_norm.svg)
+
+The most plausible explanation is that Qwen2.5-Math-1.5B is already well
+aligned with the simpler question-only prompt, so RL begins from a much better
+initial policy and then refines it steadily. However, this should not be
+interpreted as a pure surface-form prompt comparison, because the reward
+function and stop contract also change with the prompt. The result is best
+understood as showing that, in our setup, the question-only prompt-and-reward
+contract works better than the R1-Zero contract for this base model.
 
 ---
 
 ## Problem `leaderboard`: Leaderboard (16 points, 16 H100 hrs)
 
-### Final Experiment
 **Question:** As the last part of the (mandatory) assignment, you will experiment with approaches to obtain the highest validation rewards possible within 4 hours of training on 2 H100 GPUs.
 
 **Deliverable:** Report a validation accuracy obtained within 4 hours of training on 2 H100 GPUs and a screenshot of your validation accuracy with respect to wall-clock time, where the x-axis ends at `<= 4` hours. As a reminder, we place the following constraints on your evaluation: (1) your validation accuracy should be the average accuracy over the entire MATH validation set (all 5K examples), (2) you must use the R1-Zero prompt at validation time, (3) you must use temperature 1.0 and max tokens 1024 with vLLM for evaluation, and (4) you must calculate validation accuracy by averaging the answer rewards produced by the `r1_zero_reward_fn` reward function provided in the starter code.
@@ -555,7 +965,6 @@ stable runs are expected.
 
 ## Problem `look_at_sft`: Looking at Instruction-Tuning Data (4 points)
 
-### Written
 **Question:** Look through ten random examples in the provided instruction tuning training dataset. What sort of traditional NLP tasks are represented in this sample (e.g., question answering, sentiment analysis, etc.)? Comment on the quality of the sampled examples (both the prompt and the corresponding instruction).
 
 **Deliverable:** 2-4 sentences with a description of what sorts of tasks are implicitly included in the instruction tuning dataset, as well commentary about the data quality. Use concrete examples.
@@ -580,7 +989,6 @@ stable runs are expected.
 
 ## Problem `sft_script`: Training Script for Instruction Tuning (4 points)
 
-### Implementation
 **Question:** Write a script that runs a training loop fine-tune the Llama 3.1 8B base model on the provided instruction tuning data. In particular, we recommend that your training script allow for at least the ability to configure and control the various model and optimizer hyperparameters, the ability to train on larger batch sizes than can fit in memory via gradient accumulation, and periodically logging training and validation performance.
 
 **Deliverable:** Write a script that runs a training loop fine-tune the Llama 3.1 8B base model on the provided instruction tuning data.
@@ -589,7 +997,6 @@ stable runs are expected.
 
 ## Problem `sft`: Instruction Tuning (6 points, 24 H100 hrs)
 
-### Experiment
 **Question:** Fine-tune Llama 3 8B base on the provided instruction tuning data. We recommend training single epoch using a context length of 512 tokens with a total batch size of 32 sequences per gradient step. Make sure to save your model and tokenizer after training, since we'll evaluate their performance and also use them later in the assignment for further post-training on preference pairs.
 
 **Deliverable:** A description of your training setup, along with the final validation loss that was recorded and an associated learning curve. In addition, make sure to serialize the model and tokenizer after training for use in the next parts of the assignment.
@@ -718,7 +1125,6 @@ stable runs are expected.
 
 ## Problem `dpo_loss`: DPO Loss (2 points)
 
-### Implementation
 **Question:** Write a function that computes the per-instance DPO loss. Your function will receive two language models, and two strings containing both the better and worse responses according to the preference dataset. Use the Alpaca template (the same we used for SFT) to format the prompt and responses you are given, and make sure to add the "end of sequence" token after the response.
 
 **Deliverable:** A function that takes two LMs (`pi_theta` and `pi_ref`), a tokenizer, and two strings (the prompt concatenated with both a chosen response `y_w` and a rejected response `y_l`), and computes the per-instance DPO loss. Implement the adapter `[adapters.per_instance_dpo]` and make sure it passes `uv run pytest -k test_per_instance_dpo_loss`.

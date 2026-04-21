@@ -1,0 +1,18 @@
+{
+  "type": "rollout",
+  "ei_step": 3,
+  "num_questions": 512,
+  "rollouts_per_question": 2,
+  "num_rollouts": 1024,
+  "num_accepted": 229,
+  "accepted_fraction": 0.2236328125,
+  "question_coverage_with_accept": 0.36328125,
+  "reward": 0.2236328125,
+  "format_accuracy": 0.8740234375,
+  "answer_accuracy": 0.2236328125,
+  "avg_token_entropy": 1.138467788696289,
+  "avg_accepted_token_entropy": 0.9504682382641921,
+  "avg_response_token_length": 100.037109375,
+  "avg_accepted_response_token_length": 81.97816593886463,
+  "rollout_seconds": 28.958099365234375
+}

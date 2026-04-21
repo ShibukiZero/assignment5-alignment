@@ -1,0 +1,12 @@
+{
+  "num_examples": 1024,
+  "reward": 0.234375,
+  "format_accuracy": 0.732421875,
+  "answer_accuracy": 0.234375,
+  "temperature": 1.0,
+  "top_p": 1.0,
+  "max_tokens": 1024,
+  "stop": "</answer>",
+  "include_stop_str_in_output": true,
+  "eval_seconds": 34.84166622161865
+}
