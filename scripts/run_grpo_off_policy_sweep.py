@@ -86,6 +86,14 @@ def flag_name(key: str) -> str:
     return "--" + key.replace("_", "-")
 
 
+def merged_run_args(config: dict[str, Any], run_config: dict[str, Any]) -> dict[str, Any]:
+    merged_args = dict(config.get("common_args", {}))
+    for key, value in run_config.items():
+        if key not in META_KEYS and key not in {"output_dir", "log_dir"}:
+            merged_args[key] = value
+    return merged_args
+
+
 def append_arg(command: list[str], key: str, value: Any) -> None:
     if value is None:
         return
@@ -121,11 +129,7 @@ def build_command(config: dict[str, Any], run_config: dict[str, Any]) -> list[st
     command.append(config["script"])
 
     output_dir, log_dir = run_paths(config, run_config)
-    merged_args = dict(config.get("common_args", {}))
-    for key, value in run_config.items():
-        if key not in META_KEYS and key not in {"output_dir", "log_dir"}:
-            merged_args[key] = value
-
+    merged_args = merged_run_args(config, run_config)
     merged_args["output_dir"] = str(output_dir)
     merged_args["log_dir"] = str(log_dir)
 
@@ -135,26 +139,41 @@ def build_command(config: dict[str, Any], run_config: dict[str, Any]) -> list[st
     return command
 
 
-def expected_optimizer_steps(config: dict[str, Any], run_config: dict[str, Any]) -> int:
-    merged_args = dict(config.get("common_args", {}))
-    for key, value in run_config.items():
-        if key not in META_KEYS and key not in {"output_dir", "log_dir"}:
-            merged_args[key] = value
-    updates_per_rollout = int(merged_args["epochs_per_rollout_batch"]) * (
-        int(merged_args["rollout_batch_size"]) // int(merged_args["train_batch_size"])
+def compute_expected_optimizer_steps_from_args(run_args: dict[str, Any]) -> int | None:
+    required_keys = (
+        "n_grpo_steps",
+        "rollout_batch_size",
+        "train_batch_size",
+        "epochs_per_rollout_batch",
     )
-    return int(merged_args["n_grpo_steps"]) * updates_per_rollout
+    if any(run_args.get(key) is None for key in required_keys):
+        return None
+    updates_per_rollout = int(run_args["epochs_per_rollout_batch"]) * (
+        int(run_args["rollout_batch_size"]) // int(run_args["train_batch_size"])
+    )
+    return int(run_args["n_grpo_steps"]) * updates_per_rollout
+
+
+def expected_optimizer_steps(
+    config: dict[str, Any],
+    run_config: dict[str, Any],
+    log_dir: Path,
+    summary: dict[str, Any] | None = None,
+) -> int | None:
+    if summary is not None and summary.get("expected_total_optimizer_steps") is not None:
+        return int(summary["expected_total_optimizer_steps"])
+
+    config_path = log_dir / "config.json"
+    if config_path.is_file():
+        expected_steps = compute_expected_optimizer_steps_from_args(load_json(config_path))
+        if expected_steps is not None:
+            return expected_steps
+
+    return compute_expected_optimizer_steps_from_args(merged_run_args(config, run_config))
 
 
 def should_save_checkpoints(config: dict[str, Any], run_config: dict[str, Any]) -> bool:
-    merged_args = dict(config.get("common_args", {}))
-    merged_args.update(
-        {
-            key: value
-            for key, value in run_config.items()
-            if key not in META_KEYS and key not in {"output_dir", "log_dir"}
-        }
-    )
+    merged_args = merged_run_args(config, run_config)
     return bool(merged_args.get("save_checkpoints", False))
 
 
@@ -195,15 +214,22 @@ def verify_run(config: dict[str, Any], run_config: dict[str, Any]) -> tuple[bool
     metrics_path = log_dir / "metrics.jsonl"
     if summary_path.is_file() and metrics_path.is_file():
         summary = load_json(summary_path)
-        expected_steps = expected_optimizer_steps(config, run_config)
-        final_step = int(summary.get("final_optimizer_step", -1))
-        if final_step != expected_steps:
+        expected_steps = expected_optimizer_steps(config, run_config, log_dir, summary=summary)
+        if expected_steps is None:
             messages.append(
-                f"{name}: final_optimizer_step={final_step}, expected {expected_steps}"
+                f"{name}: could not determine expected optimizer steps for verification"
             )
-        train_metric_count = count_train_metrics(metrics_path)
-        if train_metric_count != expected_steps:
-            messages.append(f"{name}: train metric rows={train_metric_count}, expected {expected_steps}")
+        else:
+            final_step = int(summary.get("final_optimizer_step", -1))
+            if final_step != expected_steps:
+                messages.append(
+                    f"{name}: final_optimizer_step={final_step}, expected {expected_steps}"
+                )
+            train_metric_count = count_train_metrics(metrics_path)
+            if train_metric_count != expected_steps:
+                messages.append(
+                    f"{name}: train metric rows={train_metric_count}, expected {expected_steps}"
+                )
 
     return len(messages) == 0, messages
 
