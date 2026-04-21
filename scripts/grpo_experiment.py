@@ -17,6 +17,7 @@ from torch.optim import AdamW
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
 
+from cs336_alignment.backend_lifecycle import BackendLifecycleManager, init_policy
 from cs336_alignment.drgrpo_grader import question_only_reward_fn, r1_zero_reward_fn
 from cs336_alignment.grpo import (
     compute_group_normalized_rewards,
@@ -32,9 +33,6 @@ from sft_experiment import (
     cuda_memory_metrics,
     get_ground_truth,
     get_question,
-    init_policy,
-    init_vllm,
-    load_policy_into_vllm_instance,
     load_prompt_template,
     read_jsonl,
     write_json,
@@ -365,8 +363,7 @@ def summarize_rollouts(
 
 
 def evaluate_policy(
-    policy: torch.nn.Module,
-    llm: LLM,
+    backend_manager: BackendLifecycleManager,
     val_examples: list[dict[str, Any]],
     prompt_template: str,
     reward_fn: Any,
@@ -382,7 +379,7 @@ def evaluate_policy(
     optimizer_step: int,
 ) -> dict[str, Any]:
     start = time.time()
-    load_policy_into_vllm_instance(policy, llm)
+    llm = backend_manager.enter_inference_phase(sync_weights=True)
     prompts = [prompt_template.format(question=get_question(example)) for example in val_examples]
     sampling_params = SamplingParams(
         temperature=temperature,
@@ -432,6 +429,7 @@ def evaluate_policy(
     for record in records:
         append_jsonl(generation_path, record)
     write_json(log_dir / f"eval_summary_grpo_step_{grpo_step:06d}.json", summary)
+    backend_manager.enter_training_phase()
     return summary
 
 
@@ -761,7 +759,14 @@ def main() -> None:
     reward_fn = resolve_reward_fn(args.reward_fn)
     stop_sequences, include_stop_str_in_output = resolve_sampling_stop(args.reward_fn)
 
-    policy, tokenizer = init_policy(args.model, args.policy_device)
+    backend_manager = BackendLifecycleManager.from_defaults(
+        model_id=args.model,
+        policy_device=args.policy_device,
+        vllm_device=args.vllm_device,
+        seed=args.seed,
+        vllm_gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+    )
+    policy, tokenizer = backend_manager.enter_training_phase()
     reference_policy = None
     if args.kl_coef > 0.0:
         reference_model_id = args.kl_ref_model or args.model
@@ -769,12 +774,7 @@ def main() -> None:
         reference_policy.eval()
         for parameter in reference_policy.parameters():
             parameter.requires_grad_(False)
-    llm = init_vllm(
-        model_id=args.model,
-        device=args.vllm_device,
-        seed=args.seed,
-        gpu_memory_utilization=args.vllm_gpu_memory_utilization,
-    )
+    backend_manager.initialize_inference_backend()
     optimizer = AdamW(
         policy.parameters(),
         lr=args.learning_rate,
@@ -811,8 +811,7 @@ def main() -> None:
     logger.info("std normalization: %s", args.use_std_normalization)
 
     initial_summary = evaluate_policy(
-        policy=policy,
-        llm=llm,
+        backend_manager=backend_manager,
         val_examples=val_examples,
         prompt_template=prompt_template,
         reward_fn=reward_fn,
@@ -837,7 +836,7 @@ def main() -> None:
             rng=rng,
         )
 
-        load_policy_into_vllm_instance(policy, llm)
+        llm = backend_manager.enter_inference_phase(sync_weights=True)
         rollout_start = time.time()
         rollout_records = generate_rollouts(
             llm=llm,
@@ -880,6 +879,7 @@ def main() -> None:
         append_jsonl(metrics_path, rollout_summary)
         write_json(step_log_dir / "rollout_summary.json", rollout_summary)
 
+        policy, tokenizer = backend_manager.enter_training_phase()
         rollout_tensors = tokenize_rollout_records(rollout_records, tokenizer)
         old_log_probs = None
         if args.loss_type in {"grpo_clip", "grpo_no_clip"}:
@@ -927,8 +927,7 @@ def main() -> None:
 
         if grpo_step % args.eval_every == 0:
             eval_summary = evaluate_policy(
-                policy=policy,
-                llm=llm,
+                backend_manager=backend_manager,
                 val_examples=val_examples,
                 prompt_template=prompt_template,
                 reward_fn=reward_fn,
@@ -964,8 +963,7 @@ def main() -> None:
 
     if args.n_grpo_steps % args.eval_every != 0:
         final_eval = evaluate_policy(
-            policy=policy,
-            llm=llm,
+            backend_manager=backend_manager,
             val_examples=val_examples,
             prompt_template=prompt_template,
             reward_fn=reward_fn,

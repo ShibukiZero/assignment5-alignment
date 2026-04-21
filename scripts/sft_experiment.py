@@ -11,20 +11,13 @@ import time
 from pathlib import Path
 from statistics import mean
 from typing import Any
-from unittest.mock import patch
 
 import torch
 from torch.optim import AdamW
 from tqdm import tqdm
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    PreTrainedModel,
-    PreTrainedTokenizerBase,
-)
 from vllm import LLM, SamplingParams
-from vllm.model_executor import set_random_seed as vllm_set_random_seed
 
+from cs336_alignment.backend_lifecycle import BackendLifecycleManager
 from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
 from cs336_alignment.sft import (
     get_response_log_probs,
@@ -136,65 +129,6 @@ def get_ground_truth(example: dict[str, Any]) -> str:
     return str(ground_truth)
 
 
-def init_policy(model_id: str, device: str) -> tuple[PreTrainedModel, PreTrainedTokenizerBase]:
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
-    if tokenizer.pad_token_id is None and tokenizer.eos_token_id is not None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        torch_dtype=torch.bfloat16,
-        attn_implementation="flash_attention_2",
-    )
-    model.to(device)
-    model.train()
-    return model, tokenizer
-
-
-def init_vllm(
-    model_id: str,
-    device: str,
-    seed: int,
-    gpu_memory_utilization: float,
-) -> LLM:
-    """Start a vLLM model on a GPU separate from the training policy."""
-    vllm_set_random_seed(seed)
-    world_size_patch = patch("torch.distributed.get_world_size", return_value=1)
-    profiling_patch = patch(
-        "vllm.worker.worker.Worker._assert_memory_footprint_increased_during_profiling",
-        return_value=None,
-    )
-    with world_size_patch, profiling_patch:
-        return LLM(
-            model=model_id,
-            device=device,
-            dtype=torch.float16,
-            enable_prefix_caching=True,
-            gpu_memory_utilization=gpu_memory_utilization,
-        )
-
-
-def sync_policy_cuda_devices(policy: PreTrainedModel) -> None:
-    devices = {
-        parameter.device
-        for parameter in policy.parameters()
-        if parameter.device.type == "cuda"
-    }
-    for device in devices:
-        torch.cuda.synchronize(device)
-
-
-def load_policy_into_vllm_instance(policy: PreTrainedModel, llm: LLM) -> None:
-    """Copy the current HF policy weights into the already-running vLLM model."""
-    sync_policy_cuda_devices(policy)
-    state_dict = policy.state_dict()
-    llm_engine = getattr(llm, "llm_engine", getattr(llm, "engine", None))
-    if llm_engine is None:
-        raise AttributeError("Could not find vLLM engine on the LLM object.")
-    vllm_model = llm_engine.model_executor.driver_worker.model_runner.model
-    vllm_model.load_weights(state_dict.items())
-
-
 def maybe_filter_correct_sft(examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
     filtered: list[dict[str, Any]] = []
     for example in examples:
@@ -300,8 +234,7 @@ def cuda_memory_metrics(device: str) -> dict[str, float]:
 
 
 def run_eval_and_log(
-    policy: PreTrainedModel,
-    llm: LLM,
+    backend_manager: BackendLifecycleManager,
     val_examples: list[dict[str, Any]],
     prompt_template: str,
     max_new_tokens: int,
@@ -313,7 +246,7 @@ def run_eval_and_log(
     train_step: int,
 ) -> dict[str, Any]:
     start = time.time()
-    load_policy_into_vllm_instance(policy, llm)
+    llm = backend_manager.enter_inference_phase(sync_weights=True)
     eval_result = evaluate_with_vllm(
         llm=llm,
         val_examples=val_examples,
@@ -336,6 +269,7 @@ def run_eval_and_log(
     for record in eval_result["records"]:
         append_jsonl(generations_path, record)
     write_json(log_dir / f"eval_summary_step_{train_step:06d}.json", summary)
+    backend_manager.enter_training_phase()
     return summary
 
 
@@ -366,13 +300,15 @@ def main() -> None:
     val_examples = read_jsonl(args.val_path, max_examples=args.eval_max_examples)
     prompt_template = load_prompt_template(args.prompt_template)
 
-    policy, tokenizer = init_policy(args.model, args.policy_device)
-    llm = init_vllm(
+    backend_manager = BackendLifecycleManager.from_defaults(
         model_id=args.model,
-        device=args.vllm_device,
+        policy_device=args.policy_device,
+        vllm_device=args.vllm_device,
         seed=args.seed,
-        gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+        vllm_gpu_memory_utilization=args.vllm_gpu_memory_utilization,
     )
+    policy, tokenizer = backend_manager.enter_training_phase()
+    backend_manager.initialize_inference_backend()
     optimizer = AdamW(policy.parameters(), lr=args.learning_rate)
     rng = random.Random(args.seed)
     optimizer.zero_grad(set_to_none=True)
@@ -446,8 +382,7 @@ def main() -> None:
 
         if train_step % args.eval_every == 0:
             summary = run_eval_and_log(
-                policy=policy,
-                llm=llm,
+                backend_manager=backend_manager,
                 val_examples=val_examples,
                 prompt_template=prompt_template,
                 max_new_tokens=args.max_new_tokens,
@@ -467,8 +402,7 @@ def main() -> None:
 
     final_step = args.max_steps
     summary = run_eval_and_log(
-        policy=policy,
-        llm=llm,
+        backend_manager=backend_manager,
         val_examples=val_examples,
         prompt_template=prompt_template,
         max_new_tokens=args.max_new_tokens,

@@ -18,6 +18,7 @@ from tqdm import tqdm
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 from vllm import LLM, SamplingParams
 
+from cs336_alignment.backend_lifecycle import BackendLifecycleManager
 from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
 from cs336_alignment.sft import (
     get_response_log_probs,
@@ -33,9 +34,6 @@ from sft_experiment import (
     append_jsonl,
     get_ground_truth,
     get_question,
-    init_policy,
-    init_vllm,
-    load_policy_into_vllm_instance,
     load_prompt_template,
     read_jsonl,
     write_json,
@@ -508,8 +506,7 @@ def train_on_accepted_traces(
 
 
 def evaluate_policy(
-    policy: PreTrainedModel,
-    llm: LLM,
+    backend_manager: BackendLifecycleManager,
     val_examples: list[dict[str, Any]],
     prompt_template: str,
     max_new_tokens: int,
@@ -522,7 +519,7 @@ def evaluate_policy(
     optimizer_step: int,
 ) -> dict[str, Any]:
     start = time.time()
-    load_policy_into_vllm_instance(policy, llm)
+    llm = backend_manager.enter_inference_phase(sync_weights=True)
     prompts = [prompt_template.format(question=get_question(example)) for example in val_examples]
     sampling_params = SamplingParams(
         temperature=temperature,
@@ -572,6 +569,7 @@ def evaluate_policy(
     for record in records:
         append_jsonl(generation_path, record)
     write_json(log_dir / f"eval_summary_ei_step_{ei_step:03d}.json", summary)
+    backend_manager.enter_training_phase()
     return summary
 
 
@@ -598,13 +596,15 @@ def main() -> None:
     val_examples = read_jsonl(args.val_path, max_examples=args.eval_max_examples)
     prompt_template = load_prompt_template(args.prompt_template)
 
-    policy, tokenizer = init_policy(args.model, args.policy_device)
-    llm = init_vllm(
+    backend_manager = BackendLifecycleManager.from_defaults(
         model_id=args.model,
-        device=args.vllm_device,
+        policy_device=args.policy_device,
+        vllm_device=args.vllm_device,
         seed=args.seed,
-        gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+        vllm_gpu_memory_utilization=args.vllm_gpu_memory_utilization,
     )
+    policy, tokenizer = backend_manager.enter_training_phase()
+    backend_manager.initialize_inference_backend()
     optimizer = AdamW(policy.parameters(), lr=args.learning_rate)
     rng = random.Random(args.seed)
     optimizer_step = 0
@@ -617,8 +617,7 @@ def main() -> None:
     logger.info("rollouts per question: %d", args.rollouts_per_question)
 
     initial_summary = evaluate_policy(
-        policy=policy,
-        llm=llm,
+        backend_manager=backend_manager,
         val_examples=val_examples,
         prompt_template=prompt_template,
         max_new_tokens=args.max_new_tokens,
@@ -643,7 +642,7 @@ def main() -> None:
             rng=rng,
         )
 
-        load_policy_into_vllm_instance(policy, llm)
+        llm = backend_manager.enter_inference_phase(sync_weights=True)
         rollout_start = time.time()
         rollout_records = generate_rollouts(
             llm=llm,
@@ -658,6 +657,7 @@ def main() -> None:
         )
         rollout_seconds = time.time() - rollout_start
 
+        policy, tokenizer = backend_manager.enter_training_phase()
         if args.score_rollout_entropy:
             annotate_entropy(
                 policy=policy,
@@ -713,8 +713,7 @@ def main() -> None:
         )
 
         eval_summary = evaluate_policy(
-            policy=policy,
-            llm=llm,
+            backend_manager=backend_manager,
             val_examples=val_examples,
             prompt_template=prompt_template,
             max_new_tokens=args.max_new_tokens,
