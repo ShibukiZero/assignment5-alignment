@@ -17,7 +17,7 @@ from torch.optim import AdamW
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
 
-from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
+from cs336_alignment.drgrpo_grader import question_only_reward_fn, r1_zero_reward_fn
 from cs336_alignment.grpo import (
     compute_group_normalized_rewards,
     grpo_microbatch_train_step,
@@ -46,6 +46,22 @@ logger = logging.getLogger(__name__)
 DEFAULT_TRAIN_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/train.jsonl"
 DEFAULT_VAL_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
 DEFAULT_LOG_DIR = ".agents/logs/ch7/grpo_on_policy"
+
+
+def resolve_reward_fn(name: str):
+    if name == "r1_zero":
+        return r1_zero_reward_fn
+    if name == "question_only":
+        return question_only_reward_fn
+    raise ValueError(f"Unknown reward function: {name}")
+
+
+def resolve_sampling_stop(reward_fn_name: str) -> tuple[list[str] | None, bool]:
+    if reward_fn_name == "r1_zero":
+        return ["</answer>"], True
+    if reward_fn_name == "question_only":
+        return None, False
+    raise ValueError(f"Unknown reward function: {reward_fn_name}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -154,6 +170,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Save best_policy and final_policy under --output-dir.",
     )
+    parser.add_argument(
+        "--reward-fn",
+        choices=["r1_zero", "question_only"],
+        default="r1_zero",
+        help="Reward function used for both training and validation.",
+    )
     return parser.parse_args()
 
 
@@ -180,6 +202,7 @@ def build_rollout_records(
     question_batch: list[tuple[int, dict[str, Any]]],
     prompt_template: str,
     outputs: list[Any],
+    reward_fn: Any,
 ) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for (question_index, example), request_output in zip(question_batch, outputs):
@@ -188,7 +211,7 @@ def build_rollout_records(
         ground_truth = get_ground_truth(example)
         for rollout_index, completion in enumerate(request_output.outputs):
             response = completion.text
-            scores = r1_zero_reward_fn(response, ground_truth)
+            scores = reward_fn(response, ground_truth)
             token_ids = getattr(completion, "token_ids", None)
             records.append(
                 {
@@ -209,6 +232,9 @@ def generate_rollouts(
     llm: LLM,
     question_batch: list[tuple[int, dict[str, Any]]],
     prompt_template: str,
+    reward_fn: Any,
+    stop_sequences: list[str] | None,
+    include_stop_str_in_output: bool,
     group_size: int,
     max_new_tokens: int,
     min_new_tokens: int,
@@ -227,14 +253,15 @@ def generate_rollouts(
         min_tokens=min_new_tokens,
         n=group_size,
         seed=seed,
-        stop=["</answer>"],
-        include_stop_str_in_output=True,
+        stop=stop_sequences,
+        include_stop_str_in_output=include_stop_str_in_output,
     )
     outputs = llm.generate(prompts, sampling_params)
     return build_rollout_records(
         question_batch=question_batch,
         prompt_template=prompt_template,
         outputs=outputs,
+        reward_fn=reward_fn,
     )
 
 
@@ -313,6 +340,9 @@ def evaluate_policy(
     llm: LLM,
     val_examples: list[dict[str, Any]],
     prompt_template: str,
+    reward_fn: Any,
+    stop_sequences: list[str] | None,
+    include_stop_str_in_output: bool,
     max_new_tokens: int,
     temperature: float,
     top_p: float,
@@ -329,8 +359,8 @@ def evaluate_policy(
         temperature=temperature,
         top_p=top_p,
         max_tokens=max_new_tokens,
-        stop=["</answer>"],
-        include_stop_str_in_output=True,
+        stop=stop_sequences,
+        include_stop_str_in_output=include_stop_str_in_output,
     )
     outputs = llm.generate(prompts, sampling_params)
 
@@ -338,7 +368,7 @@ def evaluate_policy(
     for example, prompt, output in zip(val_examples, prompts, outputs):
         response = output.outputs[0].text
         ground_truth = get_ground_truth(example)
-        scores = r1_zero_reward_fn(response, ground_truth)
+        scores = reward_fn(response, ground_truth)
         records.append(
             {
                 "prompt": prompt,
@@ -356,8 +386,8 @@ def evaluate_policy(
         "temperature": temperature,
         "top_p": top_p,
         "max_tokens": max_new_tokens,
-        "stop": "</answer>",
-        "include_stop_str_in_output": True,
+        "stop": stop_sequences[0] if stop_sequences else None,
+        "include_stop_str_in_output": include_stop_str_in_output,
         "eval_seconds": time.time() - start,
     }
     append_jsonl(
@@ -632,6 +662,8 @@ def main() -> None:
     eval_max_examples = args.eval_max_examples if args.eval_max_examples > 0 else None
     val_examples = read_jsonl(args.val_path, max_examples=eval_max_examples)
     prompt_template = load_prompt_template(args.prompt_template)
+    reward_fn = resolve_reward_fn(args.reward_fn)
+    stop_sequences, include_stop_str_in_output = resolve_sampling_stop(args.reward_fn)
 
     policy, tokenizer = init_policy(args.model, args.policy_device)
     llm = init_vllm(
@@ -677,6 +709,9 @@ def main() -> None:
         llm=llm,
         val_examples=val_examples,
         prompt_template=prompt_template,
+        reward_fn=reward_fn,
+        stop_sequences=stop_sequences,
+        include_stop_str_in_output=include_stop_str_in_output,
         max_new_tokens=args.max_new_tokens,
         temperature=args.eval_temperature,
         top_p=args.eval_top_p,
@@ -702,6 +737,9 @@ def main() -> None:
             llm=llm,
             question_batch=question_batch,
             prompt_template=prompt_template,
+            reward_fn=reward_fn,
+            stop_sequences=stop_sequences,
+            include_stop_str_in_output=include_stop_str_in_output,
             group_size=args.group_size,
             max_new_tokens=args.max_new_tokens,
             min_new_tokens=args.min_new_tokens,
@@ -775,6 +813,9 @@ def main() -> None:
                 llm=llm,
                 val_examples=val_examples,
                 prompt_template=prompt_template,
+                reward_fn=reward_fn,
+                stop_sequences=stop_sequences,
+                include_stop_str_in_output=include_stop_str_in_output,
                 max_new_tokens=args.max_new_tokens,
                 temperature=args.eval_temperature,
                 top_p=args.eval_top_p,
@@ -809,6 +850,9 @@ def main() -> None:
             llm=llm,
             val_examples=val_examples,
             prompt_template=prompt_template,
+            reward_fn=reward_fn,
+            stop_sequences=stop_sequences,
+            include_stop_str_in_output=include_stop_str_in_output,
             max_new_tokens=args.max_new_tokens,
             temperature=args.eval_temperature,
             top_p=args.eval_top_p,
