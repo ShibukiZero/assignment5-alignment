@@ -722,7 +722,52 @@ baseline and ultimately suffered a late numerical collapse.
 
 **Deliverable:** Implement the unclipped per-token loss as a new loss type `"GRPO-No-Clip"`. Take your best performing off-policy hyperparameters from the previous problem and run the unclipped version of the loss. Report the validation answer reward curves. Comment on the findings compared to your GRPO-Clip run, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm.
 
-**Answer:** TODO.
+**Answer:** We implemented the unclipped off-policy surrogate as a new loss type
+`GRPO-No-Clip` and compared it against the previous `GRPO-Clip` run using the
+same selected true off-policy configuration from the broad sweep:
+`epochs_per_rollout_batch=2`, `train_batch_size=256`,
+`rollout_batch_size=256`, `learning_rate=4e-5`,
+`loss_normalization=masked_mean`, and `use_std_normalization=False`.
+
+The results were unexpectedly strong in favor of the unclipped objective.
+`GRPO-Clip` peaked at 34.38% validation answer reward on step 65 and then
+suffered a late collapse, finishing at 0.00%. In contrast, `GRPO-No-Clip`
+reached a best validation answer reward of 78.42% at step 195 and finished at
+78.22%.
+
+![Off-policy clip ablation: validation answer reward](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_validation_reward.svg)
+
+The wall-clock comparison tells the same story. The unclipped run is not only
+better at its peak, but remains strong all the way through the end of training,
+whereas the clipped run collapses late and loses all answer reward.
+
+![Off-policy clip ablation: validation answer reward vs wall-clock time](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_validation_reward_wall_clock.svg)
+
+The diagnostics suggest that clipping is the source of instability in this
+setting rather than the cure. The clipped run ends with zero format accuracy
+and an average rollout response length of 1024 tokens, indicating degenerate
+max-length outputs, while the unclipped run ends at 94.53% validation format
+accuracy and a much shorter average rollout response length of 491.9 tokens.
+
+![Off-policy clip ablation: rollout response length](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_response_length.svg)
+
+The entropy and gradient-norm curves reinforce this interpretation. Near the
+end of training, `GRPO-No-Clip` keeps finite token entropy (about `0.199`) and
+tiny gradient norm (about `0.083`), while the clipped run eventually reaches
+NaN train metrics and `clip_fraction=1.0`, which is consistent with the late
+collapse observed in the sweep logs.
+
+![Off-policy clip ablation: token entropy](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_token_entropy.svg)
+
+![Off-policy clip ablation: gradient norm](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_grad_norm.svg)
+
+In our setup, clipping was therefore not necessary for off-policy stability.
+Instead, the unclipped surrogate was dramatically better: it avoided the late
+collapse and reached performance competitive with the strongest on-policy
+reference. A plausible interpretation is that, for this `e2/tb256`
+configuration, the clip constraint interacts poorly with rollout reuse and
+pushes training into a pathological regime, while the unclipped objective
+remains well behaved.
 
 ---
 

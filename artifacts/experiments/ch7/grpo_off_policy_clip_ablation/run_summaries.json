@@ -1,0 +1,104 @@
+[
+  {
+    "run_name": "GRPO-Clip (e2/tb256)",
+    "loss_type": "grpo_clip",
+    "log_dir": ".agents/logs/ch7/grpo_off_policy_sweep/focused_e2_tb256",
+    "status": "late collapse",
+    "learning_rate": 4e-05,
+    "epochs_per_rollout_batch": 2,
+    "train_batch_size": 256,
+    "optimizer_updates_per_rollout_batch": 2,
+    "best_eval": {
+      "grpo_step": 65,
+      "answer_accuracy": 0.34375,
+      "format_accuracy": 0.7646484375
+    },
+    "final_eval": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.0,
+      "format_accuracy": 0.0
+    },
+    "final_rollout": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.0,
+      "format_accuracy": 0.0,
+      "avg_response_token_length": 1024.0
+    },
+    "last_finite_train": {
+      "optimizer_step": 389,
+      "token_entropy": 0.12430672720074654,
+      "grad_norm": 28.75,
+      "loss": 0.0,
+      "clip_fraction": 0.0,
+      "approx_kl": 0.0
+    },
+    "run_summary": {
+      "best_answer_accuracy": 0.34375,
+      "final_optimizer_step": 400,
+      "n_grpo_steps": 200,
+      "rollout_batch_size": 256,
+      "group_size": 8,
+      "epochs_per_rollout_batch": 2,
+      "train_batch_size": 256,
+      "gradient_accumulation_steps": 128,
+      "optimizer_updates_per_rollout_batch": 2,
+      "expected_total_optimizer_steps": 400,
+      "loss_type": "grpo_clip",
+      "cliprange": 0.2,
+      "loss_normalization": "masked_mean",
+      "loss_normalize_constant": 1.0,
+      "use_std_normalization": false
+    }
+  },
+  {
+    "run_name": "GRPO-No-Clip (e2/tb256)",
+    "loss_type": "grpo_no_clip",
+    "log_dir": ".agents/logs/ch7/grpo_off_policy_clip_ablation/focused_e2_tb256_no_clip",
+    "status": "completed",
+    "learning_rate": 4e-05,
+    "epochs_per_rollout_batch": 2,
+    "train_batch_size": 256,
+    "optimizer_updates_per_rollout_batch": 2,
+    "best_eval": {
+      "grpo_step": 195,
+      "answer_accuracy": 0.7841796875,
+      "format_accuracy": 0.9423828125
+    },
+    "final_eval": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.7822265625,
+      "format_accuracy": 0.9453125
+    },
+    "final_rollout": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.49609375,
+      "format_accuracy": 0.83984375,
+      "avg_response_token_length": 491.88671875
+    },
+    "last_finite_train": {
+      "optimizer_step": 400,
+      "token_entropy": 0.19890213012695312,
+      "grad_norm": 0.08349609375,
+      "loss": -0.00026271952083334327,
+      "clip_fraction": null,
+      "approx_kl": 0.00015571340918540955
+    },
+    "run_summary": {
+      "best_answer_accuracy": 0.7841796875,
+      "final_optimizer_step": 400,
+      "n_grpo_steps": 200,
+      "rollout_batch_size": 256,
+      "group_size": 8,
+      "epochs_per_rollout_batch": 2,
+      "train_batch_size": 256,
+      "gradient_accumulation_steps": 128,
+      "optimizer_updates_per_rollout_batch": 2,
+      "expected_total_optimizer_steps": 400,
+      "loss_type": "grpo_no_clip",
+      "cliprange": 0.2,
+      "loss_normalization": "masked_mean",
+      "loss_normalize_constant": 1.0,
+      "use_std_normalization": false
+    }
+  }
+]
