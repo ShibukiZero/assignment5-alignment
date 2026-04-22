@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 from unittest.mock import patch
 
 import torch
@@ -20,6 +21,8 @@ class TrainingBackendConfig:
     device: str
     torch_dtype: torch.dtype = torch.bfloat16
     attn_implementation: str = "flash_attention_2"
+    enable_cpu_offload_during_inference: bool = False
+    offload_optimizer_state: bool = True
 
 
 @dataclass(frozen=True)
@@ -30,6 +33,9 @@ class InferenceBackendConfig:
     gpu_memory_utilization: float
     dtype: torch.dtype = torch.float16
     enable_prefix_caching: bool = True
+    enable_sleep_mode: bool = False
+    sleep_level: int = 1
+    reset_prefix_cache_after_weight_sync: bool = True
 
 
 @dataclass(frozen=True)
@@ -65,6 +71,7 @@ def init_vllm(
     gpu_memory_utilization: float,
     dtype: torch.dtype = torch.float16,
     enable_prefix_caching: bool = True,
+    enable_sleep_mode: bool = False,
 ) -> LLM:
     vllm_set_random_seed(seed)
     world_size_patch = patch("torch.distributed.get_world_size", return_value=1)
@@ -79,6 +86,7 @@ def init_vllm(
             dtype=dtype,
             enable_prefix_caching=enable_prefix_caching,
             gpu_memory_utilization=gpu_memory_utilization,
+            enable_sleep_mode=enable_sleep_mode,
         )
 
 
@@ -108,6 +116,45 @@ def load_policy_into_vllm_instance(
     vllm_model.load_weights(state_dict.items())
 
 
+def offload_optimizer_state_to_cpu(optimizer: Any) -> None:
+    for state in optimizer.state.values():
+        for key, value in state.items():
+            if isinstance(value, torch.Tensor):
+                state[key] = value.to("cpu", non_blocking=True)
+
+
+def load_optimizer_state_to_device(optimizer: Any, device: str) -> None:
+    for state in optimizer.state.values():
+        for key, value in state.items():
+            if isinstance(value, torch.Tensor):
+                state[key] = value.to(device, non_blocking=True)
+
+
+def offload_training_backend_to_cpu(
+    policy: PreTrainedModel,
+    optimizer: Any | None,
+    *,
+    offload_optimizer_state: bool,
+) -> None:
+    policy.to("cpu")
+    if optimizer is not None and offload_optimizer_state:
+        offload_optimizer_state_to_cpu(optimizer)
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
+def load_training_backend_to_device(
+    policy: PreTrainedModel,
+    device: str,
+    optimizer: Any | None,
+    *,
+    offload_optimizer_state: bool,
+) -> None:
+    policy.to(device)
+    if optimizer is not None and offload_optimizer_state:
+        load_optimizer_state_to_device(optimizer, device)
+
+
 class BackendLifecycleManager:
     def __init__(
         self,
@@ -121,6 +168,10 @@ class BackendLifecycleManager:
         self._policy: PreTrainedModel | None = None
         self._tokenizer: PreTrainedTokenizerBase | None = None
         self._llm: LLM | None = None
+        self._optimizer: Any | None = None
+        self._current_phase: str | None = None
+        self._inference_backend_awake = False
+        self._training_backend_offloaded = False
 
     @classmethod
     def from_defaults(
@@ -131,17 +182,27 @@ class BackendLifecycleManager:
         vllm_device: str,
         seed: int,
         vllm_gpu_memory_utilization: float,
+        enable_sleep_mode: bool = False,
+        sleep_level: int = 1,
+        reset_prefix_cache_after_weight_sync: bool = True,
+        enable_training_offload_during_inference: bool = False,
+        offload_optimizer_state: bool = True,
     ) -> "BackendLifecycleManager":
         return cls(
             training_config=TrainingBackendConfig(
                 model_id=model_id,
                 device=policy_device,
+                enable_cpu_offload_during_inference=enable_training_offload_during_inference,
+                offload_optimizer_state=offload_optimizer_state,
             ),
             inference_config=InferenceBackendConfig(
                 model_id=model_id,
                 device=vllm_device,
                 seed=seed,
                 gpu_memory_utilization=vllm_gpu_memory_utilization,
+                enable_sleep_mode=enable_sleep_mode,
+                sleep_level=sleep_level,
+                reset_prefix_cache_after_weight_sync=reset_prefix_cache_after_weight_sync,
             ),
         )
 
@@ -153,6 +214,7 @@ class BackendLifecycleManager:
                 torch_dtype=self.training_config.torch_dtype,
                 attn_implementation=self.training_config.attn_implementation,
             )
+            self._training_backend_offloaded = False
         return self._policy, self._tokenizer
 
     def initialize_inference_backend(self) -> LLM:
@@ -164,17 +226,25 @@ class BackendLifecycleManager:
                 gpu_memory_utilization=self.inference_config.gpu_memory_utilization,
                 dtype=self.inference_config.dtype,
                 enable_prefix_caching=self.inference_config.enable_prefix_caching,
+                enable_sleep_mode=self.inference_config.enable_sleep_mode,
             )
+            self._inference_backend_awake = True
+            if self._current_phase == "training":
+                self._sleep_inference_backend_if_needed()
         return self._llm
 
     def enter_training_phase(self) -> tuple[PreTrainedModel, PreTrainedTokenizerBase]:
         policy, tokenizer = self.initialize_training_backend()
+        self._sleep_inference_backend_if_needed()
+        self._load_training_backend_if_needed()
         self._maybe_cleanup_after_phase_change()
         policy.train()
+        self._current_phase = "training"
         return policy, tokenizer
 
     def enter_inference_phase(self, *, sync_weights: bool = True) -> LLM:
         llm = self.initialize_inference_backend()
+        self._wake_inference_backend_if_needed()
         self._maybe_cleanup_after_phase_change()
         if sync_weights:
             policy, _ = self.initialize_training_backend()
@@ -183,18 +253,90 @@ class BackendLifecycleManager:
                 llm=llm,
                 synchronize_devices=self.phase_config.synchronize_before_weight_sync,
             )
+            self._reset_inference_prefix_cache_if_needed()
+        self._offload_training_backend_if_needed()
+        self._current_phase = "inference"
         return llm
 
+    def prepare_for_training(self) -> tuple[PreTrainedModel, PreTrainedTokenizerBase]:
+        return self.enter_training_phase()
+
+    def prepare_for_inference(self, *, sync_weights: bool = True) -> LLM:
+        return self.enter_inference_phase(sync_weights=sync_weights)
+
+    def after_inference(self) -> tuple[PreTrainedModel, PreTrainedTokenizerBase]:
+        return self.enter_training_phase()
+
     def training_model(self) -> PreTrainedModel:
-        policy, _ = self.initialize_training_backend()
+        policy, _ = self.enter_training_phase()
         return policy
 
     def tokenizer(self) -> PreTrainedTokenizerBase:
-        _, tokenizer = self.initialize_training_backend()
+        _, tokenizer = self.enter_training_phase()
         return tokenizer
 
     def inference_engine(self) -> LLM:
         return self.initialize_inference_backend()
+
+    def attach_training_optimizer(self, optimizer: Any) -> None:
+        self._optimizer = optimizer
+
+    def _sleep_inference_backend_if_needed(self) -> None:
+        if (
+            self._llm is None
+            or not self.inference_config.enable_sleep_mode
+            or not self._inference_backend_awake
+        ):
+            return
+        self._llm.sleep(level=self.inference_config.sleep_level)
+        self._inference_backend_awake = False
+
+    def _offload_training_backend_if_needed(self) -> None:
+        if (
+            self._policy is None
+            or not self.training_config.enable_cpu_offload_during_inference
+            or self._training_backend_offloaded
+        ):
+            return
+        offload_training_backend_to_cpu(
+            self._policy,
+            self._optimizer,
+            offload_optimizer_state=self.training_config.offload_optimizer_state,
+        )
+        self._training_backend_offloaded = True
+
+    def _load_training_backend_if_needed(self) -> None:
+        if (
+            self._policy is None
+            or not self.training_config.enable_cpu_offload_during_inference
+            or not self._training_backend_offloaded
+        ):
+            return
+        load_training_backend_to_device(
+            self._policy,
+            self.training_config.device,
+            self._optimizer,
+            offload_optimizer_state=self.training_config.offload_optimizer_state,
+        )
+        self._training_backend_offloaded = False
+
+    def _wake_inference_backend_if_needed(self) -> None:
+        if (
+            self._llm is None
+            or not self.inference_config.enable_sleep_mode
+            or self._inference_backend_awake
+        ):
+            return
+        self._llm.wake_up()
+        self._inference_backend_awake = True
+
+    def _reset_inference_prefix_cache_if_needed(self) -> None:
+        if (
+            self._llm is None
+            or not self.inference_config.reset_prefix_cache_after_weight_sync
+        ):
+            return
+        self._llm.reset_prefix_cache()
 
     def _maybe_cleanup_after_phase_change(self) -> None:
         if not self.phase_config.clear_cuda_cache_on_phase_change:

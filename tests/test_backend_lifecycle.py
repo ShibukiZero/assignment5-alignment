@@ -13,17 +13,27 @@ from cs336_alignment.backend_lifecycle import (
 def make_manager(
     *,
     synchronize_before_weight_sync: bool = True,
+    enable_sleep_mode: bool = False,
+    sleep_level: int = 1,
+    reset_prefix_cache_after_weight_sync: bool = True,
+    enable_training_offload: bool = False,
+    offload_optimizer_state: bool = True,
 ) -> BackendLifecycleManager:
     return BackendLifecycleManager(
         training_config=TrainingBackendConfig(
             model_id="dummy-model",
             device="cuda:0",
+            enable_cpu_offload_during_inference=enable_training_offload,
+            offload_optimizer_state=offload_optimizer_state,
         ),
         inference_config=InferenceBackendConfig(
             model_id="dummy-model",
             device="cuda:1",
             seed=0,
             gpu_memory_utilization=0.85,
+            enable_sleep_mode=enable_sleep_mode,
+            sleep_level=sleep_level,
+            reset_prefix_cache_after_weight_sync=reset_prefix_cache_after_weight_sync,
         ),
         phase_config=PhaseManagementConfig(
             clear_cuda_cache_on_phase_change=False,
@@ -58,7 +68,7 @@ def test_enter_inference_phase_initializes_once_and_syncs_each_time(monkeypatch)
     sync_weights = Mock()
     policy = Mock()
     tokenizer = object()
-    llm = object()
+    llm = Mock()
     init_policy.return_value = (policy, tokenizer)
     init_vllm.return_value = llm
     monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
@@ -116,7 +126,7 @@ def test_enter_inference_phase_respects_phase_sync_setting(monkeypatch):
     sync_weights = Mock()
     policy = Mock()
     tokenizer = object()
-    llm = object()
+    llm = Mock()
     init_policy.return_value = (policy, tokenizer)
     init_vllm.return_value = llm
     monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
@@ -132,3 +142,232 @@ def test_enter_inference_phase_respects_phase_sync_setting(monkeypatch):
 
     sync_weights.assert_called_once()
     assert sync_weights.call_args.kwargs["synchronize_devices"] is False
+
+
+def test_init_vllm_receives_sleep_mode(monkeypatch):
+    init_vllm = Mock()
+    llm = object()
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+
+    manager = make_manager(enable_sleep_mode=True, sleep_level=2)
+
+    result = manager.initialize_inference_backend()
+
+    assert result is llm
+    init_vllm.assert_called_once()
+    assert init_vllm.call_args.kwargs["enable_sleep_mode"] is True
+
+
+def test_enter_inference_phase_wakes_sleeping_engine_and_resets_prefix_cache(monkeypatch):
+    init_policy = Mock()
+    init_vllm = Mock()
+    sync_weights = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_policy_into_vllm_instance",
+        sync_weights,
+    )
+
+    manager = make_manager(enable_sleep_mode=True)
+
+    manager.enter_training_phase()
+    manager.initialize_inference_backend()
+    manager.enter_inference_phase(sync_weights=True)
+
+    llm.wake_up.assert_called_once()
+    llm.reset_prefix_cache.assert_called_once()
+    sync_weights.assert_called_once()
+
+
+def test_enter_training_phase_sleeps_engine_after_inference(monkeypatch):
+    init_policy = Mock()
+    init_vllm = Mock()
+    sync_weights = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_policy_into_vllm_instance",
+        sync_weights,
+    )
+
+    manager = make_manager(enable_sleep_mode=True, sleep_level=2)
+
+    manager.enter_training_phase()
+    manager.initialize_inference_backend()
+    manager.enter_inference_phase(sync_weights=True)
+    manager.enter_training_phase()
+
+    assert llm.sleep.call_count == 2
+    assert llm.sleep.call_args_list[0].kwargs == {"level": 2}
+    assert llm.sleep.call_args_list[1].kwargs == {"level": 2}
+    assert policy.train.call_count == 2
+
+
+def test_enter_inference_phase_can_skip_prefix_cache_reset(monkeypatch):
+    init_policy = Mock()
+    init_vllm = Mock()
+    sync_weights = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_policy_into_vllm_instance",
+        sync_weights,
+    )
+
+    manager = make_manager(
+        enable_sleep_mode=True,
+        reset_prefix_cache_after_weight_sync=False,
+    )
+
+    manager.enter_training_phase()
+    manager.initialize_inference_backend()
+    manager.enter_inference_phase(sync_weights=True)
+
+    llm.reset_prefix_cache.assert_not_called()
+
+
+def test_initialize_inference_backend_sleeps_immediately_during_training(monkeypatch):
+    init_policy = Mock()
+    init_vllm = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+
+    manager = make_manager(enable_sleep_mode=True, sleep_level=1)
+
+    manager.enter_training_phase()
+    result = manager.initialize_inference_backend()
+
+    assert result is llm
+    llm.sleep.assert_called_once_with(level=1)
+
+
+def test_enter_inference_phase_offloads_training_backend_when_enabled(monkeypatch):
+    init_policy = Mock()
+    init_vllm = Mock()
+    sync_weights = Mock()
+    offload_training = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    optimizer = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_policy_into_vllm_instance",
+        sync_weights,
+    )
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.offload_training_backend_to_cpu",
+        offload_training,
+    )
+
+    manager = make_manager(enable_training_offload=True)
+    manager.attach_training_optimizer(optimizer)
+
+    manager.enter_training_phase()
+    manager.enter_inference_phase(sync_weights=True)
+
+    offload_training.assert_called_once_with(
+        policy,
+        optimizer,
+        offload_optimizer_state=True,
+    )
+
+
+def test_enter_training_phase_reloads_training_backend_when_offloaded(monkeypatch):
+    init_policy = Mock()
+    init_vllm = Mock()
+    sync_weights = Mock()
+    offload_training = Mock()
+    load_training = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    optimizer = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_policy_into_vllm_instance",
+        sync_weights,
+    )
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.offload_training_backend_to_cpu",
+        offload_training,
+    )
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_training_backend_to_device",
+        load_training,
+    )
+
+    manager = make_manager(enable_training_offload=True)
+    manager.attach_training_optimizer(optimizer)
+
+    manager.enter_training_phase()
+    manager.enter_inference_phase(sync_weights=True)
+    manager.enter_training_phase()
+
+    load_training.assert_called_once_with(
+        policy,
+        "cuda:0",
+        optimizer,
+        offload_optimizer_state=True,
+    )
+
+
+def test_enter_inference_phase_offloads_only_policy_when_no_optimizer_attached(monkeypatch):
+    init_policy = Mock()
+    init_vllm = Mock()
+    sync_weights = Mock()
+    offload_training = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_policy_into_vllm_instance",
+        sync_weights,
+    )
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.offload_training_backend_to_cpu",
+        offload_training,
+    )
+
+    manager = make_manager(enable_training_offload=True)
+
+    manager.enter_training_phase()
+    manager.enter_inference_phase(sync_weights=True)
+
+    offload_training.assert_called_once_with(
+        policy,
+        None,
+        offload_optimizer_state=True,
+    )

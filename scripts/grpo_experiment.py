@@ -781,6 +781,7 @@ def main() -> None:
         weight_decay=0.0,
         betas=(0.9, 0.95),
     )
+    backend_manager.attach_training_optimizer(optimizer)
     rng = random.Random(args.seed)
     optimizer_step = 0
     best_answer_accuracy = -1.0

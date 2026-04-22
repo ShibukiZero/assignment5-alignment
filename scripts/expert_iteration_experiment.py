@@ -606,6 +606,7 @@ def main() -> None:
     policy, tokenizer = backend_manager.enter_training_phase()
     backend_manager.initialize_inference_backend()
     optimizer = AdamW(policy.parameters(), lr=args.learning_rate)
+    backend_manager.attach_training_optimizer(optimizer)
     rng = random.Random(args.seed)
     optimizer_step = 0
     best_answer_accuracy = -1.0
@@ -635,6 +636,7 @@ def main() -> None:
         step_start = time.time()
         if args.reset_optimizer_each_ei_step:
             optimizer = AdamW(policy.parameters(), lr=args.learning_rate)
+            backend_manager.attach_training_optimizer(optimizer)
 
         question_batch = sample_question_batch(
             examples=train_examples,

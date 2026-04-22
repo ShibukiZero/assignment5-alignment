@@ -310,6 +310,7 @@ def main() -> None:
     policy, tokenizer = backend_manager.enter_training_phase()
     backend_manager.initialize_inference_backend()
     optimizer = AdamW(policy.parameters(), lr=args.learning_rate)
+    backend_manager.attach_training_optimizer(optimizer)
     rng = random.Random(args.seed)
     optimizer.zero_grad(set_to_none=True)
 
