@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from cs336_alignment.backend_probe import build_probe_summary
+import torch
+
+from cs336_alignment.backend_probe import build_probe_summary, summarize_training_runtime
 
 
 def test_build_probe_summary_computes_sleep_release_deltas():
@@ -28,3 +30,18 @@ def test_build_probe_summary_computes_sleep_release_deltas():
     assert summary["used_gib_by_label"]["after_first_generate"] == 20.5
     assert summary["sleep_release_after_first_generate_gib"] == 6.5
     assert summary["sleep_release_after_second_generate_gib"] == 7.5
+
+
+def test_summarize_training_runtime_counts_gradients_and_optimizer_tensors():
+    policy = torch.nn.Linear(4, 2)
+    optimizer = torch.optim.AdamW(policy.parameters(), lr=1e-3)
+    x = torch.randn(3, 4)
+    loss = policy(x).sum()
+    loss.backward()
+    optimizer.step()
+
+    summary = summarize_training_runtime(policy, optimizer)
+
+    assert summary["num_grad_tensors"] > 0
+    assert summary["num_optimizer_tensors"] > 0
+    assert "cpu" in summary["policy_parameter_devices"]

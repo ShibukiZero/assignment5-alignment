@@ -298,6 +298,43 @@ def test_enter_inference_phase_offloads_training_backend_when_enabled(monkeypatc
     )
 
 
+def test_enter_inference_phase_offloads_before_initializing_inference_backend(monkeypatch):
+    init_policy = Mock()
+    sync_weights = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    optimizer = Mock()
+    call_order: list[str] = []
+
+    def record_offload(*args, **kwargs):
+        call_order.append("offload")
+
+    def record_init_vllm(*args, **kwargs):
+        call_order.append("init_vllm")
+        return llm
+
+    init_policy.return_value = (policy, tokenizer)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", record_init_vllm)
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_policy_into_vllm_instance",
+        sync_weights,
+    )
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.offload_training_backend_to_cpu",
+        record_offload,
+    )
+
+    manager = make_manager(enable_training_offload=True)
+    manager.attach_training_optimizer(optimizer)
+
+    manager.enter_training_phase()
+    manager.enter_inference_phase(sync_weights=True)
+
+    assert call_order == ["offload", "init_vllm"]
+
+
 def test_enter_training_phase_reloads_training_backend_when_offloaded(monkeypatch):
     init_policy = Mock()
     init_vllm = Mock()
@@ -371,3 +408,56 @@ def test_enter_inference_phase_offloads_only_policy_when_no_optimizer_attached(m
         None,
         offload_optimizer_state=True,
     )
+
+
+def test_debug_state_reflects_phase_transitions(monkeypatch):
+    init_policy = Mock()
+    init_vllm = Mock()
+    sync_weights = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_policy_into_vllm_instance",
+        sync_weights,
+    )
+
+    manager = make_manager(enable_sleep_mode=True, enable_training_offload=True)
+
+    state = manager.debug_state()
+    assert state["current_phase"] is None
+    assert state["inference_backend_awake"] is False
+    assert state["training_backend_offloaded"] is False
+
+    manager.enter_training_phase()
+    manager.enter_inference_phase(sync_weights=True)
+
+    state = manager.debug_state()
+    assert state["current_phase"] == "inference"
+    assert state["training_backend_offloaded"] is True
+
+
+def test_offload_training_backend_to_cpu_clears_gradients_and_skips_optimizer_when_disabled(monkeypatch):
+    from cs336_alignment.backend_lifecycle import offload_training_backend_to_cpu
+
+    policy = Mock()
+    optimizer = Mock()
+    offload_optimizer_state = Mock()
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.offload_optimizer_state_to_cpu",
+        offload_optimizer_state,
+    )
+
+    offload_training_backend_to_cpu(
+        policy,
+        optimizer,
+        offload_optimizer_state=False,
+    )
+
+    policy.zero_grad.assert_called_once_with(set_to_none=True)
+    policy.to.assert_called_once_with("cpu")
+    offload_optimizer_state.assert_not_called()

@@ -136,6 +136,7 @@ def offload_training_backend_to_cpu(
     *,
     offload_optimizer_state: bool,
 ) -> None:
+    policy.zero_grad(set_to_none=True)
     policy.to("cpu")
     if optimizer is not None and offload_optimizer_state:
         offload_optimizer_state_to_cpu(optimizer)
@@ -243,18 +244,22 @@ class BackendLifecycleManager:
         return policy, tokenizer
 
     def enter_inference_phase(self, *, sync_weights: bool = True) -> LLM:
+        if sync_weights:
+            policy, _ = self.initialize_training_backend()
+        else:
+            policy = None
+
+        self._offload_training_backend_if_needed()
         llm = self.initialize_inference_backend()
         self._wake_inference_backend_if_needed()
         self._maybe_cleanup_after_phase_change()
         if sync_weights:
-            policy, _ = self.initialize_training_backend()
             load_policy_into_vllm_instance(
                 policy=policy,
                 llm=llm,
                 synchronize_devices=self.phase_config.synchronize_before_weight_sync,
             )
             self._reset_inference_prefix_cache_if_needed()
-        self._offload_training_backend_if_needed()
         self._current_phase = "inference"
         return llm
 
@@ -280,6 +285,14 @@ class BackendLifecycleManager:
 
     def attach_training_optimizer(self, optimizer: Any) -> None:
         self._optimizer = optimizer
+
+    def debug_state(self) -> dict[str, Any]:
+        return {
+            "current_phase": self._current_phase,
+            "inference_backend_awake": self._inference_backend_awake,
+            "training_backend_offloaded": self._training_backend_offloaded,
+            "has_optimizer": self._optimizer is not None,
+        }
 
     def _sleep_inference_backend_if_needed(self) -> None:
         if (
