@@ -21,8 +21,8 @@ class TrainingBackendConfig:
     device: str
     torch_dtype: torch.dtype = torch.bfloat16
     attn_implementation: str = "flash_attention_2"
-    enable_cpu_offload_during_inference: bool = False
-    offload_optimizer_state: bool = True
+    keep_policy_resident_on_device: bool = True
+    keep_optimizer_state_resident_on_device: bool = False
 
 
 @dataclass(frozen=True)
@@ -134,10 +134,12 @@ def offload_training_backend_to_cpu(
     policy: PreTrainedModel,
     optimizer: Any | None,
     *,
+    offload_policy: bool,
     offload_optimizer_state: bool,
 ) -> None:
     policy.zero_grad(set_to_none=True)
-    policy.to("cpu")
+    if offload_policy:
+        policy.to("cpu")
     if optimizer is not None and offload_optimizer_state:
         offload_optimizer_state_to_cpu(optimizer)
     if torch.cuda.is_available():
@@ -149,9 +151,11 @@ def load_training_backend_to_device(
     device: str,
     optimizer: Any | None,
     *,
+    load_policy: bool,
     offload_optimizer_state: bool,
 ) -> None:
-    policy.to(device)
+    if load_policy:
+        policy.to(device)
     if optimizer is not None and offload_optimizer_state:
         load_optimizer_state_to_device(optimizer, device)
 
@@ -172,7 +176,8 @@ class BackendLifecycleManager:
         self._optimizer: Any | None = None
         self._current_phase: str | None = None
         self._inference_backend_awake = False
-        self._training_backend_offloaded = False
+        self._policy_offloaded = False
+        self._optimizer_state_offloaded = False
 
     @classmethod
     def from_defaults(
@@ -186,15 +191,15 @@ class BackendLifecycleManager:
         enable_sleep_mode: bool = False,
         sleep_level: int = 1,
         reset_prefix_cache_after_weight_sync: bool = True,
-        enable_training_offload_during_inference: bool = False,
-        offload_optimizer_state: bool = True,
+        keep_policy_resident_on_device: bool = True,
+        keep_optimizer_state_resident_on_device: bool = False,
     ) -> "BackendLifecycleManager":
         return cls(
             training_config=TrainingBackendConfig(
                 model_id=model_id,
                 device=policy_device,
-                enable_cpu_offload_during_inference=enable_training_offload_during_inference,
-                offload_optimizer_state=offload_optimizer_state,
+                keep_policy_resident_on_device=keep_policy_resident_on_device,
+                keep_optimizer_state_resident_on_device=keep_optimizer_state_resident_on_device,
             ),
             inference_config=InferenceBackendConfig(
                 model_id=model_id,
@@ -215,8 +220,27 @@ class BackendLifecycleManager:
                 torch_dtype=self.training_config.torch_dtype,
                 attn_implementation=self.training_config.attn_implementation,
             )
-            self._training_backend_offloaded = False
+            self._policy_offloaded = False
+            self._optimizer_state_offloaded = False
         return self._policy, self._tokenizer
+
+    def initialize_rl_runtime(
+        self,
+        *,
+        optimizer_factory: Any | None = None,
+    ) -> tuple[PreTrainedModel, PreTrainedTokenizerBase, Any | None]:
+        llm = self.initialize_inference_backend()
+        if self.inference_config.enable_sleep_mode and self._inference_backend_awake:
+            llm.sleep(level=self.inference_config.sleep_level)
+            self._inference_backend_awake = False
+
+        policy, tokenizer = self.initialize_training_backend()
+        if optimizer_factory is not None and self._optimizer is None:
+            self._optimizer = optimizer_factory(policy.parameters())
+
+        self._apply_inactive_training_residency()
+        self._current_phase = None
+        return policy, tokenizer, self._optimizer
 
     def initialize_inference_backend(self) -> LLM:
         if self._llm is None:
@@ -249,7 +273,7 @@ class BackendLifecycleManager:
         else:
             policy = None
 
-        self._offload_training_backend_if_needed()
+        self._apply_inactive_training_residency()
         llm = self.initialize_inference_backend()
         self._wake_inference_backend_if_needed()
         self._maybe_cleanup_after_phase_change()
@@ -285,12 +309,19 @@ class BackendLifecycleManager:
 
     def attach_training_optimizer(self, optimizer: Any) -> None:
         self._optimizer = optimizer
+        if self._current_phase != "training":
+            self._apply_inactive_training_residency()
+
+    def training_optimizer(self) -> Any | None:
+        return self._optimizer
 
     def debug_state(self) -> dict[str, Any]:
         return {
             "current_phase": self._current_phase,
             "inference_backend_awake": self._inference_backend_awake,
-            "training_backend_offloaded": self._training_backend_offloaded,
+            "training_backend_offloaded": self._policy_offloaded or self._optimizer_state_offloaded,
+            "policy_offloaded": self._policy_offloaded,
+            "optimizer_state_offloaded": self._optimizer_state_offloaded,
             "has_optimizer": self._optimizer is not None,
         }
 
@@ -304,34 +335,43 @@ class BackendLifecycleManager:
         self._llm.sleep(level=self.inference_config.sleep_level)
         self._inference_backend_awake = False
 
-    def _offload_training_backend_if_needed(self) -> None:
-        if (
-            self._policy is None
-            or not self.training_config.enable_cpu_offload_during_inference
-            or self._training_backend_offloaded
-        ):
+    def _apply_inactive_training_residency(self) -> None:
+        if self._policy is None:
             return
+
+        offload_policy = (
+            not self.training_config.keep_policy_resident_on_device and not self._policy_offloaded
+        )
+        offload_optimizer_state = (
+            self._optimizer is not None
+            and not self.training_config.keep_optimizer_state_resident_on_device
+            and not self._optimizer_state_offloaded
+        )
+        if not offload_policy and not offload_optimizer_state:
+            self._policy.zero_grad(set_to_none=True)
+            return
+
         offload_training_backend_to_cpu(
             self._policy,
             self._optimizer,
-            offload_optimizer_state=self.training_config.offload_optimizer_state,
+            offload_policy=offload_policy,
+            offload_optimizer_state=offload_optimizer_state,
         )
-        self._training_backend_offloaded = True
+        self._policy_offloaded = self._policy_offloaded or offload_policy
+        self._optimizer_state_offloaded = self._optimizer_state_offloaded or offload_optimizer_state
 
     def _load_training_backend_if_needed(self) -> None:
-        if (
-            self._policy is None
-            or not self.training_config.enable_cpu_offload_during_inference
-            or not self._training_backend_offloaded
-        ):
+        if self._policy is None or (not self._policy_offloaded and not self._optimizer_state_offloaded):
             return
         load_training_backend_to_device(
             self._policy,
             self.training_config.device,
             self._optimizer,
-            offload_optimizer_state=self.training_config.offload_optimizer_state,
+            load_policy=self._policy_offloaded,
+            offload_optimizer_state=self._optimizer_state_offloaded,
         )
-        self._training_backend_offloaded = False
+        self._policy_offloaded = False
+        self._optimizer_state_offloaded = False
 
     def _wake_inference_backend_if_needed(self) -> None:
         if (

@@ -44,12 +44,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--disable-prefix-caching", dest="enable_prefix_caching", action="store_false")
     parser.set_defaults(enable_prefix_caching=True)
     parser.add_argument("--dtype", choices=["fp16", "bf16"], default="fp16")
-    parser.add_argument("--enable-training-offload", action="store_true")
-    parser.add_argument("--disable-training-offload", dest="enable_training_offload", action="store_false")
-    parser.set_defaults(enable_training_offload=False)
-    parser.add_argument("--offload-optimizer-state", action="store_true")
-    parser.add_argument("--no-offload-optimizer-state", dest="offload_optimizer_state", action="store_false")
-    parser.set_defaults(offload_optimizer_state=True)
+    parser.add_argument(
+        "--training-residency-mode",
+        choices=["resident", "offload_optimizer", "offload_policy_and_optimizer"],
+        default="offload_optimizer",
+    )
     parser.add_argument("--learning-rate", type=float, default=1e-4)
     parser.add_argument("--materialize-optimizer-state", action="store_true")
     parser.add_argument("--skip-materialize-optimizer-state", dest="materialize_optimizer_state", action="store_false")
@@ -151,14 +150,11 @@ def probe_generate(
 
 def materialize_training_state(
     manager: BackendLifecycleManager,
+    policy: Any,
+    tokenizer: Any,
+    optimizer: AdamW,
     prompts: list[str],
-    *,
-    learning_rate: float,
-) -> AdamW:
-    policy, tokenizer = manager.enter_training_phase()
-    optimizer = AdamW(policy.parameters(), lr=learning_rate)
-    manager.attach_training_optimizer(optimizer)
-
+) -> None:
     original_padding_side = tokenizer.padding_side
     tokenizer.padding_side = "left"
     tokenized = tokenizer(
@@ -182,8 +178,6 @@ def materialize_training_state(
     optimizer.step()
     optimizer.zero_grad(set_to_none=True)
 
-    return optimizer
-
 
 def main() -> None:
     args = parse_args()
@@ -196,12 +190,15 @@ def main() -> None:
     prompt_template = load_prompt_template(args.prompt_template)
     prompts = [prompt_template.format(question=get_question(example)) for example in examples]
 
+    keep_policy_resident_on_device = args.training_residency_mode != "offload_policy_and_optimizer"
+    keep_optimizer_state_resident_on_device = args.training_residency_mode == "resident"
+
     manager = BackendLifecycleManager(
         training_config=TrainingBackendConfig(
             model_id=args.model,
             device=args.device,
-            enable_cpu_offload_during_inference=args.enable_training_offload,
-            offload_optimizer_state=args.offload_optimizer_state,
+            keep_policy_resident_on_device=keep_policy_resident_on_device,
+            keep_optimizer_state_resident_on_device=keep_optimizer_state_resident_on_device,
         ),
         inference_config=InferenceBackendConfig(
             model_id=args.model,
@@ -222,16 +219,27 @@ def main() -> None:
 
     snapshots.append(snapshot_cuda_memory(args.device, "baseline"))
     cpu_snapshots.append(snapshot_cpu_memory("baseline"))
-    manager.enter_training_phase()
-    snapshots.append(snapshot_cuda_memory(args.device, "after_training_phase"))
-    cpu_snapshots.append(snapshot_cpu_memory("after_training_phase"))
+    policy, tokenizer, optimizer = manager.initialize_rl_runtime(
+        optimizer_factory=lambda parameters: AdamW(parameters, lr=args.learning_rate)
+    )
+    snapshots.append(snapshot_cuda_memory(args.device, "after_runtime_initialization"))
+    cpu_snapshots.append(snapshot_cpu_memory("after_runtime_initialization"))
+    state_snapshots.append(
+        {
+            "label": "after_runtime_initialization",
+            **manager.debug_state(),
+            **summarize_training_runtime(policy, optimizer),
+        }
+    )
 
-    optimizer = None
     if args.materialize_optimizer_state:
-        optimizer = materialize_training_state(
+        policy, tokenizer = manager.enter_training_phase()
+        materialize_training_state(
             manager,
+            policy,
+            tokenizer,
+            optimizer,
             prompts,
-            learning_rate=args.learning_rate,
         )
         snapshots.append(snapshot_cuda_memory(args.device, "after_optimizer_step"))
         cpu_snapshots.append(snapshot_cpu_memory("after_optimizer_step"))
@@ -239,19 +247,7 @@ def main() -> None:
             {
                 "label": "after_optimizer_step",
                 **manager.debug_state(),
-                **summarize_training_runtime(manager.training_model(), optimizer),
-            }
-        )
-
-    manager.initialize_inference_backend()
-    snapshots.append(snapshot_cuda_memory(args.device, "after_inference_backend_init_sleeping"))
-    cpu_snapshots.append(snapshot_cpu_memory("after_inference_backend_init_sleeping"))
-    if optimizer is not None:
-        state_snapshots.append(
-            {
-                "label": "after_inference_backend_init_sleeping",
-                **manager.debug_state(),
-                **summarize_training_runtime(manager.training_model(), optimizer),
+                **summarize_training_runtime(policy, optimizer),
             }
         )
 
@@ -265,7 +261,7 @@ def main() -> None:
             {
                 "label": "after_enter_inference_phase",
                 **manager.debug_state(),
-                **summarize_training_runtime(manager._policy, optimizer),  # noqa: SLF001
+                **summarize_training_runtime(policy, optimizer),
             }
         )
 
@@ -284,7 +280,7 @@ def main() -> None:
             {
                 "label": "after_return_to_training",
                 **manager.debug_state(),
-                **summarize_training_runtime(manager.training_model(), optimizer),
+                **summarize_training_runtime(policy, optimizer),
             }
         )
 
@@ -298,7 +294,7 @@ def main() -> None:
             {
                 "label": "after_second_enter_inference_phase",
                 **manager.debug_state(),
-                **summarize_training_runtime(manager._policy, optimizer),  # noqa: SLF001
+                **summarize_training_runtime(policy, optimizer),
             }
         )
 
@@ -317,7 +313,7 @@ def main() -> None:
             {
                 "label": "after_final_sleep",
                 **manager.debug_state(),
-                **summarize_training_runtime(manager.training_model(), optimizer),
+                **summarize_training_runtime(policy, optimizer),
                 "return_to_training_seconds": second_return_seconds,
             }
         )
@@ -357,8 +353,7 @@ def main() -> None:
                 "second_enter_inference": second_transition_seconds,
                 "second_return_to_training": second_return_seconds,
             },
-            "training_offload_enabled": args.enable_training_offload,
-            "optimizer_state_offload_enabled": args.offload_optimizer_state,
+            "training_residency_mode": args.training_residency_mode,
             "materialized_optimizer_state": args.materialize_optimizer_state,
         }
     )

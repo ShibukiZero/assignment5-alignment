@@ -16,15 +16,15 @@ def make_manager(
     enable_sleep_mode: bool = False,
     sleep_level: int = 1,
     reset_prefix_cache_after_weight_sync: bool = True,
-    enable_training_offload: bool = False,
-    offload_optimizer_state: bool = True,
+    keep_policy_resident_on_device: bool = True,
+    keep_optimizer_state_resident_on_device: bool = True,
 ) -> BackendLifecycleManager:
     return BackendLifecycleManager(
         training_config=TrainingBackendConfig(
             model_id="dummy-model",
             device="cuda:0",
-            enable_cpu_offload_during_inference=enable_training_offload,
-            offload_optimizer_state=offload_optimizer_state,
+            keep_policy_resident_on_device=keep_policy_resident_on_device,
+            keep_optimizer_state_resident_on_device=keep_optimizer_state_resident_on_device,
         ),
         inference_config=InferenceBackendConfig(
             model_id="dummy-model",
@@ -263,6 +263,108 @@ def test_initialize_inference_backend_sleeps_immediately_during_training(monkeyp
     llm.sleep.assert_called_once_with(level=1)
 
 
+def test_initialize_rl_runtime_initializes_sleeping_inference_before_training(monkeypatch):
+    init_policy = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    call_order: list[str] = []
+
+    def record_init_vllm(*args, **kwargs):
+        call_order.append("init_vllm")
+        return llm
+
+    def record_init_policy(*args, **kwargs):
+        call_order.append("init_policy")
+        return policy, tokenizer
+
+    init_policy.side_effect = record_init_policy
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", record_init_vllm)
+
+    manager = make_manager(enable_sleep_mode=True, sleep_level=2)
+
+    returned_policy, returned_tokenizer, optimizer = manager.initialize_rl_runtime()
+
+    assert call_order == ["init_vllm", "init_policy"]
+    assert returned_policy is policy
+    assert returned_tokenizer is tokenizer
+    assert optimizer is None
+    llm.sleep.assert_called_once_with(level=2)
+    state = manager.debug_state()
+    assert state["current_phase"] is None
+    assert state["inference_backend_awake"] is False
+
+
+def test_initialize_rl_runtime_can_offload_policy_and_optimizer_after_init(monkeypatch):
+    init_policy = Mock()
+    offload_training = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    optimizer = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", Mock(return_value=llm))
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.offload_training_backend_to_cpu",
+        offload_training,
+    )
+
+    manager = make_manager(
+        enable_sleep_mode=True,
+        keep_policy_resident_on_device=False,
+        keep_optimizer_state_resident_on_device=False,
+    )
+
+    manager.initialize_rl_runtime()
+    manager.attach_training_optimizer(optimizer)
+
+    assert offload_training.call_count == 2
+    assert offload_training.call_args_list[0].args == (policy, None)
+    assert offload_training.call_args_list[0].kwargs == {
+        "offload_policy": True,
+        "offload_optimizer_state": False,
+    }
+    assert offload_training.call_args_list[1].args == (policy, optimizer)
+    assert offload_training.call_args_list[1].kwargs == {
+        "offload_policy": False,
+        "offload_optimizer_state": True,
+    }
+
+
+def test_attach_training_optimizer_can_apply_optimizer_only_residency_after_init(monkeypatch):
+    init_policy = Mock()
+    offload_training = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    optimizer = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", Mock(return_value=llm))
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.offload_training_backend_to_cpu",
+        offload_training,
+    )
+
+    manager = make_manager(
+        enable_sleep_mode=True,
+        keep_policy_resident_on_device=True,
+        keep_optimizer_state_resident_on_device=False,
+    )
+
+    manager.initialize_rl_runtime()
+    manager.attach_training_optimizer(optimizer)
+
+    offload_training.assert_called_once_with(
+        policy,
+        optimizer,
+        offload_policy=False,
+        offload_optimizer_state=True,
+    )
+
+
 def test_enter_inference_phase_offloads_training_backend_when_enabled(monkeypatch):
     init_policy = Mock()
     init_vllm = Mock()
@@ -285,7 +387,10 @@ def test_enter_inference_phase_offloads_training_backend_when_enabled(monkeypatc
         offload_training,
     )
 
-    manager = make_manager(enable_training_offload=True)
+    manager = make_manager(
+        keep_policy_resident_on_device=False,
+        keep_optimizer_state_resident_on_device=False,
+    )
     manager.attach_training_optimizer(optimizer)
 
     manager.enter_training_phase()
@@ -294,6 +399,7 @@ def test_enter_inference_phase_offloads_training_backend_when_enabled(monkeypatc
     offload_training.assert_called_once_with(
         policy,
         optimizer,
+        offload_policy=True,
         offload_optimizer_state=True,
     )
 
@@ -326,7 +432,10 @@ def test_enter_inference_phase_offloads_before_initializing_inference_backend(mo
         record_offload,
     )
 
-    manager = make_manager(enable_training_offload=True)
+    manager = make_manager(
+        keep_policy_resident_on_device=False,
+        keep_optimizer_state_resident_on_device=False,
+    )
     manager.attach_training_optimizer(optimizer)
 
     manager.enter_training_phase()
@@ -362,7 +471,10 @@ def test_enter_training_phase_reloads_training_backend_when_offloaded(monkeypatc
         load_training,
     )
 
-    manager = make_manager(enable_training_offload=True)
+    manager = make_manager(
+        keep_policy_resident_on_device=False,
+        keep_optimizer_state_resident_on_device=False,
+    )
     manager.attach_training_optimizer(optimizer)
 
     manager.enter_training_phase()
@@ -373,6 +485,7 @@ def test_enter_training_phase_reloads_training_backend_when_offloaded(monkeypatc
         policy,
         "cuda:0",
         optimizer,
+        load_policy=True,
         offload_optimizer_state=True,
     )
 
@@ -398,7 +511,10 @@ def test_enter_inference_phase_offloads_only_policy_when_no_optimizer_attached(m
         offload_training,
     )
 
-    manager = make_manager(enable_training_offload=True)
+    manager = make_manager(
+        keep_policy_resident_on_device=False,
+        keep_optimizer_state_resident_on_device=False,
+    )
 
     manager.enter_training_phase()
     manager.enter_inference_phase(sync_weights=True)
@@ -406,6 +522,46 @@ def test_enter_inference_phase_offloads_only_policy_when_no_optimizer_attached(m
     offload_training.assert_called_once_with(
         policy,
         None,
+        offload_policy=True,
+        offload_optimizer_state=False,
+    )
+
+
+def test_enter_inference_phase_can_offload_optimizer_only(monkeypatch):
+    init_policy = Mock()
+    init_vllm = Mock()
+    sync_weights = Mock()
+    offload_training = Mock()
+    policy = Mock()
+    tokenizer = object()
+    llm = Mock()
+    optimizer = Mock()
+    init_policy.return_value = (policy, tokenizer)
+    init_vllm.return_value = llm
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", init_vllm)
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.load_policy_into_vllm_instance",
+        sync_weights,
+    )
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.offload_training_backend_to_cpu",
+        offload_training,
+    )
+
+    manager = make_manager(
+        keep_policy_resident_on_device=True,
+        keep_optimizer_state_resident_on_device=False,
+    )
+    manager.attach_training_optimizer(optimizer)
+
+    manager.enter_training_phase()
+    manager.enter_inference_phase(sync_weights=True)
+
+    offload_training.assert_called_once_with(
+        policy,
+        optimizer,
+        offload_policy=False,
         offload_optimizer_state=True,
     )
 
@@ -426,7 +582,11 @@ def test_debug_state_reflects_phase_transitions(monkeypatch):
         sync_weights,
     )
 
-    manager = make_manager(enable_sleep_mode=True, enable_training_offload=True)
+    manager = make_manager(
+        enable_sleep_mode=True,
+        keep_policy_resident_on_device=False,
+        keep_optimizer_state_resident_on_device=False,
+    )
 
     state = manager.debug_state()
     assert state["current_phase"] is None
@@ -455,6 +615,7 @@ def test_offload_training_backend_to_cpu_clears_gradients_and_skips_optimizer_wh
     offload_training_backend_to_cpu(
         policy,
         optimizer,
+        offload_policy=True,
         offload_optimizer_state=False,
     )
 

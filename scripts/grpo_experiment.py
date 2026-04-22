@@ -765,6 +765,18 @@ def main() -> None:
         vllm_device=args.vllm_device,
         seed=args.seed,
         vllm_gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+        enable_sleep_mode=True,
+        sleep_level=2,
+        keep_policy_resident_on_device=True,
+        keep_optimizer_state_resident_on_device=False,
+    )
+    policy, tokenizer, optimizer = backend_manager.initialize_rl_runtime(
+        optimizer_factory=lambda parameters: AdamW(
+            parameters,
+            lr=args.learning_rate,
+            weight_decay=0.0,
+            betas=(0.9, 0.95),
+        )
     )
     policy, tokenizer = backend_manager.enter_training_phase()
     reference_policy = None
@@ -774,14 +786,6 @@ def main() -> None:
         reference_policy.eval()
         for parameter in reference_policy.parameters():
             parameter.requires_grad_(False)
-    backend_manager.initialize_inference_backend()
-    optimizer = AdamW(
-        policy.parameters(),
-        lr=args.learning_rate,
-        weight_decay=0.0,
-        betas=(0.9, 0.95),
-    )
-    backend_manager.attach_training_optimizer(optimizer)
     rng = random.Random(args.seed)
     optimizer_step = 0
     best_answer_accuracy = -1.0
