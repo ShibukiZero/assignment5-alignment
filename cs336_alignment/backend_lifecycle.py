@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import gc
+import logging
+import os
+import random
+import string
+import time
 from dataclasses import dataclass
 from typing import Any
 from unittest.mock import patch
@@ -11,8 +17,19 @@ from transformers import (
     PreTrainedModel,
     PreTrainedTokenizerBase,
 )
-from vllm import LLM
+from vllm import LLM, SamplingParams
 from vllm.model_executor import set_random_seed as vllm_set_random_seed
+
+
+logger = logging.getLogger(__name__)
+
+WARMUP_NUM_PROMPTS = 64
+WARMUP_RANDOM_CHARS = 64
+WARMUP_RANDOM_SEED = 0
+WARMUP_MAX_NEW_TOKENS = 1
+WARMUP_N = 8
+WARMUP_TEMPERATURE = 1.0
+WARMUP_TOP_P = 1.0
 
 
 @dataclass(frozen=True)
@@ -160,6 +177,43 @@ def load_training_backend_to_device(
         load_optimizer_state_to_device(optimizer, device)
 
 
+def env_flag(name: str, default: bool = False) -> bool:
+    raw_value = os.environ.get(name)
+    if raw_value is None or raw_value == "":
+        return default
+    return raw_value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def make_random_warmup_payload(
+    rng: random.Random,
+    *,
+    num_chars: int,
+) -> str:
+    alphabet = string.ascii_letters + string.digits + " +-*/=()[]{}"
+    return "".join(rng.choice(alphabet) for _ in range(num_chars))
+
+
+def build_synthetic_warmup_prompts(
+    *,
+    num_prompts: int,
+    num_chars: int,
+    seed: int,
+) -> tuple[str, ...]:
+    rng = random.Random(seed)
+    prompts: list[str] = []
+    for prompt_index in range(num_prompts):
+        payload = make_random_warmup_payload(rng, num_chars=num_chars)
+        prompts.append(
+            (
+                "A conversation between User and Assistant. "
+                f"Warmup sample {prompt_index}. "
+                f"User: {payload}\n"
+                "Assistant: <think>"
+            )
+        )
+    return tuple(prompts)
+
+
 class BackendLifecycleManager:
     def __init__(
         self,
@@ -178,6 +232,7 @@ class BackendLifecycleManager:
         self._inference_backend_awake = False
         self._policy_offloaded = False
         self._optimizer_state_offloaded = False
+        self._fresh_vllm_warmup_completed = False
 
     @classmethod
     def from_defaults(
@@ -229,6 +284,7 @@ class BackendLifecycleManager:
         *,
         optimizer_factory: Any | None = None,
     ) -> tuple[PreTrainedModel, PreTrainedTokenizerBase, Any | None]:
+        self._run_synthetic_vllm_warmup_if_needed()
         llm = self.initialize_inference_backend()
         if self.inference_config.enable_sleep_mode and self._inference_backend_awake:
             llm.sleep(level=self.inference_config.sleep_level)
@@ -398,3 +454,49 @@ class BackendLifecycleManager:
             if device.startswith("cuda"):
                 torch.cuda.synchronize(torch.device(device))
         torch.cuda.empty_cache()
+
+    def _run_synthetic_vllm_warmup_if_needed(self) -> None:
+        if self._fresh_vllm_warmup_completed or not env_flag("CS336_FRESH_VLLM_WARMUP"):
+            return
+
+        prompts = build_synthetic_warmup_prompts(
+            num_prompts=WARMUP_NUM_PROMPTS,
+            num_chars=WARMUP_RANDOM_CHARS,
+            seed=WARMUP_RANDOM_SEED,
+        )
+        sampling_params = SamplingParams(
+            temperature=WARMUP_TEMPERATURE,
+            top_p=WARMUP_TOP_P,
+            max_tokens=WARMUP_MAX_NEW_TOKENS,
+            n=WARMUP_N,
+            include_stop_str_in_output=False,
+        )
+
+        logger.info(
+            "Starting fresh vLLM warmup over %d prompts",
+            len(prompts),
+        )
+        started_at = time.time()
+        llm = init_vllm(
+            model_id=self.inference_config.model_id,
+            device=self.inference_config.device,
+            seed=self.inference_config.seed,
+            gpu_memory_utilization=self.inference_config.gpu_memory_utilization,
+            dtype=self.inference_config.dtype,
+            enable_prefix_caching=self.inference_config.enable_prefix_caching,
+            enable_sleep_mode=False,
+        )
+        outputs = llm.generate(list(prompts), sampling_params)
+        elapsed = time.time() - started_at
+
+        del outputs
+        del llm
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        self._fresh_vllm_warmup_completed = True
+        logger.info(
+            "Completed fresh vLLM warmup in %.2f seconds",
+            elapsed,
+        )

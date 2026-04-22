@@ -333,6 +333,102 @@ def test_initialize_rl_runtime_can_offload_policy_and_optimizer_after_init(monke
     }
 
 
+def test_initialize_rl_runtime_runs_fresh_warmup_before_runtime_init(monkeypatch):
+    init_policy = Mock()
+    policy = Mock()
+    tokenizer = object()
+    warmup_llm = Mock()
+    runtime_llm = Mock()
+    call_order: list[str] = []
+
+    def record_init_vllm(*args, **kwargs):
+        if kwargs["enable_sleep_mode"]:
+            call_order.append("runtime_init_vllm")
+            return runtime_llm
+        call_order.append("warmup_init_vllm")
+        return warmup_llm
+
+    init_policy.return_value = (policy, tokenizer)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", record_init_vllm)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.gc.collect", Mock())
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.torch.cuda.is_available", Mock(return_value=False))
+    monkeypatch.setenv("CS336_FRESH_VLLM_WARMUP", "1")
+
+    manager = make_manager(enable_sleep_mode=True, sleep_level=2)
+
+    manager.initialize_rl_runtime()
+
+    assert call_order == ["warmup_init_vllm", "runtime_init_vllm"]
+    warmup_llm.generate.assert_called_once()
+    prompts = warmup_llm.generate.call_args.args[0]
+    assert len(prompts) == 64
+    runtime_llm.sleep.assert_called_once_with(level=2)
+
+
+def test_initialize_rl_runtime_only_runs_fresh_warmup_once(monkeypatch):
+    init_policy = Mock()
+    policy = Mock()
+    tokenizer = object()
+    warmup_llm = Mock()
+    runtime_llm = Mock()
+    init_calls = {"count": 0}
+
+    def record_init_vllm(*args, **kwargs):
+        init_calls["count"] += 1
+        if kwargs["enable_sleep_mode"]:
+            return runtime_llm
+        return warmup_llm
+
+    init_policy.return_value = (policy, tokenizer)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", record_init_vllm)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.gc.collect", Mock())
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.torch.cuda.is_available", Mock(return_value=False))
+    monkeypatch.setenv("CS336_FRESH_VLLM_WARMUP", "1")
+
+    manager = make_manager(enable_sleep_mode=True, sleep_level=2)
+
+    manager.initialize_rl_runtime()
+    manager.initialize_rl_runtime()
+
+    assert init_calls["count"] == 2
+    warmup_llm.generate.assert_called_once()
+
+
+def test_initialize_rl_runtime_can_build_synthetic_fresh_warmup_from_env(monkeypatch):
+    init_policy = Mock()
+    policy = Mock()
+    tokenizer = object()
+    warmup_llm = Mock()
+    runtime_llm = Mock()
+
+    def record_init_vllm(*args, **kwargs):
+        if kwargs["enable_sleep_mode"]:
+            return runtime_llm
+        return warmup_llm
+
+    monkeypatch.setenv("CS336_FRESH_VLLM_WARMUP", "1")
+    init_policy.return_value = (policy, tokenizer)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", record_init_vllm)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.gc.collect", Mock())
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.torch.cuda.is_available", Mock(return_value=False))
+
+    manager = make_manager(enable_sleep_mode=True, sleep_level=2)
+
+    manager.initialize_rl_runtime()
+
+    warmup_llm.generate.assert_called_once()
+    prompts = warmup_llm.generate.call_args.args[0]
+    sampling_params = warmup_llm.generate.call_args.args[1]
+    assert len(prompts) == 64
+    assert all("Assistant: <think>" in prompt for prompt in prompts)
+    assert sampling_params.n == 8
+    assert sampling_params.max_tokens == 1
+    runtime_llm.sleep.assert_called_once_with(level=2)
+
+
 def test_attach_training_optimizer_can_apply_optimizer_only_residency_after_init(monkeypatch):
     init_policy = Mock()
     offload_training = Mock()
