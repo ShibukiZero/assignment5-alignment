@@ -451,12 +451,15 @@ template.
 **Deliverable:** Compare the two approaches (without running experiments yet). What are the pros and cons of each approach? Are there any specific settings or examples where one approach seems better?
 
 **Answer:** The two approaches differ in how they assign credit across
-responses of different lengths. With `masked_mean`, a per-token loss sequence
-for completion \(i\) is aggregated as
+responses of different lengths. In our implementation, the batch loss is an
+average over per-example aggregated losses. With `masked_mean`, a per-token loss
+sequence for completion \(i\) is aggregated as
 
-\[
-L_i = \frac{1}{T_i}\sum_{t=1}^{T_i} \ell_{it},
-\]
+$$
+\mathcal{L} = \frac{1}{B}\sum_{i=1}^{B} L_i,
+\qquad
+L_i = \frac{1}{T_i}\sum_{t=1}^{T_i} \ell_{it}.
+$$
 
 where \(T_i\) is the number of response tokens. This makes each completion have
 roughly comparable total weight in the batch, regardless of whether it is short
@@ -466,32 +469,31 @@ downside is that each token in a long reasoning trace receives less credit or
 blame than each token in a short response, so `masked_mean` can dilute the
 learning signal for long chains of reasoning.
 
-With `masked_normalize`, the same per-token losses are summed over the response
-tokens and divided by a fixed constant \(C\), such as the maximum generation
-length:
+With `masked_normalize`, the same batch structure is kept, but the per-example
+aggregation uses a fixed constant \(C\), such as the maximum generation length:
 
-\[
+$$
 L_i = \frac{1}{C}\sum_{t=1}^{T_i} \ell_{it}.
-\]
+$$
 
 This is closer to the policy-gradient objective based on the log-probability of
 a trajectory, since the trajectory log-probability itself is a sum over token
-log-probabilities. Its main advantage is that it does not give short responses a
-larger per-token gradient simply because they have fewer tokens. This can be
+log-probabilities. Its main advantage is that it does not shrink the total loss
+of a long response just because that response contains more tokens. This can be
 preferable when correct solutions genuinely require multi-step reasoning, since
-the tokens in a long solution are not averaged away. The tradeoff is higher
-length-dependent variance: longer responses receive larger total weight, so long
-incorrect, rambling, or format-breaking completions can have a larger effect on
-the update.
+the contribution from a long solution is not averaged down by its own length.
+The tradeoff is higher length-dependent variance: longer responses receive
+larger total weight, so long incorrect, rambling, or format-breaking
+completions can have a larger effect on the update.
 
 Thus, `masked_mean` is a safer choice when response lengths vary widely or when
 the model tends to generate long low-quality outputs, because it treats each
 completion more like one training example. `masked_normalize` is more appealing
 when the task rewards long, useful reasoning traces and we want the optimization
-to treat each generated action more uniformly. In short, this choice is not just
-a harmless rescaling of the loss: `masked_mean` is closer to weighting each
-completion equally, while `masked_normalize` is closer to weighting each
-response token equally.
+to stay closer to a trajectory-sum view of the policy-gradient objective. In
+short, this choice is not just a harmless rescaling of the loss:
+`masked_mean` is closer to weighting each completion equally, while
+`masked_normalize` gives longer responses proportionally more total influence.
 
 ---
 
