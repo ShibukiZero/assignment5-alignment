@@ -833,7 +833,27 @@ contract works better than the R1-Zero contract for this base model.
 
 **Deliverable:** Report a validation accuracy obtained within 4 hours of training on 2 H100 GPUs and a screenshot of your validation accuracy with respect to wall-clock time, where the x-axis ends at `<= 4` hours. As a reminder, we place the following constraints on your evaluation: (1) your validation accuracy should be the average accuracy over the entire MATH validation set (all 5K examples), (2) you must use the R1-Zero prompt at validation time, (3) you must use temperature 1.0 and max tokens 1024 with vLLM for evaluation, and (4) you must calculate validation accuracy by averaging the answer rewards produced by the `r1_zero_reward_fn` reward function provided in the starter code.
 
-**Answer:** TODO.
+**Answer:** Before spending our remaining budget on the final leaderboard
+training sweep, we first improved the RL systems stack so that longer GRPO runs
+were both faster and more stable. In particular, we consolidated SFT, EI, and
+GRPO onto a unified backend lifecycle manager that explicitly separates
+training and rollout phases, keeps the policy resident by default, offloads
+optimizer state while inactive, uses vLLM sleep/wake instead of repeatedly
+recreating the inference engine, and performs explicit HF-to-vLLM weight sync
+with prefix-cache reset at phase boundaries. These phase-managed rollout and
+training transitions were inspired by the general systems structure used in
+`veRL`, although our implementation is much smaller and specialized to this
+assignment.
+
+We also found and fixed an infrastructure bug that only appeared on the cold
+single-GPU lifecycle path: the first evaluation after initialization could
+produce degenerate outputs unless a fresh vLLM instance had already been warmed
+up in the process. We therefore added an explicit fresh-vLLM warmup path before
+the sleep-enabled lifecycle path. Together, these changes made the mainline
+SFT, EI, and GRPO smoke runs reproducible again after reload boundaries and
+gave us a more reliable platform for the final leaderboard experiment. We treat
+these infrastructure changes as enabling improvements rather than as a separate
+algorithmic contribution.
 
 ---
 
