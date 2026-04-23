@@ -456,7 +456,7 @@ class BackendLifecycleManager:
         torch.cuda.empty_cache()
 
     def _run_synthetic_vllm_warmup_if_needed(self) -> None:
-        if self._fresh_vllm_warmup_completed or not env_flag("CS336_FRESH_VLLM_WARMUP"):
+        if self._fresh_vllm_warmup_completed or not env_flag("CS336_FRESH_VLLM_WARMUP", default=True):
             return
 
         prompts = build_synthetic_warmup_prompts(
