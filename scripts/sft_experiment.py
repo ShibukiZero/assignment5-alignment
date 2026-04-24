@@ -97,6 +97,18 @@ def parse_args() -> argparse.Namespace:
         help="Number of worker processes for CPU-side validation reward scoring.",
     )
     parser.add_argument(
+        "--quiet-reward-parser-logs",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Suppress noisy dependency parser logs during CPU-side reward scoring.",
+    )
+    parser.add_argument(
+        "--reward-timeout-seconds",
+        type=int,
+        default=5,
+        help="Per-response reward scoring timeout. Timed-out responses receive zero reward.",
+    )
+    parser.add_argument(
         "--filter-correct-sft",
         action="store_true",
         help="Keep only SFT traces that receive answer_reward == 1.",
@@ -148,6 +160,8 @@ def evaluate_with_vllm(
     temperature: float,
     top_p: float,
     reward_workers: int,
+    quiet_reward_parser_logs: bool,
+    reward_timeout_seconds: int | None,
 ) -> dict[str, Any]:
     prompts = [prompt_template.format(question=get_question(example)) for example in val_examples]
     sampling_params = SamplingParams(
@@ -170,6 +184,8 @@ def evaluate_with_vllm(
         ground_truths=ground_truths,
         reward_fn_name="r1_zero",
         reward_workers=reward_workers,
+        quiet_parser_logs=quiet_reward_parser_logs,
+        timeout_seconds=reward_timeout_seconds,
     )
 
     records: list[dict[str, Any]] = []
@@ -194,6 +210,8 @@ def evaluate_with_vllm(
             "top_p": top_p,
             "max_tokens": max_new_tokens,
             "reward_workers": reward_workers,
+            "quiet_reward_parser_logs": quiet_reward_parser_logs,
+            "reward_timeout_seconds": reward_timeout_seconds,
             "stop": "</answer>",
             "include_stop_str_in_output": True,
         },
@@ -208,6 +226,8 @@ def run_eval_and_log(
     temperature: float,
     top_p: float,
     reward_workers: int,
+    quiet_reward_parser_logs: bool,
+    reward_timeout_seconds: int | None,
     writer: ExperimentLogWriter,
     train_step: int,
 ) -> dict[str, Any]:
@@ -221,6 +241,8 @@ def run_eval_and_log(
         temperature=temperature,
         top_p=top_p,
         reward_workers=reward_workers,
+        quiet_reward_parser_logs=quiet_reward_parser_logs,
+        reward_timeout_seconds=reward_timeout_seconds,
     )
     summary = eval_result["summary"]
     writer.append_metric(
@@ -358,6 +380,8 @@ def main() -> None:
                 temperature=args.eval_temperature,
                 top_p=args.eval_top_p,
                 reward_workers=args.reward_workers,
+                quiet_reward_parser_logs=args.quiet_reward_parser_logs,
+                reward_timeout_seconds=args.reward_timeout_seconds,
                 writer=writer,
                 train_step=train_step,
             )
@@ -377,6 +401,8 @@ def main() -> None:
         temperature=args.eval_temperature,
         top_p=args.eval_top_p,
         reward_workers=args.reward_workers,
+        quiet_reward_parser_logs=args.quiet_reward_parser_logs,
+        reward_timeout_seconds=args.reward_timeout_seconds,
         writer=writer,
         train_step=final_step,
     )

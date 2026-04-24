@@ -18,7 +18,6 @@ from transformers import PreTrainedModel, PreTrainedTokenizerBase
 from vllm import LLM, SamplingParams
 
 from cs336_alignment.backend_lifecycle import BackendLifecycleManager
-from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
 from cs336_alignment.experiment_logging import (
     ExperimentLogWriter,
     get_ground_truth,
@@ -27,6 +26,8 @@ from cs336_alignment.experiment_logging import (
     read_jsonl,
 )
 from cs336_alignment.experiment_metrics import cuda_memory_metrics, mean_or_none
+from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
+from cs336_alignment.reward_scoring import quiet_reward_parser_logs, score_response_with_reward_fn
 from cs336_alignment.sft import (
     get_response_log_probs,
     masked_normalize,
@@ -135,6 +136,18 @@ def parse_args() -> argparse.Namespace:
     )
     parser.set_defaults(score_rollout_entropy=True)
     parser.add_argument(
+        "--quiet-reward-parser-logs",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Suppress noisy dependency parser logs during reward scoring.",
+    )
+    parser.add_argument(
+        "--reward-timeout-seconds",
+        type=int,
+        default=5,
+        help="Per-response reward scoring timeout. Timed-out responses receive zero reward.",
+    )
+    parser.add_argument(
         "--save-checkpoints",
         action="store_true",
         help="Save best_policy and final_policy under --output-dir.",
@@ -158,6 +171,7 @@ def build_rollout_records(
     question_batch: list[tuple[int, dict[str, Any]]],
     prompt_template: str,
     outputs: list[Any],
+    reward_timeout_seconds: int | None,
 ) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for (question_index, example), request_output in zip(question_batch, outputs):
@@ -166,7 +180,12 @@ def build_rollout_records(
         ground_truth = get_ground_truth(example)
         for rollout_index, completion in enumerate(request_output.outputs):
             response = completion.text
-            scores = r1_zero_reward_fn(response, ground_truth)
+            scores = score_response_with_reward_fn(
+                response=response,
+                ground_truth=ground_truth,
+                reward_fn=r1_zero_reward_fn,
+                timeout_seconds=reward_timeout_seconds,
+            )
             token_ids = getattr(completion, "token_ids", None)
             records.append(
                 {
@@ -193,6 +212,7 @@ def generate_rollouts(
     temperature: float,
     top_p: float,
     seed: int,
+    reward_timeout_seconds: int | None,
 ) -> list[dict[str, Any]]:
     prompts = [
         prompt_template.format(question=get_question(example))
@@ -213,6 +233,7 @@ def generate_rollouts(
         question_batch=question_batch,
         prompt_template=prompt_template,
         outputs=outputs,
+        reward_timeout_seconds=reward_timeout_seconds,
     )
 
 
@@ -494,6 +515,7 @@ def evaluate_policy(
     writer: ExperimentLogWriter,
     ei_step: int,
     optimizer_step: int,
+    reward_timeout_seconds: int | None,
 ) -> dict[str, Any]:
     start = time.time()
     llm = backend_manager.enter_inference_phase(sync_weights=True)
@@ -511,7 +533,12 @@ def evaluate_policy(
     for example, prompt, output in zip(val_examples, prompts, outputs):
         response = output.outputs[0].text
         ground_truth = get_ground_truth(example)
-        scores = r1_zero_reward_fn(response, ground_truth)
+        scores = score_response_with_reward_fn(
+            response=response,
+            ground_truth=ground_truth,
+            reward_fn=r1_zero_reward_fn,
+            timeout_seconds=reward_timeout_seconds,
+        )
         records.append(
             {
                 "prompt": prompt,
@@ -550,6 +577,8 @@ def evaluate_policy(
 
 def main() -> None:
     args = parse_args()
+    if args.quiet_reward_parser_logs:
+        quiet_reward_parser_logs()
     random.seed(args.seed)
     torch.manual_seed(args.seed)
 
@@ -599,6 +628,7 @@ def main() -> None:
         writer=writer,
         ei_step=0,
         optimizer_step=optimizer_step,
+        reward_timeout_seconds=args.reward_timeout_seconds,
     )
     best_answer_accuracy = float(initial_summary["answer_accuracy"])
 
@@ -626,6 +656,7 @@ def main() -> None:
             temperature=args.rollout_temperature,
             top_p=args.rollout_top_p,
             seed=args.seed + ei_step,
+            reward_timeout_seconds=args.reward_timeout_seconds,
         )
         rollout_seconds = time.time() - rollout_start
 
@@ -692,6 +723,7 @@ def main() -> None:
             writer=writer,
             ei_step=ei_step,
             optimizer_step=optimizer_step,
+            reward_timeout_seconds=args.reward_timeout_seconds,
         )
 
         answer_accuracy = float(eval_summary["answer_accuracy"])
