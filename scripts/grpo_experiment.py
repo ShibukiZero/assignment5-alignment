@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import random
 import time
@@ -19,6 +18,13 @@ from vllm import LLM, SamplingParams
 
 from cs336_alignment.backend_lifecycle import BackendLifecycleManager, init_policy
 from cs336_alignment.drgrpo_grader import question_only_reward_fn, r1_zero_reward_fn
+from cs336_alignment.experiment_logging import (
+    ExperimentLogWriter,
+    get_ground_truth,
+    get_question,
+    load_prompt_template,
+    read_jsonl,
+)
 from cs336_alignment.grpo import (
     compute_group_normalized_rewards,
     grpo_microbatch_train_step,
@@ -29,13 +35,7 @@ from cs336_alignment.sft import get_response_log_probs, tokenize_prompt_and_outp
 from sft_experiment import (
     DEFAULT_MODEL,
     DEFAULT_PROMPT_TEMPLATE,
-    append_jsonl,
     cuda_memory_metrics,
-    get_ground_truth,
-    get_question,
-    load_prompt_template,
-    read_jsonl,
-    write_json,
 )
 
 
@@ -206,13 +206,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for record in records:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
-
-
 def sample_question_batch(
     examples: list[dict[str, Any]],
     num_questions: int,
@@ -372,9 +365,7 @@ def evaluate_policy(
     max_new_tokens: int,
     temperature: float,
     top_p: float,
-    output_dir: Path,
-    log_dir: Path,
-    metrics_path: Path,
+    writer: ExperimentLogWriter,
     grpo_step: int,
     optimizer_step: int,
 ) -> dict[str, Any]:
@@ -416,8 +407,7 @@ def evaluate_policy(
         "include_stop_str_in_output": include_stop_str_in_output,
         "eval_seconds": time.time() - start,
     }
-    append_jsonl(
-        metrics_path,
+    writer.append_metric(
         {
             "type": "eval",
             "grpo_step": grpo_step,
@@ -425,10 +415,9 @@ def evaluate_policy(
             **summary,
         },
     )
-    generation_path = output_dir / f"eval_generations_grpo_step_{grpo_step:06d}.jsonl"
     for record in records:
-        append_jsonl(generation_path, record)
-    write_json(log_dir / f"eval_summary_grpo_step_{grpo_step:06d}.json", summary)
+        writer.append_eval_generation(grpo_step, record)
+    writer.write_eval_summary(grpo_step, summary)
     backend_manager.enter_training_phase()
     return summary
 
@@ -496,7 +485,7 @@ def train_on_rollout_batch(
     kl_coef: float,
     device: str,
     rng: random.Random,
-    metrics_path: Path,
+    writer: ExperimentLogWriter,
     grpo_step: int,
     optimizer_step: int,
     learning_rate: float,
@@ -637,8 +626,7 @@ def train_on_rollout_batch(
                 else mean(micro_scaled_losses)
             )
             optimizer_step += 1
-            append_jsonl(
-                metrics_path,
+            writer.append_metric(
                 {
                     "type": "train",
                     "grpo_step": grpo_step,
@@ -747,10 +735,10 @@ def main() -> None:
 
     output_dir = Path(args.output_dir)
     log_dir = Path(args.log_dir)
-    metrics_path = log_dir / "metrics.jsonl"
+    writer = ExperimentLogWriter("grpo", output_dir=output_dir, log_dir=log_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
-    write_json(log_dir / "config.json", vars(args))
+    writer.write_config(vars(args))
 
     train_examples = read_jsonl(args.train_path, max_examples=args.max_train_questions)
     eval_max_examples = args.eval_max_examples if args.eval_max_examples > 0 else None
@@ -825,9 +813,7 @@ def main() -> None:
         max_new_tokens=args.max_new_tokens,
         temperature=args.eval_temperature,
         top_p=args.eval_top_p,
-        output_dir=output_dir,
-        log_dir=log_dir,
-        metrics_path=metrics_path,
+        writer=writer,
         grpo_step=0,
         optimizer_step=optimizer_step,
     )
@@ -865,12 +851,10 @@ def main() -> None:
             normalize_by_std=args.use_std_normalization,
         )
 
-        step_output_dir = output_dir / f"grpo_step_{grpo_step:06d}"
-        step_log_dir = log_dir / f"grpo_step_{grpo_step:06d}"
-        write_jsonl(step_output_dir / "rollouts.jsonl", rollout_records)
+        writer.write_rollouts(grpo_step, rollout_records)
         if args.sample_rollouts_to_log > 0:
-            write_jsonl(
-                step_log_dir / "sample_rollouts.jsonl",
+            writer.write_sample_rollouts(
+                grpo_step,
                 rollout_records[: args.sample_rollouts_to_log],
             )
 
@@ -881,8 +865,8 @@ def main() -> None:
             group_size=args.group_size,
             rollout_seconds=rollout_seconds,
         )
-        append_jsonl(metrics_path, rollout_summary)
-        write_json(step_log_dir / "rollout_summary.json", rollout_summary)
+        writer.append_metric(rollout_summary)
+        writer.write_rollout_summary(grpo_step, rollout_summary)
 
         policy, tokenizer = backend_manager.enter_training_phase()
         rollout_tensors = tokenize_rollout_records(rollout_records, tokenizer)
@@ -920,7 +904,7 @@ def main() -> None:
             kl_coef=args.kl_coef,
             device=args.policy_device,
             rng=rng,
-            metrics_path=metrics_path,
+            writer=writer,
             grpo_step=grpo_step,
             optimizer_step=optimizer_step,
             learning_rate=args.learning_rate,
@@ -941,9 +925,7 @@ def main() -> None:
                 max_new_tokens=args.max_new_tokens,
                 temperature=args.eval_temperature,
                 top_p=args.eval_top_p,
-                output_dir=output_dir,
-                log_dir=log_dir,
-                metrics_path=metrics_path,
+                writer=writer,
                 grpo_step=grpo_step,
                 optimizer_step=optimizer_step,
             )
@@ -954,8 +936,7 @@ def main() -> None:
                     policy.save_pretrained(output_dir / "best_policy")
                     tokenizer.save_pretrained(output_dir / "best_policy")
 
-        append_jsonl(
-            metrics_path,
+        writer.append_metric(
             {
                 "type": "grpo_step_summary",
                 "grpo_step": grpo_step,
@@ -977,9 +958,7 @@ def main() -> None:
             max_new_tokens=args.max_new_tokens,
             temperature=args.eval_temperature,
             top_p=args.eval_top_p,
-            output_dir=output_dir,
-            log_dir=log_dir,
-            metrics_path=metrics_path,
+            writer=writer,
             grpo_step=args.n_grpo_steps,
             optimizer_step=optimizer_step,
         )
@@ -1011,7 +990,7 @@ def main() -> None:
         "loss_normalize_constant": args.loss_normalize_constant,
         "use_std_normalization": args.use_std_normalization,
     }
-    write_json(log_dir / "run_summary.json", run_summary)
+    writer.write_run_summary(run_summary)
     if args.save_checkpoints:
         policy.save_pretrained(output_dir / "final_policy")
         tokenizer.save_pretrained(output_dir / "final_policy")

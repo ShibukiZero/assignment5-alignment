@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import random
 import time
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from statistics import mean
 from typing import Any
@@ -19,6 +19,13 @@ from vllm import LLM, SamplingParams
 
 from cs336_alignment.backend_lifecycle import BackendLifecycleManager
 from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
+from cs336_alignment.experiment_logging import (
+    ExperimentLogWriter,
+    get_ground_truth,
+    get_question,
+    load_prompt_template,
+    read_jsonl,
+)
 from cs336_alignment.sft import (
     get_response_log_probs,
     sft_microbatch_train_step,
@@ -84,6 +91,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--eval-temperature", type=float, default=1.0)
     parser.add_argument("--eval-top-p", type=float, default=1.0)
     parser.add_argument(
+        "--reward-workers",
+        type=int,
+        default=1,
+        help="Number of worker processes for CPU-side validation reward scoring.",
+    )
+    parser.add_argument(
         "--filter-correct-sft",
         action="store_true",
         help="Keep only SFT traces that receive answer_reward == 1.",
@@ -94,39 +107,6 @@ def parse_args() -> argparse.Namespace:
         help="Save best_policy and final_policy under --output-dir. Leave off for smoke/debug runs.",
     )
     return parser.parse_args()
-
-
-def read_jsonl(path: str, max_examples: int | None = None) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    with Path(path).open(encoding="utf-8") as f:
-        for line in f:
-            if max_examples is not None and len(rows) >= max_examples:
-                break
-            rows.append(json.loads(line))
-    if not rows:
-        raise ValueError(f"No examples found in {path}")
-    return rows
-
-
-def load_prompt_template(path: str) -> str:
-    template = Path(path).read_text(encoding="utf-8")
-    if "{question}" not in template:
-        raise ValueError(f"Prompt template must contain '{{question}}': {path}")
-    return template
-
-
-def get_question(example: dict[str, Any]) -> str:
-    question = example.get("question") or example.get("problem")
-    if question is None:
-        raise ValueError("Example must contain `question` or `problem`.")
-    return question
-
-
-def get_ground_truth(example: dict[str, Any]) -> str:
-    ground_truth = example.get("ground_truth", example.get("answer"))
-    if ground_truth is None:
-        raise ValueError("Example must contain `ground_truth` or `answer`.")
-    return str(ground_truth)
 
 
 def maybe_filter_correct_sft(examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -167,6 +147,7 @@ def evaluate_with_vllm(
     max_new_tokens: int,
     temperature: float,
     top_p: float,
+    reward_workers: int,
 ) -> dict[str, Any]:
     prompts = [prompt_template.format(question=get_question(example)) for example in val_examples]
     sampling_params = SamplingParams(
@@ -178,11 +159,16 @@ def evaluate_with_vllm(
     )
     outputs = llm.generate(prompts, sampling_params)
 
+    responses = [output.outputs[0].text for output in outputs]
+    ground_truths = [get_ground_truth(example) for example in val_examples]
+    scores_list = score_generated_responses(
+        responses=responses,
+        ground_truths=ground_truths,
+        reward_workers=reward_workers,
+    )
+
     records: list[dict[str, Any]] = []
-    for example, prompt, output in zip(val_examples, prompts, outputs):
-        response = output.outputs[0].text
-        ground_truth = get_ground_truth(example)
-        scores = r1_zero_reward_fn(response, ground_truth)
+    for prompt, response, ground_truth, scores in zip(prompts, responses, ground_truths, scores_list):
         records.append(
             {
                 "prompt": prompt,
@@ -202,21 +188,30 @@ def evaluate_with_vllm(
             "temperature": temperature,
             "top_p": top_p,
             "max_tokens": max_new_tokens,
+            "reward_workers": reward_workers,
             "stop": "</answer>",
             "include_stop_str_in_output": True,
         },
     }
 
 
-def append_jsonl(path: Path, record: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+def score_generated_response(task: tuple[str, str]) -> dict[str, float]:
+    response, ground_truth = task
+    return r1_zero_reward_fn(response, ground_truth)
 
 
-def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+def score_generated_responses(
+    responses: list[str],
+    ground_truths: list[str],
+    reward_workers: int,
+) -> list[dict[str, float]]:
+    tasks = list(zip(responses, ground_truths))
+    if reward_workers <= 1 or len(tasks) <= 1:
+        return [score_generated_response(task) for task in tasks]
+
+    # Keep vLLM in the parent process; workers only receive plain strings.
+    with ProcessPoolExecutor(max_workers=reward_workers) as executor:
+        return list(executor.map(score_generated_response, tasks))
 
 
 def cuda_memory_metrics(device: str) -> dict[str, float]:
@@ -240,9 +235,8 @@ def run_eval_and_log(
     max_new_tokens: int,
     temperature: float,
     top_p: float,
-    output_dir: Path,
-    log_dir: Path,
-    metrics_path: Path,
+    reward_workers: int,
+    writer: ExperimentLogWriter,
     train_step: int,
 ) -> dict[str, Any]:
     start = time.time()
@@ -254,10 +248,10 @@ def run_eval_and_log(
         max_new_tokens=max_new_tokens,
         temperature=temperature,
         top_p=top_p,
+        reward_workers=reward_workers,
     )
     summary = eval_result["summary"]
-    append_jsonl(
-        metrics_path,
+    writer.append_metric(
         {
             "type": "eval",
             "train_step": train_step,
@@ -265,10 +259,9 @@ def run_eval_and_log(
             **summary,
         },
     )
-    generations_path = output_dir / f"eval_generations_step_{train_step:06d}.jsonl"
     for record in eval_result["records"]:
-        append_jsonl(generations_path, record)
-    write_json(log_dir / f"eval_summary_step_{train_step:06d}.json", summary)
+        writer.append_eval_generation(train_step, record)
+    writer.write_eval_summary(train_step, summary)
     backend_manager.enter_training_phase()
     return summary
 
@@ -279,10 +272,10 @@ def main() -> None:
     torch.manual_seed(args.seed)
     output_dir = Path(args.output_dir)
     log_dir = Path(args.log_dir)
-    metrics_path = log_dir / "metrics.jsonl"
+    writer = ExperimentLogWriter("sft", output_dir=output_dir, log_dir=log_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
-    write_json(log_dir / "config.json", vars(args))
+    writer.write_config(vars(args))
 
     if args.train_batch_size % args.gradient_accumulation_steps != 0:
         raise ValueError("train_batch_size must be divisible by gradient_accumulation_steps.")
@@ -367,8 +360,7 @@ def main() -> None:
         optimizer.step()
         optimizer.zero_grad(set_to_none=True)
 
-        append_jsonl(
-            metrics_path,
+        writer.append_metric(
             {
                 "type": "train",
                 "train_step": train_step,
@@ -393,9 +385,8 @@ def main() -> None:
                 max_new_tokens=args.max_new_tokens,
                 temperature=args.eval_temperature,
                 top_p=args.eval_top_p,
-                output_dir=output_dir,
-                log_dir=log_dir,
-                metrics_path=metrics_path,
+                reward_workers=args.reward_workers,
+                writer=writer,
                 train_step=train_step,
             )
             answer_accuracy = float(summary["answer_accuracy"])
@@ -413,9 +404,8 @@ def main() -> None:
         max_new_tokens=args.max_new_tokens,
         temperature=args.eval_temperature,
         top_p=args.eval_top_p,
-        output_dir=output_dir,
-        log_dir=log_dir,
-        metrics_path=metrics_path,
+        reward_workers=args.reward_workers,
+        writer=writer,
         train_step=final_step,
     )
     if float(summary["answer_accuracy"]) > best_answer_accuracy and args.save_checkpoints:

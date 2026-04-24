@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import random
 import time
@@ -20,6 +19,13 @@ from vllm import LLM, SamplingParams
 
 from cs336_alignment.backend_lifecycle import BackendLifecycleManager
 from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
+from cs336_alignment.experiment_logging import (
+    ExperimentLogWriter,
+    get_ground_truth,
+    get_question,
+    load_prompt_template,
+    read_jsonl,
+)
 from cs336_alignment.sft import (
     get_response_log_probs,
     masked_normalize,
@@ -31,12 +37,6 @@ from sft_experiment import (
     BYTES_PER_GIB,
     DEFAULT_MODEL,
     DEFAULT_PROMPT_TEMPLATE,
-    append_jsonl,
-    get_ground_truth,
-    get_question,
-    load_prompt_template,
-    read_jsonl,
-    write_json,
 )
 
 
@@ -412,7 +412,7 @@ def train_on_accepted_traces(
     sft_epochs: float,
     device: str,
     rng: random.Random,
-    metrics_path: Path,
+    writer: ExperimentLogWriter,
     ei_step: int,
     optimizer_step_start: int,
 ) -> int:
@@ -481,8 +481,7 @@ def train_on_accepted_traces(
             grad_norm = torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=1.0)
             optimizer.step()
             optimizer_step += 1
-            append_jsonl(
-                metrics_path,
+            writer.append_metric(
                 {
                     "type": "train",
                     "ei_step": ei_step,
@@ -512,9 +511,7 @@ def evaluate_policy(
     max_new_tokens: int,
     temperature: float,
     top_p: float,
-    output_dir: Path,
-    log_dir: Path,
-    metrics_path: Path,
+    writer: ExperimentLogWriter,
     ei_step: int,
     optimizer_step: int,
 ) -> dict[str, Any]:
@@ -556,8 +553,7 @@ def evaluate_policy(
         "include_stop_str_in_output": True,
         "eval_seconds": time.time() - start,
     }
-    append_jsonl(
-        metrics_path,
+    writer.append_metric(
         {
             "type": "eval",
             "ei_step": ei_step,
@@ -565,19 +561,11 @@ def evaluate_policy(
             **summary,
         },
     )
-    generation_path = output_dir / f"eval_generations_ei_step_{ei_step:03d}.jsonl"
     for record in records:
-        append_jsonl(generation_path, record)
-    write_json(log_dir / f"eval_summary_ei_step_{ei_step:03d}.json", summary)
+        writer.append_eval_generation(ei_step, record)
+    writer.write_eval_summary(ei_step, summary)
     backend_manager.enter_training_phase()
     return summary
-
-
-def write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for record in records:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
 def main() -> None:
@@ -587,10 +575,10 @@ def main() -> None:
 
     output_dir = Path(args.output_dir)
     log_dir = Path(args.log_dir)
-    metrics_path = log_dir / "metrics.jsonl"
+    writer = ExperimentLogWriter("ei", output_dir=output_dir, log_dir=log_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
-    write_json(log_dir / "config.json", vars(args))
+    writer.write_config(vars(args))
 
     train_examples = read_jsonl(args.train_path, max_examples=args.max_train_questions)
     val_examples = read_jsonl(args.val_path, max_examples=args.eval_max_examples)
@@ -628,9 +616,7 @@ def main() -> None:
         max_new_tokens=args.max_new_tokens,
         temperature=args.eval_temperature,
         top_p=args.eval_top_p,
-        output_dir=output_dir,
-        log_dir=log_dir,
-        metrics_path=metrics_path,
+        writer=writer,
         ei_step=0,
         optimizer_step=optimizer_step,
     )
@@ -680,10 +666,8 @@ def main() -> None:
             reward_key=args.filter_reward_key,
             threshold=args.filter_threshold,
         )
-        step_output_dir = output_dir / f"ei_step_{ei_step:03d}"
-        step_log_dir = log_dir / f"ei_step_{ei_step:03d}"
-        write_jsonl(step_output_dir / "rollouts.jsonl", rollout_records)
-        write_jsonl(step_output_dir / "accepted_sft.jsonl", accepted)
+        writer.write_rollouts(ei_step, rollout_records)
+        writer.write_accepted_sft(ei_step, accepted)
 
         rollout_summary = summarize_rollouts(
             records=rollout_records,
@@ -692,8 +676,8 @@ def main() -> None:
             rollouts_per_question=args.rollouts_per_question,
             rollout_seconds=rollout_seconds,
         )
-        append_jsonl(metrics_path, rollout_summary)
-        write_json(step_log_dir / "rollout_summary.json", rollout_summary)
+        writer.append_metric(rollout_summary)
+        writer.write_rollout_summary(ei_step, rollout_summary)
 
         logger.info(
             "EI step %d accepted %d/%d rollouts",
@@ -713,7 +697,7 @@ def main() -> None:
             sft_epochs=args.sft_epochs_per_step,
             device=args.policy_device,
             rng=rng,
-            metrics_path=metrics_path,
+            writer=writer,
             ei_step=ei_step,
             optimizer_step_start=optimizer_step,
         )
@@ -725,9 +709,7 @@ def main() -> None:
             max_new_tokens=args.max_new_tokens,
             temperature=args.eval_temperature,
             top_p=args.eval_top_p,
-            output_dir=output_dir,
-            log_dir=log_dir,
-            metrics_path=metrics_path,
+            writer=writer,
             ei_step=ei_step,
             optimizer_step=optimizer_step,
         )
@@ -739,8 +721,7 @@ def main() -> None:
                 policy.save_pretrained(output_dir / "best_policy")
                 tokenizer.save_pretrained(output_dir / "best_policy")
 
-        append_jsonl(
-            metrics_path,
+        writer.append_metric(
             {
                 "type": "ei_step_summary",
                 "ei_step": ei_step,
@@ -757,7 +738,7 @@ def main() -> None:
         "final_optimizer_step": optimizer_step,
         "n_ei_steps": args.n_ei_steps,
     }
-    write_json(log_dir / "run_summary.json", final_summary)
+    writer.write_run_summary(final_summary)
     if args.save_checkpoints:
         policy.save_pretrained(output_dir / "final_policy")
         tokenizer.save_pretrained(output_dir / "final_policy")
