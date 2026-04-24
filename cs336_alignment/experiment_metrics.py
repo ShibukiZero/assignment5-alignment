@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from statistics import mean
+
 import torch
 
 
@@ -9,7 +11,7 @@ BYTES_PER_GIB = 1024**3
 def mean_or_none(values: list[float]) -> float | None:
     if not values:
         return None
-    return sum(values) / len(values)
+    return mean(values)
 
 
 def cuda_memory_metrics(device: str) -> dict[str, float]:

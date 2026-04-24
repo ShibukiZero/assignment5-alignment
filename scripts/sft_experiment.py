@@ -159,8 +159,12 @@ def evaluate_with_vllm(
     )
     outputs = llm.generate(prompts, sampling_params)
 
-    responses = [output.outputs[0].text for output in outputs]
-    ground_truths = [get_ground_truth(example) for example in val_examples]
+    scoring_items = [
+        (prompt, output.outputs[0].text, get_ground_truth(example))
+        for example, prompt, output in zip(val_examples, prompts, outputs)
+    ]
+    responses = [response for _, response, _ in scoring_items]
+    ground_truths = [ground_truth for _, _, ground_truth in scoring_items]
     scores_list = score_responses(
         responses=responses,
         ground_truths=ground_truths,
@@ -169,7 +173,7 @@ def evaluate_with_vllm(
     )
 
     records: list[dict[str, Any]] = []
-    for prompt, response, ground_truth, scores in zip(prompts, responses, ground_truths, scores_list):
+    for (prompt, response, ground_truth), scores in zip(scoring_items, scores_list):
         records.append(
             {
                 "prompt": prompt,
