@@ -137,19 +137,23 @@ The main results are:
 
 | setting | train examples | effective epochs | best answer acc | best step | final answer acc | final step |
 |---|---:|---:|---:|---:|---:|---:|
-| 128 | 128 | 112.5 | 41.14% | 200 | 31.48% | 900 |
-| 256 | 256 | 56.2 | 42.20% | 500 | 38.26% | 900 |
-| 512 | 512 | 28.1 | 41.64% | 900 | 41.64% | 900 |
-| 1024 | 1024 | 14.1 | 37.86% | 900 | 37.86% | 900 |
-| Noisy full | 4866 | 3.0 | 26.07% | 700 | 22.01% | 900 |
+| 128 | 128 | 112.5 | 33.73% | 200 | 1.31% | 900 |
+| 256 | 256 | 56.2 | 36.64% | 100 | 5.53% | 900 |
+| 512 | 512 | 28.1 | 39.36% | 600 | 34.23% | 900 |
+| 1024 | 1024 | 14.1 | 37.36% | 200 | 36.36% | 900 |
+| Noisy full | 4866 | 3.0 | 35.51% | 700 | 31.17% | 900 |
 
-The 256-example run achieved the highest peak validation answer accuracy,
-42.20% at step 500, but then declined to 38.26% by step 900. The 512-example
-run was the best final checkpoint, reaching 41.64% at step 900. The 128-example
-run peaked early at 41.14% and then degraded substantially, which suggests
-overfitting under a fixed 900-step training budget. The full noisy dataset
-still exceeded the assignment's 15% target, reaching 26.07% at best, but it
-underperformed the smaller subsets.
+All dataset sizes cleared the assignment's 15% target at some point in
+training, including the full noisy dataset, which reached 35.51% validation
+answer accuracy. The best peak in this sweep came from the 512-example run,
+which reached 39.36% at step 600. However, the fixed 900-step budget makes the
+small-data runs receive many more effective epochs than the full-data run, and
+the 128- and 256-example runs collapsed badly by the end of training. Their
+final answer accuracies fell to 1.31% and 5.53%, with format accuracies also
+dropping sharply, which suggests that these tiny subsets were overfit so
+aggressively that the model lost the validation-time response behavior needed
+by the reward parser. In contrast, the 512-, 1024-, and full-data runs were
+more stable at the end of training.
 
 For the filtered SFT experiment, filtering retained 4,136 of the 4,866 noisy
 SFT examples. The filtered-vs-noisy validation curve is shown below.
@@ -160,15 +164,18 @@ The comparison is:
 
 | setting | train examples | best answer acc | best step | final answer acc | final step |
 |---|---:|---:|---:|---:|---:|
-| Noisy full | 4866 | 26.07% | 700 | 22.01% | 900 |
-| Filtered full | 4136 | 35.79% | 800 | 35.10% | 900 |
+| Noisy full | 4866 | 35.51% | 700 | 31.17% | 900 |
+| Filtered full | 4136 | 39.64% | 900 | 39.64% | 900 |
 
-Reward filtering improved the best validation answer accuracy by 9.72
-percentage points, from 26.07% to 35.79%, and improved final validation answer
-accuracy by 13.10 points, from 22.01% to 35.10%. This supports the filtering
-hypothesis in the assignment: SFT traces whose final answers fail the reward
-function are harmful enough that removing them produces a substantially better
-supervised warm start.
+Reward filtering improved the best validation answer accuracy by 4.13
+percentage points, from 35.51% to 39.64%, and improved final validation answer
+accuracy by 8.47 points, from 31.17% to 39.64%. The filtered curve was also
+more stable late in training: unlike the noisy full run, whose accuracy peaked
+at step 700 and then declined by step 900, the filtered full run achieved its
+best score at the final checkpoint. This supports the filtering hypothesis in
+the assignment: SFT traces whose final answers fail the reward function are
+harmful enough that removing them produces a cleaner supervised warm start,
+and makes late-training performance more stable.
 
 The size-sweep results should be interpreted carefully because the optimizer
 step budget was fixed across dataset sizes. Smaller datasets therefore receive
@@ -176,7 +183,8 @@ many more effective epochs than the full dataset: for example, the 128-example
 run sees about 112.5 epochs, while the full noisy run sees only about 3.0.
 Thus, the result does not imply that smaller datasets are inherently better;
 rather, under this fixed-step budget, the small datasets fit quickly and then
-begin to overfit, while the full noisy dataset is both harder and noisier.
+can overfit or collapse, while the full noisy dataset learns more slowly but
+maintains substantially better late-training validation behavior.
 
 ---
 

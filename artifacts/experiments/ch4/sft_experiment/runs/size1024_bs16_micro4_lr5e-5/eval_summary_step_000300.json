@@ -1,11 +1,14 @@
 {
   "num_examples": 3199,
-  "reward": 0.30165676773991873,
-  "format_accuracy": 0.9474835886214442,
-  "answer_accuracy": 0.30165676773991873,
+  "reward": 0.3485464207564864,
+  "format_accuracy": 0.9431072210065645,
+  "answer_accuracy": 0.3485464207564864,
   "temperature": 1.0,
   "top_p": 1.0,
   "max_tokens": 1024,
+  "reward_workers": 1,
+  "quiet_reward_parser_logs": true,
+  "reward_timeout_seconds": 5,
   "stop": "</answer>",
   "include_stop_str_in_output": true
 }

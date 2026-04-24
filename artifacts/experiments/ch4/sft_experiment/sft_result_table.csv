@@ -1,7 +1,7 @@
 run,label,train_examples,effective_epochs,best_answer_accuracy_percent,best_step,best_format_accuracy_percent,final_answer_accuracy_percent,final_step,final_format_accuracy_percent,final_train_loss
-size128_bs16_micro4_lr5e-5,128,128,112.50,41.14,200,97.72,31.48,900,91.22,5.1406
-size256_bs16_micro4_lr5e-5,256,256,56.25,42.20,500,98.06,38.26,900,97.66,2.7031
-size512_bs16_micro4_lr5e-5,512,512,28.12,41.64,900,98.16,41.64,900,98.16,3.8833
-size1024_bs16_micro4_lr5e-5,1024,1024,14.06,37.86,900,97.22,37.86,900,97.22,2.5723
-sizefull_bs16_micro4_lr5e-5,Noisy full,4866,2.96,26.07,700,92.97,22.01,900,92.37,58.4375
-filtered_full_bs16_micro4_lr5e-5,Filtered full,4136,3.48,35.79,800,95.53,35.10,900,95.19,62.6875
+size128_bs16_micro4_lr5e-5,128,128,112.50,33.73,200,90.25,1.31,900,12.85,4.8750
+size256_bs16_micro4_lr5e-5,256,256,56.25,36.64,100,90.62,5.53,900,38.20,1.9062
+size512_bs16_micro4_lr5e-5,512,512,28.12,39.36,600,96.56,34.23,900,93.65,1.1196
+size1024_bs16_micro4_lr5e-5,1024,1024,14.06,37.36,200,96.31,36.36,900,93.28,3.4277
+sizefull_bs16_micro4_lr5e-5,Noisy full,4866,2.96,35.51,700,97.00,31.17,900,96.75,59.0000
+filtered_full_bs16_micro4_lr5e-5,Filtered full,4136,3.48,39.64,900,96.12,39.64,900,96.12,61.5000
