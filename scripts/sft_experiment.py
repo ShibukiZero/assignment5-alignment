@@ -7,7 +7,6 @@ import argparse
 import logging
 import random
 import time
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from statistics import mean
 from typing import Any
@@ -26,6 +25,8 @@ from cs336_alignment.experiment_logging import (
     load_prompt_template,
     read_jsonl,
 )
+from cs336_alignment.experiment_metrics import cuda_memory_metrics
+from cs336_alignment.reward_scoring import score_responses
 from cs336_alignment.sft import (
     get_response_log_probs,
     sft_microbatch_train_step,
@@ -41,7 +42,6 @@ DEFAULT_TRAIN_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_n
 DEFAULT_VAL_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
 DEFAULT_PROMPT_TEMPLATE = "cs336_alignment/prompts/r1_zero.prompt"
 DEFAULT_LOG_DIR = ".agents/logs/ch4/sft_experiment"
-BYTES_PER_GIB = 1024**3
 
 
 def parse_args() -> argparse.Namespace:
@@ -161,9 +161,10 @@ def evaluate_with_vllm(
 
     responses = [output.outputs[0].text for output in outputs]
     ground_truths = [get_ground_truth(example) for example in val_examples]
-    scores_list = score_generated_responses(
+    scores_list = score_responses(
         responses=responses,
         ground_truths=ground_truths,
+        reward_fn_name="r1_zero",
         reward_workers=reward_workers,
     )
 
@@ -192,39 +193,6 @@ def evaluate_with_vllm(
             "stop": "</answer>",
             "include_stop_str_in_output": True,
         },
-    }
-
-
-def score_generated_response(task: tuple[str, str]) -> dict[str, float]:
-    response, ground_truth = task
-    return r1_zero_reward_fn(response, ground_truth)
-
-
-def score_generated_responses(
-    responses: list[str],
-    ground_truths: list[str],
-    reward_workers: int,
-) -> list[dict[str, float]]:
-    tasks = list(zip(responses, ground_truths))
-    if reward_workers <= 1 or len(tasks) <= 1:
-        return [score_generated_response(task) for task in tasks]
-
-    # Keep vLLM in the parent process; workers only receive plain strings.
-    with ProcessPoolExecutor(max_workers=reward_workers) as executor:
-        return list(executor.map(score_generated_response, tasks))
-
-
-def cuda_memory_metrics(device: str) -> dict[str, float]:
-    if not device.startswith("cuda"):
-        return {}
-    cuda_device = torch.device(device)
-    return {
-        "cuda_memory_allocated_gib": torch.cuda.memory_allocated(cuda_device) / BYTES_PER_GIB,
-        "cuda_memory_reserved_gib": torch.cuda.memory_reserved(cuda_device) / BYTES_PER_GIB,
-        "cuda_max_memory_allocated_gib": torch.cuda.max_memory_allocated(cuda_device)
-        / BYTES_PER_GIB,
-        "cuda_max_memory_reserved_gib": torch.cuda.max_memory_reserved(cuda_device)
-        / BYTES_PER_GIB,
     }
 
 

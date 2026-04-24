@@ -17,7 +17,6 @@ from tqdm import tqdm
 from vllm import LLM, SamplingParams
 
 from cs336_alignment.backend_lifecycle import BackendLifecycleManager, init_policy
-from cs336_alignment.drgrpo_grader import question_only_reward_fn, r1_zero_reward_fn
 from cs336_alignment.experiment_logging import (
     ExperimentLogWriter,
     get_ground_truth,
@@ -25,6 +24,8 @@ from cs336_alignment.experiment_logging import (
     load_prompt_template,
     read_jsonl,
 )
+from cs336_alignment.experiment_metrics import cuda_memory_metrics, mean_or_none
+from cs336_alignment.reward_scoring import resolve_reward_fn
 from cs336_alignment.grpo import (
     compute_group_normalized_rewards,
     grpo_microbatch_train_step,
@@ -35,7 +36,6 @@ from cs336_alignment.sft import get_response_log_probs, tokenize_prompt_and_outp
 from sft_experiment import (
     DEFAULT_MODEL,
     DEFAULT_PROMPT_TEMPLATE,
-    cuda_memory_metrics,
 )
 
 
@@ -44,14 +44,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_TRAIN_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/train.jsonl"
 DEFAULT_VAL_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
 DEFAULT_LOG_DIR = ".agents/logs/ch7/grpo_on_policy"
-
-
-def resolve_reward_fn(name: str):
-    if name == "r1_zero":
-        return r1_zero_reward_fn
-    if name == "question_only":
-        return question_only_reward_fn
-    raise ValueError(f"Unknown reward function: {name}")
 
 
 def resolve_sampling_stop(reward_fn_name: str) -> tuple[list[str] | None, bool]:
@@ -315,12 +307,6 @@ def attach_advantages(
         record["advantage"] = float(advantage.item())
         record["raw_reward"] = float(raw_reward.item())
     return advantages, raw_rewards, metadata
-
-
-def mean_or_none(values: list[float]) -> float | None:
-    if not values:
-        return None
-    return mean(values)
 
 
 def summarize_rollouts(

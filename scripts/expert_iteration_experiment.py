@@ -26,6 +26,7 @@ from cs336_alignment.experiment_logging import (
     load_prompt_template,
     read_jsonl,
 )
+from cs336_alignment.experiment_metrics import cuda_memory_metrics, mean_or_none
 from cs336_alignment.sft import (
     get_response_log_probs,
     masked_normalize,
@@ -34,7 +35,6 @@ from cs336_alignment.sft import (
 )
 
 from sft_experiment import (
-    BYTES_PER_GIB,
     DEFAULT_MODEL,
     DEFAULT_PROMPT_TEMPLATE,
 )
@@ -140,20 +140,6 @@ def parse_args() -> argparse.Namespace:
         help="Save best_policy and final_policy under --output-dir.",
     )
     return parser.parse_args()
-
-
-def cuda_memory_metrics(device: str) -> dict[str, float]:
-    if not device.startswith("cuda"):
-        return {}
-    cuda_device = torch.device(device)
-    return {
-        "cuda_memory_allocated_gib": torch.cuda.memory_allocated(cuda_device) / BYTES_PER_GIB,
-        "cuda_memory_reserved_gib": torch.cuda.memory_reserved(cuda_device) / BYTES_PER_GIB,
-        "cuda_max_memory_allocated_gib": torch.cuda.max_memory_allocated(cuda_device)
-        / BYTES_PER_GIB,
-        "cuda_max_memory_reserved_gib": torch.cuda.max_memory_reserved(cuda_device)
-        / BYTES_PER_GIB,
-    }
 
 
 def sample_question_batch(
@@ -325,12 +311,6 @@ def accepted_sft_records(
                 }
             )
     return accepted
-
-
-def mean_or_none(values: list[float]) -> float | None:
-    if not values:
-        return None
-    return mean(values)
 
 
 def summarize_rollouts(
