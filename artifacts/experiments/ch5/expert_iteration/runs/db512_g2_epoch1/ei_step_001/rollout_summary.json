@@ -8,11 +8,11 @@
   "accepted_fraction": 0.0263671875,
   "question_coverage_with_accept": 0.05078125,
   "reward": 0.0263671875,
-  "format_accuracy": 0.1552734375,
+  "format_accuracy": 0.1513671875,
   "answer_accuracy": 0.0263671875,
-  "avg_token_entropy": 0.9143037796020508,
-  "avg_accepted_token_entropy": 0.7561125578703703,
-  "avg_response_token_length": 365.73046875,
-  "avg_accepted_response_token_length": 122.33333333333333,
-  "rollout_seconds": 77.74146246910095
+  "avg_token_entropy": 0.9116458892822266,
+  "avg_accepted_token_entropy": 0.7477213541666666,
+  "avg_response_token_length": 365.310546875,
+  "avg_accepted_response_token_length": 130.0,
+  "rollout_seconds": 55.92089557647705
 }

@@ -1,0 +1,18 @@
+{
+  "best_answer_accuracy": 0.35698655829946857,
+  "ei_step_summary_rows": 5,
+  "experiment": "ei",
+  "final_answer_accuracy": 0.33916849015317285,
+  "final_optimizer_step": 150,
+  "log_dir": ".agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch2",
+  "n_ei_steps": 5,
+  "output_dir": "/root/autodl-tmp/a5-alignment/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch2",
+  "policy_device": "cuda:0",
+  "run_id": "db512_g2_epoch2",
+  "save_checkpoints": false,
+  "source_config_path": "artifacts/experiments/ch5/expert_iteration/runs/db512_g2_epoch2/config.json",
+  "stdout_stderr_path": "/root/autodl-tmp/a5-alignment/reruns/prefix_cache_repair_single_gpu/stdout/ei/db512_g2_epoch2.out",
+  "train_rows": 150,
+  "verified_at_utc": "2026-04-24T13:01:31.008949+00:00",
+  "vllm_device": "cuda:0"
+}

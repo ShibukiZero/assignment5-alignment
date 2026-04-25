@@ -1,28 +1,93 @@
 # Ch5 Expert Iteration Run Summaries
 
-This archive records the run summary data used by the Ch5 `expert_iteration_experiment` writeup section. It covers the four initial `D_b=512` runs and the four supplement runs used in the final table.
+Source: prefix-cache-repaired single-GPU rerun; old EI artifacts are intentionally ignored.
 
-The raw per-run data needed to reproduce the writeup tables and curves are
-archived under `artifacts/experiments/ch5/expert_iteration/runs/`. Each run
-directory contains `config.json`, `run_summary.json`, `metrics.jsonl`, all
-`eval_summary_ei_step_*.json` files, and each EI step's `rollout_summary.json`.
+These summaries are rebuilt from the prefix-cache-repaired rerun logs only.
 
-| run | rollout batch | G | SFT epochs | best answer accuracy | best EI step | final answer accuracy | final EI step | final rollout entropy | source run summary |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `db512_g2_epoch1` | 512 | 2 | 1 | 0.281651 | 5 | 0.281651 | 5 | 1.251425 | `.agents/logs/ch5/ei_first_grid_db512_lr5e-5_bs16/db512_g2_epoch1/run_summary.json` |
-| `db512_g2_epoch2` | 512 | 2 | 2 | 0.338543 | 5 | 0.338543 | 5 | 0.674401 | `.agents/logs/ch5/ei_first_grid_db512_lr5e-5_bs16/db512_g2_epoch2/run_summary.json` |
-| `db512_g4_epoch1` | 512 | 4 | 1 | 0.256330 | 4 | 0.226008 | 5 | 1.368774 | `.agents/logs/ch5/ei_first_grid_db512_lr5e-5_bs16/db512_g4_epoch1/run_summary.json` |
-| `db512_g4_epoch2` | 512 | 4 | 2 | 0.359175 | 4 | 0.353548 | 5 | 0.796369 | `.agents/logs/ch5/ei_first_grid_db512_lr5e-5_bs16/db512_g4_epoch2/run_summary.json` |
-| `db1024_g4_epoch2` | 1024 | 4 | 2 | 0.331354 | 5 | 0.331354 | 5 | 0.679569 | `.agents/logs/ch5/ei_supplement_db1024_2048_budget4_lr5e-5_bs16/db1024_g4_epoch2/run_summary.json` |
-| `db1024_g8_epoch2` | 1024 | 8 | 2 | 0.323539 | 2 | 0.278525 | 5 | 0.973193 | `.agents/logs/ch5/ei_supplement_db1024_2048_budget4_lr5e-5_bs16/db1024_g8_epoch2/run_summary.json` |
-| `db2048_g4_epoch2` | 2048 | 4 | 2 | 0.346358 | 4 | 0.313535 | 5 | 0.672091 | `.agents/logs/ch5/ei_supplement_db1024_2048_budget4_lr5e-5_bs16/db2048_g4_epoch2/run_summary.json` |
-| `db2048_g4_epoch3` | 2048 | 4 | 3 | 0.409503 | 3 | 0.405439 | 5 | 0.364994 | `.agents/logs/ch5/ei_supplement_db1024_2048_budget4_lr5e-5_bs16/db2048_g4_epoch3/run_summary.json` |
+## D_b=512, G=2, epochs=1
 
-Additional archived artifacts:
+- Run name: `db512_g2_epoch1`
+- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch1`
+- Best validation answer accuracy: 0.2216 at EI step 5
+- Final validation answer accuracy: 0.2216 at EI step 5
+- Final validation format accuracy: 0.9572
+- Final accepted rollout fraction: 0.2734
+- Final average rollout entropy: 0.6721
+- Verified at UTC: 2026-04-24T12:40:22.259452+00:00
 
-- `artifacts/experiments/ch5/expert_iteration/ei_results_summary.csv`
-- `artifacts/experiments/ch5/expert_iteration/ei_results_summary.md`
-- `artifacts/experiments/ch5/expert_iteration/ei_validation_accuracy.svg`
-- `artifacts/experiments/ch5/expert_iteration/ei_rollout_entropy.svg`
-- `artifacts/experiments/ch5/expert_iteration/run_summaries.json`
-- `artifacts/experiments/ch5/expert_iteration/runs/`
+## D_b=512, G=2, epochs=2
+
+- Run name: `db512_g2_epoch2`
+- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch2`
+- Best validation answer accuracy: 0.3570 at EI step 4
+- Final validation answer accuracy: 0.3392 at EI step 5
+- Final validation format accuracy: 0.8909
+- Final accepted rollout fraction: 0.2812
+- Final average rollout entropy: 0.6600
+- Verified at UTC: 2026-04-24T13:01:31.008949+00:00
+
+## D_b=512, G=4, epochs=1
+
+- Run name: `db512_g4_epoch1`
+- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g4_epoch1`
+- Best validation answer accuracy: 0.2607 at EI step 2
+- Final validation answer accuracy: 0.2123 at EI step 5
+- Final validation format accuracy: 0.8465
+- Final accepted rollout fraction: 0.1748
+- Final average rollout entropy: 2.6597
+- Verified at UTC: 2026-04-24T13:24:35.007027+00:00
+
+## D_b=512, G=4, epochs=2
+
+- Run name: `db512_g4_epoch2`
+- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g4_epoch2`
+- Best validation answer accuracy: 0.3407 at EI step 3
+- Final validation answer accuracy: 0.2466 at EI step 5
+- Final validation format accuracy: 0.9015
+- Final accepted rollout fraction: 0.2080
+- Final average rollout entropy: 1.0129
+- Verified at UTC: 2026-04-24T13:47:06.389322+00:00
+
+## D_b=1024, G=4, epochs=2
+
+- Run name: `db1024_g4_epoch2`
+- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db1024_g4_epoch2`
+- Best validation answer accuracy: 0.3092 at EI step 3
+- Final validation answer accuracy: 0.2073 at EI step 5
+- Final validation format accuracy: 0.8512
+- Final accepted rollout fraction: 0.1760
+- Final average rollout entropy: 1.0949
+- Verified at UTC: 2026-04-24T14:23:25.008004+00:00
+
+## D_b=1024, G=8, epochs=2
+
+- Run name: `db1024_g8_epoch2`
+- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db1024_g8_epoch2`
+- Best validation answer accuracy: 0.3514 at EI step 2
+- Final validation answer accuracy: 0.2082 at EI step 5
+- Final validation format accuracy: 0.8224
+- Final accepted rollout fraction: 0.1671
+- Final average rollout entropy: 1.3029
+- Verified at UTC: 2026-04-24T15:50:26.931334+00:00
+
+## D_b=2048, G=4, epochs=2
+
+- Run name: `db2048_g4_epoch2`
+- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db2048_g4_epoch2`
+- Best validation answer accuracy: 0.3467 at EI step 2
+- Final validation answer accuracy: 0.2269 at EI step 5
+- Final validation format accuracy: 0.8249
+- Final accepted rollout fraction: 0.1810
+- Final average rollout entropy: 1.3813
+- Verified at UTC: 2026-04-24T16:59:15.253028+00:00
+
+## D_b=2048, G=4, epochs=3
+
+- Run name: `db2048_g4_epoch3`
+- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db2048_g4_epoch3`
+- Best validation answer accuracy: 0.4189 at EI step 2
+- Final validation answer accuracy: 0.2304 at EI step 5
+- Final validation format accuracy: 0.8409
+- Final accepted rollout fraction: 0.2125
+- Final average rollout entropy: 0.7737
+- Verified at UTC: 2026-04-24T18:11:36.119504+00:00

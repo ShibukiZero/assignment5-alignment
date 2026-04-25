@@ -202,14 +202,18 @@ maintains substantially better late-training validation behavior.
 
 **Answer:** Because the official course MATH files were not available in this
 environment, we ran EI on the same substitute MATH-like
-`competition_math_numeric_noisy` split used in the previous experiments.
-Validation was run on the full 3199-example validation set with the R1-Zero
-prompt, temperature 1.0, max tokens 1024, and the `r1_zero_reward_fn`-based
-answer reward.
+`competition_math_numeric_noisy` split used in the previous experiments. The
+results below come from the prefix-cache-repaired rerun artifacts, so the old
+EI runs that reused a live vLLM engine without clearing prefix cache after
+weight sync are not used here. Validation was run on the full 3199-example
+validation set with the R1-Zero prompt, temperature 1.0, max tokens 1024, and
+the `r1_zero_reward_fn`-based answer reward.
 
 ![Expert Iteration validation accuracy](artifacts/experiments/ch5/expert_iteration/ei_validation_accuracy.svg)
 
 ![Expert Iteration response entropy](artifacts/experiments/ch5/expert_iteration/ei_rollout_entropy.svg)
+
+![Expert Iteration accepted rollout fraction](artifacts/experiments/ch5/expert_iteration/ei_accepted_fraction.svg)
 
 The run summaries used by this section are archived in
 `artifacts/experiments/ch5/expert_iteration/run_summaries_archive.md` and
@@ -220,41 +224,53 @@ The table below summarizes the EI runs.
 
 | Configuration | Best answer accuracy | Best EI step | Final answer accuracy | Final EI step |
 |---|---:|---:|---:|---:|
-| `D_b=512, G=2, epochs=1` | 28.17% | 5 | 28.17% | 5 |
-| `D_b=512, G=2, epochs=2` | 33.85% | 5 | 33.85% | 5 |
-| `D_b=512, G=4, epochs=1` | 25.63% | 4 | 22.60% | 5 |
-| `D_b=512, G=4, epochs=2` | 35.92% | 4 | 35.35% | 5 |
-| `D_b=1024, G=4, epochs=2` | 33.14% | 5 | 33.14% | 5 |
-| `D_b=1024, G=8, epochs=2` | 32.35% | 2 | 27.85% | 5 |
-| `D_b=2048, G=4, epochs=2` | 34.64% | 4 | 31.35% | 5 |
-| `D_b=2048, G=4, epochs=3` | **40.95%** | 3 | **40.54%** | 5 |
+| `D_b=512, G=2, epochs=1` | 22.16% | 5 | 22.16% | 5 |
+| `D_b=512, G=2, epochs=2` | 35.70% | 4 | 33.92% | 5 |
+| `D_b=512, G=4, epochs=1` | 26.07% | 2 | 21.23% | 5 |
+| `D_b=512, G=4, epochs=2` | 34.07% | 3 | 24.66% | 5 |
+| `D_b=1024, G=4, epochs=2` | 30.92% | 3 | 20.73% | 5 |
+| `D_b=1024, G=8, epochs=2` | 35.14% | 2 | 20.82% | 5 |
+| `D_b=2048, G=4, epochs=2` | 34.67% | 2 | 22.69% | 5 |
+| `D_b=2048, G=4, epochs=3` | **41.89%** | 2 | 23.04% | 5 |
 
 The best EI configuration was `D_b=2048, G=4, epochs=3`, which reached
-40.95% validation answer accuracy at EI step 3 and finished at 40.54% after
-step 5. This comfortably exceeds the 15% target, though this result is on the
-substitute MATH-like validation set rather than the official course MATH split.
+41.89% validation answer accuracy at EI step 2. This comfortably exceeds the
+15% target, though this result is on the substitute MATH-like validation set
+rather than the official course MATH split. Unlike the old cache-affected
+results, the best run did not finish near its peak: it fell to 23.04% by EI
+step 5, so the best-validation checkpoint is the meaningful model to select.
 
-The EI curves show a clear bootstrapping effect: after the first EI step,
-accepted self-generated traces become much more common, and validation
-accuracy rises quickly. Larger `D_b` helped when paired with enough SFT
-training: moving from `D_b=512, G=4, epochs=2` to
-`D_b=2048, G=4, epochs=3` improved the best validation accuracy from 35.92%
-to 40.95%. Increasing `G` from 4 to 8 at `D_b=1024` helped early but hurt the
-final result, suggesting that more rollouts alone were not enough under this
-training schedule.
+The EI curves show a sharp early bootstrapping effect followed by frequent
+late-stage drift. All runs start from 3.16% validation answer accuracy and
+17.16% format accuracy, but after one or two rounds of generating, filtering,
+and SFT, many runs reach the 30-40% range. This happens because even a weak
+policy produces a small number of correct traces; the verifier filters those
+traces, and SFT then makes the next policy much more likely to produce
+verifier-accepted responses.
 
-Compared with the SFT experiments, EI was more effective because it
-continually refreshed the training traces from the current policy and filtered
-them by verifier reward. The best EI run also exceeded the earlier
-filtered-SFT result, showing that self-generated verified traces can improve
-beyond the static SFT dataset in this setup.
+The same self-training loop is also unstable. The heavier configurations often
+peak early and then degrade: for example, `D_b=2048, G=4, epochs=3` drops from
+41.89% at step 2 to 23.04% at step 5, and `D_b=1024, G=8, epochs=2` drops from
+35.14% at step 2 to 20.82% at step 5. Increasing `G` or `D_b` can improve the
+chance of finding useful traces and can raise the peak, but it does not by
+itself prevent later overfitting or distribution drift in the accepted-trace
+dataset.
 
-The entropy curve decreases most strongly for the best run, especially for
-`D_b=2048, G=4, epochs=3`, whose final rollout entropy is about 0.365. This
-suggests that as EI progresses, the policy becomes more confident and produces
-more consistently formatted, verifier-accepted responses. Entropy values are
-measured in nats and are not bounded by 1, so values above 1 in weaker or less
-stable runs are expected.
+Compared with the SFT experiments, EI is attractive because it continually
+refreshes the training traces from the current policy and filters them by
+verifier reward, rather than relying only on a fixed supervised dataset.
+However, the rerun makes clear that EI should be treated as verifier-filtered
+self-training with selection bias: later SFT rounds train only on what the
+current policy happened to solve, so they can narrow the policy or amplify
+artifacts even while the format reward remains high.
+
+The entropy and accepted-fraction curves support this interpretation. Accepted
+rollout fractions begin around 2-3%, then often jump above 20% after the first
+successful EI update, showing the bootstrapping mechanism directly. In several
+unstable runs, rollout entropy rises again near the end while validation
+accuracy falls, suggesting less controlled generation; in the best run, entropy
+stays comparatively low but accuracy still drops, which suggests that later EI
+can also make the policy confidently wrong rather than merely more random.
 
 ---
 

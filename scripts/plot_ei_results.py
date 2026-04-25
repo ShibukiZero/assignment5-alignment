@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Create writeup-ready plots and tables for the Ch5 Expert Iteration experiments."""
+"""Rebuild writeup-ready artifacts for the Ch5 Expert Iteration reruns.
+
+This script intentionally treats the old EI experiment artifacts as obsolete.
+By default, it reads only the prefix-cache-repaired rerun logs and rewrites the
+Ch5 EI artifact directory from those numerically-correct results.
+"""
 
 from __future__ import annotations
 
@@ -9,16 +14,19 @@ import html
 import json
 import math
 import re
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 
 DEFAULT_LOG_ROOTS = [
-    ".agents/logs/ch5/ei_first_grid_db512_lr5e-5_bs16",
-    ".agents/logs/ch5/ei_supplement_db1024_2048_budget4_lr5e-5_bs16",
+    ".agents/logs/reruns/prefix_cache_repair_single_gpu/ei",
 ]
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch5/expert_iteration"
+DEFAULT_SOURCE_NOTE = (
+    "prefix-cache-repaired single-GPU rerun; old EI artifacts are intentionally ignored"
+)
 
 COLORS = [
     "#1f77b4",
@@ -67,6 +75,8 @@ class RunData:
     sft_epochs_per_step: int | None
     eval_points: list[EvalPoint]
     rollout_points: list[RolloutPoint]
+    source_dir: Path
+    verification_summary: dict[str, Any] | None
 
     @property
     def best_eval(self) -> EvalPoint:
@@ -87,6 +97,21 @@ def parse_args() -> argparse.Namespace:
         help="EI sweep log root. May be passed multiple times.",
     )
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument(
+        "--source-note",
+        default=DEFAULT_SOURCE_NOTE,
+        help="Human-readable source note written into summaries.",
+    )
+    parser.add_argument(
+        "--no-archive-runs",
+        action="store_true",
+        help="Only write summary tables/plots; do not copy per-run logs into artifacts/runs.",
+    )
+    parser.add_argument(
+        "--keep-existing-runs",
+        action="store_true",
+        help="Do not clear artifacts/runs before archiving the selected rerun logs.",
+    )
     parser.add_argument(
         "--include-run",
         action="append",
@@ -167,6 +192,8 @@ def load_run(run_dir: Path) -> RunData | None:
             g = as_optional_int(run_config.get("rollouts_per_question"))
         if epochs is None:
             epochs = as_optional_int(run_config.get("sft_epochs_per_step"))
+    verification_path = run_dir / "rerun_verification_summary.json"
+    verification_summary = read_json(verification_path) if verification_path.exists() else None
 
     eval_points: list[EvalPoint] = []
     for path in eval_paths:
@@ -221,6 +248,8 @@ def load_run(run_dir: Path) -> RunData | None:
         sft_epochs_per_step=epochs,
         eval_points=sorted(eval_points, key=lambda point: point.step),
         rollout_points=sorted(rollout_points, key=lambda point: point.step),
+        source_dir=run_dir,
+        verification_summary=verification_summary,
     )
 
 
@@ -419,6 +448,8 @@ def write_summary_csv(runs: list[RunData], output_path: Path) -> None:
                 "final_format_accuracy",
                 "final_accepted_fraction",
                 "final_rollout_entropy",
+                "source_log_dir",
+                "verified_at_utc",
             ],
             lineterminator="\n",
         )
@@ -446,13 +477,21 @@ def write_summary_csv(runs: list[RunData], output_path: Path) -> None:
                         if final_rollout and final_rollout.avg_token_entropy is not None
                         else ""
                     ),
+                    "source_log_dir": str(run.source_dir.as_posix()),
+                    "verified_at_utc": (
+                        str(run.verification_summary.get("verified_at_utc", ""))
+                        if run.verification_summary
+                        else ""
+                    ),
                 }
             )
 
 
-def write_summary_markdown(runs: list[RunData], output_path: Path) -> None:
+def write_summary_markdown(runs: list[RunData], output_path: Path, source_note: str) -> None:
     lines = [
         "# Ch5 Expert Iteration Summary",
+        "",
+        f"Source: {source_note}.",
         "",
         "| run | best answer acc | best step | final answer acc | final step | final accepted frac | final entropy |",
         "|---|---:|---:|---:|---:|---:|---:|",
@@ -475,6 +514,102 @@ def write_summary_markdown(runs: list[RunData], output_path: Path) -> None:
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def run_summary_record(run: RunData) -> dict[str, Any]:
+    best = run.best_eval
+    final = run.final_eval
+    final_rollout = run.rollout_points[-1] if run.rollout_points else None
+    return {
+        "experiment": "ei_prefix_cache_repair_single_gpu",
+        "run_name": run.run_name,
+        "status": "completed",
+        "rollout_batch_size": run.rollout_batch_size,
+        "rollouts_per_question": run.rollouts_per_question,
+        "sft_epochs_per_step": run.sft_epochs_per_step,
+        "best_answer_accuracy": best.answer_accuracy,
+        "best_step": best.step,
+        "final_answer_accuracy": final.answer_accuracy,
+        "final_step": final.step,
+        "final_format_accuracy": final.format_accuracy,
+        "final_accepted_fraction": (
+            final_rollout.accepted_fraction if final_rollout is not None else None
+        ),
+        "final_rollout_entropy": (
+            final_rollout.avg_token_entropy if final_rollout is not None else None
+        ),
+        "source_log_dir": str(run.source_dir.as_posix()),
+        "artifact_run_dir": f"artifacts/experiments/ch5/expert_iteration/runs/{run.run_name}",
+        "verified_at_utc": (
+            run.verification_summary.get("verified_at_utc")
+            if run.verification_summary is not None
+            else None
+        ),
+    }
+
+
+def write_run_summaries_json(runs: list[RunData], output_path: Path) -> None:
+    payload = [run_summary_record(run) for run in runs]
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def write_run_summaries_archive(
+    runs: list[RunData],
+    output_path: Path,
+    source_note: str,
+) -> None:
+    lines = [
+        "# Ch5 Expert Iteration Run Summaries",
+        "",
+        f"Source: {source_note}.",
+        "",
+        "These summaries are rebuilt from the prefix-cache-repaired rerun logs only.",
+        "",
+    ]
+    for run in runs:
+        best = run.best_eval
+        final = run.final_eval
+        lines.extend(
+            [
+                f"## {run.label}",
+                "",
+                f"- Run name: `{run.run_name}`",
+                f"- Source log dir: `{run.source_dir.as_posix()}`",
+                f"- Best validation answer accuracy: {best.answer_accuracy:.4f} at EI step {best.step}",
+                f"- Final validation answer accuracy: {final.answer_accuracy:.4f} at EI step {final.step}",
+                f"- Final validation format accuracy: {final.format_accuracy:.4f}",
+            ]
+        )
+        if run.rollout_points:
+            final_rollout = run.rollout_points[-1]
+            entropy = final_rollout.avg_token_entropy
+            entropy_text = f"{entropy:.4f}" if entropy is not None else "n/a"
+            lines.extend(
+                [
+                    f"- Final accepted rollout fraction: {final_rollout.accepted_fraction:.4f}",
+                    f"- Final average rollout entropy: {entropy_text}",
+                ]
+            )
+        if run.verification_summary is not None:
+            verified_at = run.verification_summary.get("verified_at_utc")
+            if verified_at:
+                lines.append(f"- Verified at UTC: {verified_at}")
+        lines.append("")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def archive_run_logs(runs: list[RunData], output_dir: Path, keep_existing_runs: bool) -> None:
+    runs_dir = output_dir / "runs"
+    if runs_dir.exists() and not keep_existing_runs:
+        shutil.rmtree(runs_dir)
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    for run in runs:
+        destination = runs_dir / run.run_name
+        if destination.exists():
+            shutil.rmtree(destination)
+        shutil.copytree(run.source_dir, destination)
+
+
 def main() -> None:
     args = parse_args()
     log_roots = [Path(path) for path in (args.log_roots or DEFAULT_LOG_ROOTS)]
@@ -485,6 +620,8 @@ def main() -> None:
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    if not args.no_archive_runs:
+        archive_run_logs(runs, output_dir, keep_existing_runs=args.keep_existing_runs)
 
     accuracy_series = [
         (run.label, [(point.step, point.answer_accuracy) for point in run.eval_points])
@@ -539,7 +676,13 @@ def main() -> None:
     )
 
     write_summary_csv(runs, output_dir / "ei_results_summary.csv")
-    write_summary_markdown(runs, output_dir / "ei_results_summary.md")
+    write_summary_markdown(runs, output_dir / "ei_results_summary.md", args.source_note)
+    write_run_summaries_json(runs, output_dir / "run_summaries.json")
+    write_run_summaries_archive(
+        runs,
+        output_dir / "run_summaries_archive.md",
+        args.source_note,
+    )
 
     print(f"Wrote EI plots and tables to {output_dir}")
 
