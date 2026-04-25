@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_RUN_DIR = ".agents/logs/ch7/grpo_on_policy_lr1e-5"
+DEFAULT_RUN_DIR = ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr1e-5"
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_train_loop"
 DEFAULT_RUN_NAME = "grpo_on_policy_lr1e-5"
 SELECTED_ROLLOUT_STEPS = (1, 50, 100, 150, 200)
@@ -716,7 +716,7 @@ def main() -> None:
         y_label="Validation answer reward",
         output_path=output_dir / "grpo_train_loop_validation_reward.svg",
         y_min=0.0,
-        y_max=0.35,
+        y_max=0.75,
         x_tick_decimals=0,
         y_percent_axis=True,
     )
@@ -732,7 +732,7 @@ def main() -> None:
         y_label="Validation format accuracy",
         output_path=output_dir / "grpo_train_loop_format_accuracy.svg",
         y_min=0.0,
-        y_max=0.8,
+        y_max=1.0,
         x_tick_decimals=0,
         y_percent_axis=True,
     )

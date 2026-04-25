@@ -10,7 +10,7 @@
 
 ## Outcome
 
-- Validation answer reward improved from 3.81% at step 0 to a best of 29.30% at step 180.
-- The run finished at 27.15% validation answer reward and 73.34% validation format accuracy.
-- Final rollout answer reward was 33.98% with average response length 168.5 tokens.
-- Final train token entropy was 0.1698.
+- Validation answer reward improved from 3.81% at step 0 to a best of 67.77% at step 195.
+- The run finished at 67.29% validation answer reward and 95.61% validation format accuracy.
+- Final rollout answer reward was 60.16% with average response length 207.2 tokens.
+- Final train token entropy was 0.1335.
