@@ -603,6 +603,19 @@ losses and dividing by 1024 downweights each completion relative to
 
 ![GRPO gradient norm by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_grad_norm.svg)
 
+The token-entropy curve provides a useful companion diagnostic. All three runs
+rapidly moved from the high-entropy initial policy into a low-entropy regime by
+the end of training. The final mean token entropy was 0.0233 for `masked_mean`,
+0.0282 for `masked_normalize`, and 0.0196 for `batch_token_mean`. Thus,
+`masked_normalize` retained slightly higher entropy at the end, but the entropy
+differences were small compared with the earlier differences in validation
+reward, response length, and gradient scale. I interpret entropy here as
+supporting evidence that none of the repaired runs suffered an obvious
+late-training randomness collapse; the main effect of the normalization choice
+was still the speed and scale of credit assignment.
+
+![GRPO token entropy by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_token_entropy.svg)
+
 Based on this experiment, we fixed `masked_mean` as the better-performing
 length-normalization choice for the following on-policy ablations. The reason is
 not that `masked_normalize` failed outright, but that `masked_mean` learned much

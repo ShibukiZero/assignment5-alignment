@@ -691,6 +691,7 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
             "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_format_accuracy.svg`",
             "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_response_length.svg`",
             "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_grad_norm.svg`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_token_entropy.svg`",
             "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_eval_points.csv`",
             "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_rollout_points.csv`",
             "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_train_points.csv`",
@@ -758,6 +759,13 @@ def main() -> None:
         )
         for run in runs
     ]
+    token_entropy_series = [
+        (
+            run.label,
+            [(point.step, point.token_entropy) for point in run.train_points],
+        )
+        for run in runs
+    ]
 
     render_svg_line_plot(
         series=answer_series,
@@ -787,6 +795,13 @@ def main() -> None:
         x_label="GRPO step",
         y_label="pre-clip gradient norm",
         output_path=output_dir / "grpo_length_normalization_grad_norm.svg",
+    )
+    render_svg_line_plot(
+        series=token_entropy_series,
+        title="GRPO token entropy by length normalization",
+        x_label="GRPO step",
+        y_label="mean token entropy",
+        output_path=output_dir / "grpo_length_normalization_token_entropy.svg",
     )
 
 
