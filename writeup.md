@@ -437,11 +437,12 @@ learn a terse formatting behavior without learning the underlying reasoning.
 
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
-**Answer:** We compared `reinforce_with_baseline` against a matched
-`no_baseline` run using the tuned `4e-5` learning rate, while keeping the
-prompt, rollout batch size, group size, standard-deviation normalization, and
-loss normalization fixed. Both runs completed 200 GRPO steps on the converted
-`competition_math_numeric` validation set.
+**Answer:** We compared the repaired `reinforce_with_baseline` reference run
+against a newly rerun `no_baseline` ablation using the tuned `4e-5` learning
+rate, while keeping the prompt, rollout batch size, group size,
+standard-deviation normalization, and loss normalization fixed. Both runs
+completed 200 GRPO steps on the converted `competition_math_numeric`
+validation set.
 
 ![GRPO validation answer reward by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_validation_reward.svg)
 
@@ -457,25 +458,26 @@ and the raw run data under `artifacts/experiments/ch7/grpo_baselines/runs/`.
 
 | loss type | best answer reward | best step | final answer reward | final format accuracy | final rollout answer reward | final rollout average length | final token entropy |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `reinforce_with_baseline` | **74.41%** | 75 | **70.02%** | 87.70% | **64.84%** | 393.6 | **0.055** |
-| `no_baseline` | 25.68% | 135 | 24.61% | **98.54%** | 39.45% | 20.9 | 0.396 |
+| `reinforce_with_baseline` | **88.18%** | 190 | **88.18%** | **98.05%** | **80.86%** | **466.9** | **0.023** |
+| `no_baseline` | 26.17% | 90 | 18.46% | 85.55% | 22.66% | 103.6 | 2.454 |
 
-Baselining made a large difference. `reinforce_with_baseline` reached 74.41%
-best validation answer reward and finished at 70.02%, whereas `no_baseline`
-plateaued near 25% despite using the same learning rate and training budget.
-This supports the idea that the group-relative baseline is doing more than
-cosmetic variance reduction in this sparse-reward setting: it provides a useful
-within-group comparison signal, while `no_baseline` mostly amplifies trajectories
-that already received reward and offers much weaker corrective pressure on bad
-ones.
+Baselining made a very large difference. `reinforce_with_baseline` reached
+88.18% best validation answer reward and also finished at 88.18%, whereas
+`no_baseline` peaked at 26.17% and fell to 18.46% by the final evaluation
+despite using the same learning rate and training budget. This supports the
+idea that the group-relative baseline is doing more than cosmetic variance
+reduction in this sparse-reward setting: it provides a useful within-group
+comparison signal, while `no_baseline` mostly reinforces trajectories that
+already received reward and offers much weaker corrective pressure on bad ones.
 
-The other logged metrics show that `no_baseline` mainly learns the output format
-rather than the underlying reasoning behavior. It ends with very high validation
-format accuracy (98.54%), but its final rollouts are extremely short on average
-at 20.9 tokens. In contrast, `reinforce_with_baseline` ends with slightly lower
-format accuracy (87.70%) but much higher answer reward and much longer final
-rollouts, averaging 393.6 tokens, which is more consistent with sustained
-reasoning than with a short answer-template strategy.
+The other logged metrics show that `no_baseline` learns some of the output
+format early, but does not learn stable reasoning behavior. It ends with lower
+validation format accuracy (85.55%), much lower rollout answer reward (22.66%),
+and much higher token entropy (2.454) than the baselined run. In contrast,
+`reinforce_with_baseline` ends with 98.05% validation format accuracy, 80.86%
+final rollout answer reward, low token entropy (0.023), and much longer final
+rollouts averaging 466.9 tokens, which is more consistent with sustained
+reasoning than with a brittle answer-template strategy.
 
 ![GRPO validation format accuracy by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_format_accuracy.svg)
 
@@ -484,18 +486,18 @@ reasoning than with a short answer-template strategy.
 ![GRPO token entropy by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_token_entropy.svg)
 
 The response-length curve makes this contrast especially clear. Both runs start
-from similarly long initial rollouts, but `no_baseline` rapidly collapses toward
-short responses, dropping from about 305 response tokens at step 1 to around 31
-tokens by step 20 and ending at 20.9. `reinforce_with_baseline` instead keeps
-producing much longer trajectories throughout training, typically hundreds of
-tokens late in training and ending at 393.6.
+from similarly long initial rollouts, but `no_baseline` quickly moves toward
+shorter, unstable responses, dropping from about 305 response tokens at step 1
+to tens of tokens for much of training and ending at 103.6. The baselined run
+instead keeps producing much longer trajectories throughout training, typically
+hundreds of tokens late in training and ending at 466.9.
 
 The entropy curve tells a complementary story. `reinforce_with_baseline` starts
-near `0.93` token entropy and steadily sharpens to about `0.055` by step 200,
-whereas `no_baseline` remains much higher at about `0.396` at the end of
-training. As in the EI experiment, the stronger run is the one that eventually
-becomes lower-entropy and more committed; the weaker run stays relatively
-diffuse even after it has learned the format. We therefore use
+near `0.93` token entropy and steadily sharpens to about `0.023` by step 200,
+whereas `no_baseline` ends much higher at about `2.454`. As in the EI
+experiment, the stronger run is the one that eventually becomes lower-entropy
+and more committed; the weaker run remains diffuse and even becomes noisier
+late in training. We therefore use
 `reinforce_with_baseline` for the remaining GRPO experiments.
 
 ---

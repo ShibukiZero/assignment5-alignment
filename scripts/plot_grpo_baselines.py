@@ -17,9 +17,15 @@ from typing import Any
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_baselines"
 TARGET_STEPS = 200
 
-DEFAULT_RUN_LABELS = [
-    "reinforce_with_baseline",
-    "no_baseline",
+DEFAULT_RUN_SPECS = [
+    (
+        "reinforce_with_baseline",
+        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
+    ),
+    (
+        "no_baseline",
+        ".agents/logs/reruns/grpo_ablation_repairs_single_gpu/grpo_baselines/no_baseline",
+    ),
 ]
 
 COLORS = [
@@ -153,11 +159,8 @@ def parse_extra_run(spec: str) -> tuple[str, str]:
 
 
 def default_run_specs(output_dir: Path) -> list[tuple[str, str]]:
-    runs_dir = output_dir / "runs"
-    return [
-        (label, str(runs_dir / label))
-        for label in DEFAULT_RUN_LABELS
-    ]
+    del output_dir
+    return list(DEFAULT_RUN_SPECS)
 
 
 def load_run(label: str, log_dir: Path) -> RunData:
@@ -557,6 +560,7 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
                 "loss_type": run.loss_type,
                 "learning_rate": run.learning_rate,
                 "status": run.status,
+                "source_log_dir": str(run.log_dir),
                 "archived_run_dir": str(output_dir / "runs" / run.label),
                 "best_eval": {
                     "grpo_step": run.best_eval.step,
@@ -634,6 +638,13 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
     markdown_lines.extend(
         [
             "",
+            "Default source logs:",
+            "",
+            *[
+                f"- `{label}`: `{log_dir}`"
+                for label, log_dir in DEFAULT_RUN_SPECS
+            ],
+            "",
             "Raw run files are archived under `artifacts/experiments/ch7/grpo_baselines/runs/`.",
         ]
     )
@@ -695,7 +706,6 @@ def main() -> None:
         x_label="GRPO step",
         y_label="validation answer reward",
         output_path=output_dir / "grpo_baselines_validation_reward.svg",
-        y_max=0.8,
     )
     render_svg_line_plot(
         series=format_series,
