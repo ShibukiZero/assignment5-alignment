@@ -542,14 +542,40 @@ The tradeoff is higher length-dependent variance: longer responses receive
 larger total weight, so long incorrect, rambling, or format-breaking
 completions can have a larger effect on the update.
 
+The `batch_token_mean` variant makes a third choice: instead of first forming a
+per-example loss, it averages the masked token losses over all response tokens
+in the optimizer batch:
+
+$$
+\mathcal{L}
+= \frac{\sum_{i=1}^{B}\sum_{t=1}^{T_i}\ell_{it}}
+        {\sum_{i=1}^{B} T_i}.
+$$
+
+This gives every token equal weight, so a completion with twice as many response
+tokens contributes about twice as much total gradient as a shorter completion.
+In that sense it shares the length-dependent credit assignment of
+`masked_normalize`. However, unlike `masked_normalize` with a fixed constant
+\(C\), the denominator adapts to the actual number of generated tokens in the
+batch. That keeps the overall loss scale more stable across batches with very
+different average response lengths. The cost is that the objective becomes more
+explicitly token-weighted: long completions dominate the batch average, while
+short completions have less influence. If all completions have the same length,
+`batch_token_mean` and `masked_mean` are equivalent up to the same batch
+average; when lengths vary, `batch_token_mean` is closer to weighting tokens
+equally than weighting examples equally.
+
 Thus, `masked_mean` is a safer choice when response lengths vary widely or when
 the model tends to generate long low-quality outputs, because it treats each
-completion more like one training example. `masked_normalize` is more appealing
-when the task rewards long, useful reasoning traces and we want the optimization
-to stay closer to a trajectory-sum view of the policy-gradient objective. In
-short, this choice is not just a harmless rescaling of the loss:
-`masked_mean` is closer to weighting each completion equally, while
-`masked_normalize` gives longer responses proportionally more total influence.
+completion more like one training example. `masked_normalize` and
+`batch_token_mean` are more appealing when the task rewards long, useful
+reasoning traces and we want the optimization to stay closer to a trajectory-sum
+view of the policy-gradient objective. In short, this choice is not just a
+harmless rescaling of the loss: `masked_mean` is closer to weighting each
+completion equally, `masked_normalize` gives longer responses proportionally
+more total influence under a fixed denominator, and `batch_token_mean` gives
+longer responses proportionally more influence while stabilizing the batch-level
+scale by dividing by the actual number of response tokens.
 
 ---
 
