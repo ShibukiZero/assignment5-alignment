@@ -1,20 +1,20 @@
-# GRPO Learning Rate Run Summaries
+# GRPO Learning Rate Run Summaries Archive
 
-This archive summarizes every learning-rate run used for the `grpo_learning_rate` writeup section. Completed runs with a `run_summary.json` also keep their raw summaries under the corresponding `.agents/logs/ch7/...` log directory. Early-stopped runs are summarized from their `metrics.jsonl` eval rows.
+This archive summarizes the repaired-infra learning-rate runs used for the `grpo_learning_rate` writeup section. It intentionally ignores the older pre-repair sweep artifacts.
 
-| learning rate | status | best answer reward | best step | best format accuracy | final answer reward | final step | final format accuracy | source log dir |
+| learning rate | status | best answer | best step | best format | final answer | final step | final format | source log |
 |---:|---|---:|---:|---:|---:|---:|---:|---|
-| `3e-6` | stopped early | 0.0449218750 | 35 | 0.2509765625 | 0.0449218750 | 35 | 0.2509765625 | `.agents/logs/ch7/grpo_learning_rate_manual_sweep/lr3e-6` |
-| `5e-6` | completed | 0.1464843750 | 200 | 0.5390625000 | 0.1464843750 | 200 | 0.5390625000 | `.agents/logs/ch7/grpo_learning_rate_manual_sweep/lr5e-6` |
-| `1e-5` | completed | 0.2929687500 | 180 | 0.7519531250 | 0.2714843750 | 200 | 0.7333984375 | `.agents/logs/ch7/grpo_on_policy_lr1e-5` |
-| `2e-5` | completed | 0.3720703125 | 155 | 0.7617187500 | 0.3417968750 | 200 | 0.7529296875 | `.agents/logs/ch7/grpo_learning_rate_manual_sweep/lr2e-5` |
-| `3e-5` | completed | 0.5576171875 | 190 | 0.8535156250 | 0.5498046875 | 200 | 0.8496093750 | `.agents/logs/ch7/grpo_learning_rate_manual_sweep/lr3e-5` |
-| `4e-5` | completed | 0.7441406250 | 75 | 0.9501953125 | 0.7001953125 | 200 | 0.8769531250 | `.agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr4e-5` |
-| `5e-5` | completed | 0.6494140625 | 160 | 0.9052734375 | 0.6240234375 | 200 | 0.8378906250 | `.agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr5e-5` |
-| `7e-5` | stopped early | 0.1308593750 | 5 | 0.8417968750 | 0.0751953125 | 20 | 0.3642578125 | `.agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr7e-5` |
-| `2e-4` | collapsed | 0.0380859375 | 0 | 0.1806640625 | 0.0000000000 | 5 | 0.0000000000 | `.agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr2e-4` |
+| `3e-6` | stopped early | 0.1005859375 | 50 | 0.3632812500 | 0.1005859375 | 50 | 0.3632812500 | `.agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr3e-6` |
+| `5e-6` | completed | 0.4707031250 | 200 | 0.8193359375 | 0.4707031250 | 200 | 0.8193359375 | `.agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr5e-6` |
+| `1e-5` | completed | 0.6777343750 | 195 | 0.9648437500 | 0.6728515625 | 200 | 0.9560546875 | `.agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr1e-5` |
+| `2e-5` | completed | 0.8583984375 | 200 | 0.9833984375 | 0.8583984375 | 200 | 0.9833984375 | `.agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr2e-5` |
+| `3e-5` | completed | 0.8642578125 | 200 | 0.9775390625 | 0.8642578125 | 200 | 0.9775390625 | `.agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr3e-5` |
+| `4e-5` | completed | 0.8818359375 | 190 | 0.9765625000 | 0.8818359375 | 200 | 0.9804687500 | `.agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5` |
+| `5e-5` | completed | 0.8710937500 | 120 | 0.9511718750 | 0.8427734375 | 200 | 0.9462890625 | `.agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr5e-5` |
+| `7e-5` | stopped early | 0.2128906250 | 50 | 1.0000000000 | 0.2128906250 | 50 | 1.0000000000 | `.agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr7e-5` |
+| `2e-4` | collapsed | 0.0380859375 | 0 | 0.1806640625 | 0.0000000000 | 50 | 0.0000000000 | `.agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr2e-4` |
 
-Additional generated artifacts:
+Generated artifacts:
 
 - `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg`
 - `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg`

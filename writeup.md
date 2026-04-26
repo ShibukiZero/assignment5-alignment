@@ -386,8 +386,13 @@ environment, so we ran this sweep on the same converted
 `competition_math_numeric` MATH-like validation set used in the previous
 experiments. All runs used the R1-Zero prompt, rollout batch size 256, group
 size 8, `reinforce_with_baseline`, standard-deviation-normalized advantages,
-and validation every 5 GRPO steps; we stopped the clearly bad high-learning-rate
-runs early once the validation curve showed collapse or severe instability.
+`masked_mean` loss normalization, and validation every 5 GRPO steps. The table
+below uses the repaired single-GPU reruns, ignoring the older pre-repair sweep
+artifacts; for `lr=4e-5`, we use the completed repaired
+`masked_mean_lr4e-5` run from the length-normalization staging sweep because it
+has the same core hyperparameters and the strongest complete 200-step trace.
+We stopped clearly suboptimal or collapsed runs early once their validation
+curves were no longer competitive.
 
 ![GRPO validation answer reward for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
 
@@ -398,27 +403,27 @@ points in `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_eval_
 
 | learning rate | status | best answer reward | best step | final answer reward | final step | final format accuracy |
 |---:|---|---:|---:|---:|---:|---:|
-| `3e-6` | stopped early | 4.49% | 35 | 4.49% | 35 | 25.10% |
-| `5e-6` | completed | 14.65% | 200 | 14.65% | 200 | 53.91% |
-| `1e-5` | completed | 29.30% | 180 | 27.15% | 200 | 73.34% |
-| `2e-5` | completed | 37.21% | 155 | 34.18% | 200 | 75.29% |
-| `3e-5` | completed | 55.76% | 190 | 54.98% | 200 | 84.96% |
-| `4e-5` | completed | **74.41%** | 75 | **70.02%** | 200 | 87.70% |
-| `5e-5` | completed | 64.94% | 160 | 62.40% | 200 | 83.79% |
-| `7e-5` | stopped early | 13.09% | 5 | 7.52% | 20 | 36.43% |
-| `2e-4` | collapsed | 3.81% | 0 | 0.00% | 5 | 0.00% |
+| `3e-6` | stopped early | 10.06% | 50 | 10.06% | 50 | 36.33% |
+| `5e-6` | completed | 47.07% | 200 | 47.07% | 200 | 81.93% |
+| `1e-5` | completed | 67.77% | 195 | 67.29% | 200 | 95.61% |
+| `2e-5` | completed | 85.84% | 200 | 85.84% | 200 | 98.34% |
+| `3e-5` | completed | 86.43% | 200 | 86.43% | 200 | 97.75% |
+| `4e-5` | completed | **88.18%** | 190 | **88.18%** | 200 | 98.05% |
+| `5e-5` | completed | 87.11% | 120 | 84.28% | 200 | 94.63% |
+| `7e-5` | stopped early | 21.29% | 50 | 21.29% | 50 | 100.00% |
+| `2e-4` | collapsed | 3.81% | 0 | 0.00% | 50 | 0.00% |
 
-The best learning rate was `4e-5`, whose best checkpoint reached 74.41%
-validation answer reward at step 75 and whose final checkpoint still reached
-70.02%, comfortably exceeding the 25% target. We use `4e-5` for the remaining
-on-policy GRPO experiments.
+The best learning rate was `4e-5`, whose repaired run reached 88.18%
+validation answer reward at both step 190 and the final step 200, comfortably
+exceeding the 25% target. We use `4e-5` for the remaining on-policy GRPO
+experiments.
 
-Other metrics followed the same stability pattern: successful runs improved
-format accuracy as answer reward increased, while `7e-5` and `2e-4` quickly
-lost formatting and reward. The `4e-5` run showed a mild late-training format
-regression, dropping from the 95-98% format-accuracy range in the middle of
-training to 87.70% at step 200, so the best checkpoint is preferable to the
-final checkpoint for model selection.
+Other metrics followed the same stability pattern: successful middle learning
+rates improved both answer reward and format accuracy, while `2e-4` fully
+collapsed to zero reward and zero format accuracy. The `7e-5` run is a useful
+warning case: it reached 100% format accuracy by step 50, but only 21.29%
+answer reward and very short rollouts, suggesting that too-large updates can
+learn a terse formatting behavior without learning the underlying reasoning.
 
 ![GRPO validation format accuracy for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg)
 
