@@ -562,42 +562,56 @@ short, this choice is not just a harmless rescaling of the loss:
 **Answer:** We compared the selected `masked_mean` reference run against a
 `masked_normalize` run with the same on-policy setup, learning rate `4e-5`,
 group size 8, standard-deviation-normalized advantages, and
-`loss_normalize_constant=1024`. The `masked_mean` run performed better in this
-controlled setting: it reached a best validation answer reward of 74.41% at
-step 75 and ended at 70.02%, while `masked_normalize` reached a lower best
-validation answer reward of 68.95% at step 130 and ended at 44.92%.
+`loss_normalize_constant=1024`. The regenerated plot also includes
+`batch_token_mean` as an additional reference. In the repaired rerun,
+`masked_mean` was still the best length-normalization choice, but the gap was
+much smaller than in the earlier pre-repair artifact: `masked_mean` reached a
+best validation answer reward of 88.18% at steps 190 and 200, while
+`masked_normalize` reached 87.11% at steps 165 and 200. The
+`batch_token_mean` reference reached 86.91% at step 110 and ended at 86.43%.
 
 ![GRPO validation answer reward by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_validation_reward.svg)
 
-The noticeable stability metrics point in the same direction. The validation
-format accuracy for `masked_mean` ended at 87.70%, compared with 56.84% for
-`masked_normalize`, so the weaker answer reward was coupled with a substantial
-format collapse rather than only more arithmetic mistakes.
+The main difference was learning speed rather than a late-training collapse. At
+step 25, `masked_mean` had already reached 72.66% validation answer reward,
+compared with 31.05% for `masked_normalize`; at step 50, the corresponding
+values were 82.71% and 57.03%. `masked_normalize` then caught up steadily,
+reaching 79.59% by step 75 and 87.11% by the end. The validation format
+accuracy also stayed high for all three runs at the end: 98.05% for
+`masked_mean`, 96.48% for `masked_normalize`, and 98.83% for
+`batch_token_mean`.
 
 ![GRPO validation format accuracy by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_format_accuracy.svg)
 
-The rollout response lengths make the failure mode clearer. By the final step,
-`masked_normalize` had an average rollout response length of 688.7 tokens,
-compared with 393.6 tokens for `masked_mean`; during steps 190-200,
-`masked_normalize` repeatedly produced average lengths above 630 tokens while
-rollout answer and format reward were both low.
+The rollout response lengths help explain the slower start for
+`masked_normalize`. Its average rollout length briefly fell to only 34.9 tokens
+at step 5, so with a fixed denominator of 1024 those short completions received
+small total update weight. Later, the same run grew to the longest final
+responses, ending at 512.1 tokens. By comparison, `masked_mean` ended at 466.9
+tokens and `batch_token_mean` ended at 375.3 tokens.
 
 ![GRPO rollout response length by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_response_length.svg)
 
-The gradient-norm curve also suggests less stable optimization under
-`masked_normalize`. Our logged gradient norm is the pre-clipping norm returned
-by `clip_grad_norm_`; the final value was 4.22 for `masked_normalize` versus
-1.02 for `masked_mean`, and `masked_normalize` had larger spikes during
-training. Since the actual update is clipped, these spikes should be interpreted
-as evidence that the raw gradient direction was more volatile, not that the full
-large norm was applied directly.
+The gradient-norm curve is consistent with this interpretation. Our logged
+gradient norm is the pre-clipping norm returned by `clip_grad_norm_`; the final
+value was 0.1357 for `masked_mean`, 0.0649 for `masked_normalize`, and 0.1934
+for `batch_token_mean`. `masked_normalize` therefore had the smallest final
+raw gradient scale in this run, which matches the fixed-denominator intuition:
+while responses are shorter than the maximum generation length, summing token
+losses and dividing by 1024 downweights each completion relative to
+`masked_mean`.
 
 ![GRPO gradient norm by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_grad_norm.svg)
 
 Based on this experiment, we fixed `masked_mean` as the better-performing
-length-normalization choice for the following on-policy ablations. This result
-is specific to our current on-policy configuration; `masked_normalize` may still
-benefit from separate tuning in later exploratory or leaderboard runs.
+length-normalization choice for the following on-policy ablations. The reason is
+not that `masked_normalize` failed outright, but that `masked_mean` learned much
+faster and still finished with the highest validation answer reward. Mechanically,
+`masked_mean` treats each completion more like one training example regardless
+of length, while `masked_normalize` makes a completion's total influence roughly
+proportional to its response length divided by the fixed normalization constant.
+That length-dependent weighting can be useful in some settings, but here it
+made early learning slower without improving the final score.
 
 ---
 
