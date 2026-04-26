@@ -23,11 +23,11 @@ DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_group_standard_deviation"
 DEFAULT_RUNS = [
     (
         "std_normalization",
-        ".agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr4e-5",
+        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
     ),
     (
         "no_std_normalization",
-        ".agents/logs/ch7/grpo_on_policy_ablations/std_normalization/no_std_lr4e-5",
+        ".agents/logs/reruns/grpo_group_standard_deviation_retry_single_gpu/grpo_group_standard_deviation/no_std_normalization",
     ),
 ]
 
@@ -202,6 +202,7 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
                 "loss_normalization": loss_normalization(run),
                 "learning_rate": run.learning_rate,
                 "status": run.status,
+                "source_log_dir": str(run.log_dir),
                 "archived_run_dir": str(output_dir / "runs" / run.label),
                 "best_eval": {
                     "grpo_step": run.best_eval.step,
@@ -283,6 +284,13 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
     markdown_lines.extend(
         [
             "",
+            "Default source logs:",
+            "",
+            *[
+                f"- `{label}`: `{log_dir}`"
+                for label, log_dir in DEFAULT_RUNS
+            ],
+            "",
             (
                 "Raw run files are archived under "
                 "`artifacts/experiments/ch7/grpo_group_standard_deviation/runs/`."
@@ -340,6 +348,13 @@ def main() -> None:
         )
         for run in runs
     ]
+    entropy_series = [
+        (
+            std_label(run),
+            [(point.step, point.token_entropy) for point in run.train_points],
+        )
+        for run in runs
+    ]
 
     render_svg_line_plot(
         series=answer_series,
@@ -347,7 +362,6 @@ def main() -> None:
         x_label="GRPO step",
         y_label="validation answer reward",
         output_path=output_dir / "grpo_group_standard_deviation_validation_reward.svg",
-        y_max=0.85,
     )
     render_svg_line_plot(
         series=format_series,
@@ -370,6 +384,13 @@ def main() -> None:
         x_label="GRPO step",
         y_label="pre-clip gradient norm",
         output_path=output_dir / "grpo_group_standard_deviation_grad_norm.svg",
+    )
+    render_svg_line_plot(
+        series=entropy_series,
+        title="GRPO token entropy by group std normalization",
+        x_label="GRPO step",
+        y_label="token entropy (nats)",
+        output_path=output_dir / "grpo_group_standard_deviation_token_entropy.svg",
     )
 
 

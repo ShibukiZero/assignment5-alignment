@@ -2,7 +2,12 @@
 
 | run | use std normalization | status | best answer | best step | final answer | final format | final rollout answer | final avg length | final grad norm |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
-| `std_normalization` | `True` | completed | 74.41% | 75 | 70.02% | 87.70% | 64.84% | 393.6 | 1.02 |
-| `no_std_normalization` | `False` | completed | 80.08% | 95 | 77.64% | 96.97% | 69.92% | 332.7 | 32.00 |
+| `std_normalization` | `True` | completed | 88.18% | 190 | 88.18% | 98.05% | 80.86% | 466.9 | 0.14 |
+| `no_std_normalization` | `False` | completed | 87.21% | 200 | 87.21% | 97.66% | 79.30% | 453.1 | 0.05 |
+
+Default source logs:
+
+- `std_normalization`: `.agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5`
+- `no_std_normalization`: `.agents/logs/reruns/grpo_group_standard_deviation_retry_single_gpu/grpo_group_standard_deviation/no_std_normalization`
 
 Raw run files are archived under `artifacts/experiments/ch7/grpo_group_standard_deviation/runs/`.
