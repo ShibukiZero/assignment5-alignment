@@ -744,18 +744,23 @@ hyperparameters.
 **Answer:** Because the official course MATH files were not available in our
 self-hosted environment, we ran this sweep on the same
 `competition_math_numeric` MATH-like substitute dataset used in the previous
-GRPO experiments. We fixed `rollout_batch_size = 256`,
+GRPO experiments. All runs used a single GPU with `policy_device = cuda:0` and
+`vllm_device = cuda:0`. We fixed `rollout_batch_size = 256`, `group_size = 8`,
 `learning_rate = 4e-5`, `loss_type = grpo_clip`,
-`loss_normalization = masked_mean`, and `use_std_normalization = false`, and
-then swept over `epochs_per_rollout_batch in {1, 2, 4}` and
-`train_batch_size in {256, 128}`. This gives `1`, `2`, `4`, or `8` optimizer
-updates per rollout batch. We kept the `e1, tb256` configuration in the broad
-sweep as an on-policy-style control because it uses the off-policy
-infrastructure but does not actually reuse rollout data.
+`loss_normalization = masked_mean`, and `use_std_normalization = true`, then
+varied `epochs_per_rollout_batch` and `train_batch_size`. The number of
+optimizer updates per rollout batch is
+`epochs_per_rollout_batch * rollout_batch_size / train_batch_size`, so the
+sweep tests both mild reuse and aggressive repeated updates on the same
+rollout data.
 
 The broad validation answer-reward curves are shown below.
 
 ![Off-policy GRPO broad sweep validation answer reward](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_validation_reward.svg)
+
+![Off-policy GRPO broad sweep token entropy](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_token_entropy.svg)
+
+![Off-policy GRPO broad sweep response length](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_response_length.svg)
 
 The broad-sweep summaries and archived logs are stored under
 `artifacts/experiments/ch7/grpo_off_policy_sweep/`, especially
@@ -765,26 +770,42 @@ The broad-sweep summaries and archived logs are stored under
 
 | run | role | optimizer updates / rollout batch | best answer acc | best step | final answer acc | final format acc |
 |---|---|---:|---:|---:|---:|---:|
-| `broad_e1_tb256` | on-policy-style control | 1 | 61.52% | 40 | 61.52% | 90.72% |
-| `broad_e2_tb256` | true off-policy | 2 | 18.55% | 20 | 13.96% | 79.00% |
-| `broad_e2_tb128` | true off-policy | 4 | 46.09% | 10 | 0.00% | 0.00% |
-| `broad_e4_tb256` | true off-policy | 4 | 22.17% | 10 | 16.99% | 44.14% |
-| `broad_e4_tb128` | true off-policy | 8 | 29.88% | 5 | 0.00% | 0.29% |
+| `broad_e2_tb256` | true off-policy | 2 | 74.22% | 40 | 74.22% | 94.43% |
+| `broad_e2_tb128` | true off-policy | 4 | **83.20%** | 35 | **81.54%** | 95.61% |
+| `broad_e4_tb256` | true off-policy | 4 | 73.73% | 35 | 71.19% | 94.92% |
+| `broad_e4_tb128` | true off-policy | 8 | 75.00% | 40 | 75.00% | 87.79% |
+| `broad_e2_tb64` | true off-policy | 8 | 77.44% | 40 | 77.44% | 96.39% |
+| `broad_e2_tb32` | true off-policy | 16 | 74.71% | 40 | 74.71% | 97.07% |
+| `broad_e8_tb256` | true off-policy | 8 | 48.44% | 15 | 0.00% | 0.00% |
+| `broad_e16_tb256` | true off-policy | 16 | 3.81% | 0 | 0.00% | 0.00% |
 
-The broad sweep shows a clear stability tradeoff. The most aggressive settings
-(`tb128`, especially combined with larger `epochs_per_rollout_batch`) can reach
-high early validation accuracy, but both `tb128` runs collapse by the end of
-the 40-step broad sweep. In contrast, the `tb256` runs stay finite throughout
-the broad sweep, although their peak performance is substantially weaker than
-the on-policy-style control. We therefore selected `e2_tb256` as the focused
-true off-policy configuration because it was the most stable genuinely
-off-policy setting in the broad sweep, even though it was not the best peak
-performer.
+The broad sweep shows that moderate off-policy reuse is viable, but repeated
+full-batch reuse is unstable. The best broad run was `broad_e2_tb128`, which
+uses two epochs and `train_batch_size = 128`, i.e. four optimizer updates per
+rollout batch. It reached 83.20% validation answer accuracy by step 35 and
+finished at 81.54%. Smaller train batches under `epochs_per_rollout_batch = 2`
+also worked: `e2_tb64` and `e2_tb32` finished at 77.44% and 74.71%,
+respectively. This is an important diagnostic because `e2_tb32` and
+`e16_tb256` both perform 16 optimizer updates per rollout batch, but only
+`e16_tb256` collapses. The failure mode is therefore not just the raw number of
+updates; it is especially harmful to repeat many epochs over the same full
+rollout batch.
 
-For the focused 200-step comparison, we compared `focused_e2_tb256` against an
-on-policy reference run with the same `learning_rate = 4e-5`,
-`epochs_per_rollout_batch = 1`, `train_batch_size = 256`, and
-`use_std_normalization = false`.
+The entropy and response-length curves make the broad-sweep failures visible.
+The successful settings reduce token entropy into a low but finite regime and
+keep rollout lengths in the few-hundred-token range. By contrast, the
+aggressive full-batch settings lose validation reward: `e8_tb256` rises early,
+peaking at 48.44% on step 15, and then drops to 0%, while `e16_tb256` is
+effectively collapsed after the initial evaluation. These failures coincide
+with degenerate formatting/reward behavior rather than a smooth plateau.
+
+For the focused 200-step comparison, we extended the strongest and most
+informative off-policy settings: `e2_tb256`, `e2_tb128`, and `e4_tb256`. We
+compare them to the matched on-policy reference from the selected on-policy
+GRPO configuration, `masked_mean_lr4e-5`, which uses
+`epochs_per_rollout_batch = 1`, `train_batch_size = 256`,
+`use_std_normalization = true`, and the same dataset, prompt, rollout batch
+size, group size, and learning rate.
 
 ![Focused on-policy vs off-policy validation answer reward](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_validation_reward.svg)
 
@@ -792,20 +813,28 @@ on-policy reference run with the same `learning_rate = 4e-5`,
 
 The focused comparison is:
 
-| run | role | status | best answer acc | best step | final answer acc | final format acc |
-|---|---|---|---:|---:|---:|---:|
-| `on_policy_reference_e1_tb256` | on-policy reference | completed | 80.08% | 95 | 77.64% | 96.97% |
-| `focused_e2_tb256` | true off-policy | late collapse | 34.38% | 65 | 0.00% | 0.00% |
+| run | role | optimizer updates / rollout batch | best answer acc | best step | final answer acc | final format acc | final avg length | final token entropy |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `on_policy_reference_e1_tb256_std_norm` | on-policy reference | 1 | **88.18%** | 190 | **88.18%** | 98.05% | 466.9 | 0.023 |
+| `focused_e2_tb256` | true off-policy | 2 | 86.33% | 145 | 82.32% | 98.14% | 474.8 | 0.033 |
+| `focused_e2_tb128` | true off-policy | 4 | 86.13% | 120 | 85.64% | 96.68% | 547.4 | 0.028 |
+| `focused_e4_tb256` | true off-policy | 4 | 86.43% | 145 | 82.23% | 97.07% | 437.9 | 0.027 |
 
-The validation-step and wall-clock plots both favor the on-policy reference by
-a wide margin. The focused off-policy run improves steadily at first, reaching
-34.38% validation answer accuracy at step 65, and then stays in roughly the
-28-34% range for much of training. However, it eventually suffers a late
-collapse near step 195 and finishes at 0% validation answer accuracy, whereas
-the on-policy reference remains strong through the full 200-step run. Because
-the off-policy run performs two optimizer updates per rollout batch, it is also
-slower in wall-clock time, so it underperforms both in final quality and in
-reward-vs-time efficiency.
+The focused runs confirm the broad-sweep picture. True off-policy GRPO can
+learn strongly when the reuse is not too aggressive: all three focused runs
+reach at least 86.13% validation answer accuracy, and none collapses over 200
+steps. However, the matched on-policy reference remains the best overall run,
+peaking and finishing at 88.18%. Among the off-policy settings, `e4_tb256` has
+the highest peak, 86.43% at step 145, but `e2_tb128` is the best final
+off-policy run, ending at 85.64%. I would therefore select `e2_tb128` if the
+objective is a stable off-policy configuration, while keeping the on-policy
+`e1_tb256` run as the stronger final baseline.
+
+The wall-clock plot does not overturn this conclusion. Extra reuse can improve
+the amount of learning per rollout batch, but it also adds optimizer work after
+each generation phase. In this single-GPU setting, the focused off-policy runs
+do not produce a better reward-vs-time frontier than the matched on-policy
+reference.
 
 The entropy and response-length diagnostics are shown below.
 
@@ -813,26 +842,29 @@ The entropy and response-length diagnostics are shown below.
 
 ![Focused on-policy vs off-policy response length](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_response_length.svg)
 
-These diagnostics help explain the instability. In the on-policy reference, the
-token entropy decreases smoothly over training, ending around `0.04-0.05` nats,
-while response lengths remain in a reasonable few-hundred-token regime. This is
-qualitatively similar to the EI experiment, where entropy also decreased over
-training as the policy became more confident, although here the final on-policy
-GRPO entropy is even lower than the best EI entropy we observed. In the
-off-policy run, entropy also decreases at first, but late in training the
-second update on each rollout batch starts producing extremely large losses and
-gradient norms, eventually reaching `Infinity` and then `NaN`. Immediately
-after that numerical failure, rollout response length jumps to the
-`max_tokens = 1024` ceiling, and both format accuracy and answer accuracy drop
-to zero. This indicates that the failure is not a gentle degradation but a
-sharp instability tied to repeated reuse of stale rollout data.
+The entropy behavior is qualitatively similar to what we observed in expert
+iteration: as the policy improves, token entropy falls because the model
+becomes more confident about its response distribution. The GRPO runs end in an
+even lower-entropy regime than the EI sweep. The final focused off-policy
+entropies are all around `0.03` nats, close to the on-policy reference's
+`0.023` nats. This low entropy is not by itself a failure signal, since the
+high-reward runs also have low entropy. The problematic signal is low or
+pathological entropy paired with reward collapse, malformed outputs, or
+degenerate response lengths, as in the aggressive broad settings.
 
-Overall, this sweep suggests that stronger off-policy reuse was not beneficial
-in our setting. The `tb128` settings were especially unstable, while the more
-conservative `tb256` settings were more stable but still weaker than the
-on-policy reference. Our best true off-policy focused run (`e2_tb256`) was able
-to learn nontrivially, but it was not competitive with the matched on-policy
-baseline and ultimately suffered a late numerical collapse.
+Response length is the other useful diagnostic. The stable focused runs finish
+with average rollout lengths between about 438 and 547 tokens, comparable to
+the on-policy reference's 467 tokens. The longest final focused run,
+`e2_tb128`, is also the best final off-policy run, so longer responses are not
+automatically bad here. The broad collapses are different: they are associated
+with severe reward and format failures, showing that the model has left the
+useful reasoning-and-formatting regime.
+
+Overall, the sweep suggests that off-policy reuse can be made stable with
+standard-deviation-normalized advantages and `masked_mean` loss normalization,
+but it did not beat the matched on-policy run. Moderate reuse is best; too many
+epochs over the same full rollout batch makes the policy update stale and
+unstable.
 
 ---
 

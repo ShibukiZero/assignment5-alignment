@@ -1,5 +1,5 @@
 {
-  "best_answer_accuracy": 0.34375,
+  "best_answer_accuracy": 0.86328125,
   "final_optimizer_step": 400,
   "n_grpo_steps": 200,
   "rollout_batch_size": 256,
@@ -11,7 +11,11 @@
   "expected_total_optimizer_steps": 400,
   "loss_type": "grpo_clip",
   "cliprange": 0.2,
+  "cliprange_low": 0.2,
+  "cliprange_high": 0.2,
+  "kl_coef": 0.0,
+  "kl_ref_model": "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B",
   "loss_normalization": "masked_mean",
   "loss_normalize_constant": 1.0,
-  "use_std_normalization": false
+  "use_std_normalization": true
 }

@@ -1,13 +1,18 @@
 # GRPO Off-Policy Sweep Run Archive
 
-| run | phase | role | status | best answer | best step | final answer | final step |
-|---|---|---|---|---:|---:|---:|---:|
-| `broad_e1_tb256_control` | broad | on_policy_style_control | completed | 61.52% | 40 | 61.52% | 40 |
-| `broad_e2_tb256` | broad | true_off_policy | completed | 18.55% | 20 | 13.96% | 40 |
-| `broad_e2_tb128` | broad | true_off_policy | late collapse | 46.09% | 10 | 0.00% | 40 |
-| `broad_e4_tb256` | broad | true_off_policy | completed | 22.17% | 10 | 16.99% | 40 |
-| `broad_e4_tb128` | broad | true_off_policy | completed | 29.88% | 5 | 0.00% | 40 |
-| `on_policy_reference_e1_tb256` | focused | on_policy_reference | completed | 80.08% | 95 | 77.64% | 200 |
-| `focused_e2_tb256` | focused | true_off_policy | late collapse | 34.38% | 65 | 0.00% | 200 |
+| run | phase | role | status | best answer | best step | final answer | final step | source log |
+|---|---|---|---|---:|---:|---:|---:|---|
+| `broad_e2_tb256` | broad | true_off_policy | completed | 74.22% | 40 | 74.22% | 40 | `.agents/logs/reruns/off_policy_sweep_retry_single_gpu_std_norm/broad_e2_tb256` |
+| `broad_e2_tb128` | broad | true_off_policy | completed | 83.20% | 35 | 81.54% | 40 | `.agents/logs/reruns/off_policy_sweep_retry_single_gpu_std_norm/broad_e2_tb128` |
+| `broad_e4_tb256` | broad | true_off_policy | completed | 73.73% | 35 | 71.19% | 40 | `.agents/logs/reruns/off_policy_sweep_retry_single_gpu_std_norm/broad_e4_tb256` |
+| `broad_e4_tb128` | broad | true_off_policy | completed | 75.00% | 40 | 75.00% | 40 | `.agents/logs/reruns/off_policy_sweep_retry_single_gpu_std_norm/broad_e4_tb128` |
+| `broad_e2_tb64` | broad | true_off_policy | completed | 77.44% | 40 | 77.44% | 40 | `.agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/broad_e2_tb64` |
+| `broad_e2_tb32` | broad | true_off_policy | completed | 74.71% | 40 | 74.71% | 40 | `.agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/broad_e2_tb32` |
+| `broad_e8_tb256` | broad | true_off_policy | late collapse | 48.44% | 15 | 0.00% | 40 | `.agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/broad_e8_tb256` |
+| `broad_e16_tb256` | broad | true_off_policy | collapsed | 3.81% | 0 | 0.00% | 40 | `.agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/broad_e16_tb256` |
+| `on_policy_reference_e1_tb256_std_norm` | focused | on_policy_reference | completed | 88.18% | 190 | 88.18% | 200 | `.agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5` |
+| `focused_e2_tb256` | focused | true_off_policy | completed | 86.33% | 145 | 82.32% | 200 | `.agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e2_tb256` |
+| `focused_e2_tb128` | focused | true_off_policy | completed | 86.13% | 120 | 85.64% | 200 | `.agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e2_tb128` |
+| `focused_e4_tb256` | focused | true_off_policy | completed | 86.43% | 145 | 82.23% | 200 | `.agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e4_tb256` |
 
 Raw run files are archived under `artifacts/experiments/ch7/grpo_off_policy_sweep/runs/`.

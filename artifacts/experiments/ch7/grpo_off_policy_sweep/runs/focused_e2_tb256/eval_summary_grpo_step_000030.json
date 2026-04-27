@@ -1,12 +1,12 @@
 {
   "num_examples": 1024,
-  "reward": 0.27734375,
-  "format_accuracy": 0.8154296875,
-  "answer_accuracy": 0.27734375,
+  "reward": 0.77734375,
+  "format_accuracy": 0.9599609375,
+  "answer_accuracy": 0.77734375,
   "temperature": 1.0,
   "top_p": 1.0,
   "max_tokens": 1024,
   "stop": "</answer>",
   "include_stop_str_in_output": true,
-  "eval_seconds": 24.60654044151306
+  "eval_seconds": 39.55063247680664
 }
