@@ -1,0 +1,16 @@
+[
+  {
+    "run_name": "r1_zero_reference",
+    "loss_normalization": "masked_mean",
+    "source_log_dir": ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
+    "archived_run_dir": "artifacts/experiments/ch7/grpo_prompt_ablation/runs/r1_zero_reference",
+    "copied": true
+  },
+  {
+    "run_name": "question_only",
+    "loss_normalization": "masked_mean",
+    "source_log_dir": ".agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/question_only_e1_tb256_std_norm",
+    "archived_run_dir": "artifacts/experiments/ch7/grpo_prompt_ablation/runs/question_only",
+    "copied": true
+  }
+]

@@ -941,39 +941,45 @@ extra freedom does not appear beneficial for this `e2/tb256` configuration.
 
 **Deliverable:** Report the validation answer reward curves for both the R1-Zero prompt and the question-only prompt. How do metrics compare, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm? Try to explain your findings.
 
-**Answer:** We compared two prompt-and-evaluation contracts under the same
-on-policy GRPO budget: the selected R1-Zero reference run
-(`r1_zero.prompt` with `r1_zero_reward_fn` and `</answer>` stopping) and a
-question-only run (`question_only.prompt` with `question_only_reward_fn` and
-no `</answer>` stop string). Both runs used `learning_rate=4e-5`,
-`rollout_batch_size=256`, `train_batch_size=256`,
-`epochs_per_rollout_batch=1`, `group_size=8`, `use_std_normalization=False`,
-and 200 GRPO steps.
+**Answer:** We compare the prefix-cache-repaired R1-Zero reference run used in
+the later GRPO reruns with the prefix-cache-repaired question-only rerun. The
+reference uses `r1_zero.prompt` with `r1_zero_reward_fn` and `</answer>`
+stopping. The question-only rerun uses `question_only.prompt` with
+`question_only_reward_fn` and no `</answer>` stop string. Both runs use
+`learning_rate=4e-5`, `rollout_batch_size=256`, `train_batch_size=256`,
+`epochs_per_rollout_batch=1`, `group_size=8`,
+`use_std_normalization=True`, and 200 GRPO steps. The reference uses
+`reinforce_with_baseline`, while the question-only run uses `grpo_clip`, so
+this should still be interpreted as a prompt-and-evaluation contract
+comparison rather than a pure prompt-wording ablation.
 
-The question-only contract performed slightly better overall. It started much
-stronger before any RL updates, with 56.74% validation answer reward at step
-0, then reached a best validation answer reward of 82.81% at step 155 and
-finished at 80.27%. The R1-Zero reference peaked at 80.08% at step 95 and
-finished at 77.64%.
+The repaired comparison is more nuanced than the old cache-affected archive:
+question-only gives a much stronger starting point, while the repaired R1-Zero
+reference reaches the stronger final model. The question-only run starts at
+56.74% validation answer reward before any RL updates, reaches 80.08% by step
+50, and then improves more gradually to its best and final value of 85.16% at
+step 200. The R1-Zero reference starts much lower, at 3.81%, but improves more
+throughout training and reaches 88.18% at both its best checkpoint, step 190,
+and the final checkpoint, step 200.
 
 ![GRPO validation answer reward by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_validation_reward.svg)
 
-The format-accuracy curve tells a more nuanced story. Both contracts end with
-very high validation format accuracy, but the R1-Zero run is slightly higher
-at the end (96.97% versus 96.58%). So the gain from question-only is not
-coming from better adherence to a stricter output template. Instead, it seems
-to come from answer quality under a contract that is already more natural for
-the base model.
+The format-accuracy curve shows that both repaired runs learn their required
+output contract. The R1-Zero reference finishes slightly higher on validation
+format accuracy, 98.05% versus 97.66%, despite having the stricter output
+protocol. The question-only prompt therefore mainly changes the optimization
+path rather than simply fixing parser failures: it gives a far stronger initial
+policy under a natural boxed-answer contract, but the stricter R1-Zero contract
+catches up once RL has learned the tag format.
 
 ![GRPO validation format accuracy by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_format_accuracy.svg)
 
 The rollout diagnostics support that interpretation. The question-only run
-maintains longer responses throughout training, ending at 475.8 rollout tokens
-on average versus 332.7 for R1-Zero, while also ending with higher rollout
-answer reward (80.47% versus 69.92%). Its late token entropy is higher
-(`0.106` versus `0.044`), but still stable rather than noisy, and its gradient
-norm stays tiny near the end (`0.044` versus `32.0` for the R1-Zero
-reference).
+ends with a slightly shorter average rollout response than the R1-Zero
+reference, 460.5 versus 466.9 tokens, and a slightly lower final rollout answer
+reward, 79.30% versus 80.86%. Its late token entropy is higher (`0.130` versus
+`0.023`), but still stable rather than noisy, and its final gradient norm is
+lower (`0.093` versus `0.136` for the R1-Zero reference).
 
 ![GRPO rollout response length by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_response_length.svg)
 
@@ -983,11 +989,13 @@ reference).
 
 The most plausible explanation is that Qwen2.5-Math-1.5B is already well
 aligned with the simpler question-only prompt, so RL begins from a much better
-initial policy and then refines it steadily. However, this should not be
-interpreted as a pure surface-form prompt comparison, because the reward
-function and stop contract also change with the prompt. The result is best
-understood as showing that, in our setup, the question-only prompt-and-reward
-contract works better than the R1-Zero contract for this base model.
+initial policy and then refines it steadily instead of spending capacity on a
+brittle answer-tag protocol early on. However, this should not be interpreted
+as a pure surface-form prompt comparison, because the reward function, stop
+contract, and loss type also change with the prompt. The result is best
+understood as showing that question-only is easier at initialization and
+remains competitive, but the repaired R1-Zero reference becomes stronger after
+enough RL updates.
 
 ---
 
