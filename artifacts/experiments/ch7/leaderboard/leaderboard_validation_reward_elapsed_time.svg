@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="660" viewBox="0 0 1100 660">
+<rect width="100%" height="100%" fill="white"/>
+<text x="550.0" y="36" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700">Leaderboard validation answer reward vs elapsed step time</text>
+<line x1="95" y1="578" x2="800" y2="578" stroke="#222" stroke-width="1.5"/>
+<line x1="95" y1="74" x2="95" y2="578" stroke="#222" stroke-width="1.5"/>
+<line x1="90" y1="578.0" x2="800" y2="578.0" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="582.0" text-anchor="end" font-family="Arial" font-size="12">0.00%</text>
+<line x1="90" y1="477.2" x2="800" y2="477.2" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="481.2" text-anchor="end" font-family="Arial" font-size="12">16.00%</text>
+<line x1="90" y1="376.4" x2="800" y2="376.4" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="380.4" text-anchor="end" font-family="Arial" font-size="12">32.00%</text>
+<line x1="90" y1="275.6" x2="800" y2="275.6" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="279.6" text-anchor="end" font-family="Arial" font-size="12">48.00%</text>
+<line x1="90" y1="174.8" x2="800" y2="174.8" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="178.8" text-anchor="end" font-family="Arial" font-size="12">64.00%</text>
+<line x1="90" y1="74.0" x2="800" y2="74.0" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="78.0" text-anchor="end" font-family="Arial" font-size="12">80.00%</text>
+<line x1="95.0" y1="578" x2="95.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="95.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">0.0</text>
+<line x1="236.0" y1="578" x2="236.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="236.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">0.9</text>
+<line x1="377.0" y1="578" x2="377.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="377.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">1.8</text>
+<line x1="518.0" y1="578" x2="518.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="518.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">2.8</text>
+<line x1="659.0" y1="578" x2="659.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="659.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">3.7</text>
+<line x1="800.0" y1="578" x2="800.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="800.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">4.6</text>
+<polyline fill="none" stroke="#1f77b4" stroke-width="2.3" points="95.0,558.1 120.8,365.1 147.3,304.5 178.8,223.1 212.7,177.0 245.8,159.7 281.3,144.0 316.3,144.3 352.5,137.1 388.7,129.4 424.5,124.8 462.1,121.3 498.9,124.1 537.5,125.6 576.9,113.6 614.6,118.0 651.9,119.9 689.9,121.5 726.4,121.3 762.7,119.9 800.0,120.7"/>
+<circle cx="95.0" cy="558.1" r="3" fill="#1f77b4"/>
+<circle cx="120.8" cy="365.1" r="3" fill="#1f77b4"/>
+<circle cx="147.3" cy="304.5" r="3" fill="#1f77b4"/>
+<circle cx="178.8" cy="223.1" r="3" fill="#1f77b4"/>
+<circle cx="212.7" cy="177.0" r="3" fill="#1f77b4"/>
+<circle cx="245.8" cy="159.7" r="3" fill="#1f77b4"/>
+<circle cx="281.3" cy="144.0" r="3" fill="#1f77b4"/>
+<circle cx="316.3" cy="144.3" r="3" fill="#1f77b4"/>
+<circle cx="352.5" cy="137.1" r="3" fill="#1f77b4"/>
+<circle cx="388.7" cy="129.4" r="3" fill="#1f77b4"/>
+<circle cx="424.5" cy="124.8" r="3" fill="#1f77b4"/>
+<circle cx="462.1" cy="121.3" r="3" fill="#1f77b4"/>
+<circle cx="498.9" cy="124.1" r="3" fill="#1f77b4"/>
+<circle cx="537.5" cy="125.6" r="3" fill="#1f77b4"/>
+<circle cx="576.9" cy="113.6" r="3" fill="#1f77b4"/>
+<circle cx="614.6" cy="118.0" r="3" fill="#1f77b4"/>
+<circle cx="651.9" cy="119.9" r="3" fill="#1f77b4"/>
+<circle cx="689.9" cy="121.5" r="3" fill="#1f77b4"/>
+<circle cx="726.4" cy="121.3" r="3" fill="#1f77b4"/>
+<circle cx="762.7" cy="119.9" r="3" fill="#1f77b4"/>
+<circle cx="800.0" cy="120.7" r="3" fill="#1f77b4"/>
+<line x1="828" y1="96" x2="850" y2="96" stroke="#1f77b4" stroke-width="2.5"/>
+<text x="858" y="100" font-family="Arial" font-size="13">final_on_policy_lr4e-5_400_full_eval</text>
+<text x="447.5" y="638" text-anchor="middle" font-family="Arial" font-size="15">Elapsed step hours</text>
+<text x="24" y="326.0" text-anchor="middle" font-family="Arial" font-size="15" transform="rotate(-90 24 326.0)">Answer reward</text>
+</svg>

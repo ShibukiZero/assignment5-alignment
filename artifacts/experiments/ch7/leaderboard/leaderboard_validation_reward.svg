@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="660" viewBox="0 0 1100 660">
+<rect width="100%" height="100%" fill="white"/>
+<text x="550.0" y="36" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700">Leaderboard validation answer reward</text>
+<line x1="95" y1="578" x2="800" y2="578" stroke="#222" stroke-width="1.5"/>
+<line x1="95" y1="74" x2="95" y2="578" stroke="#222" stroke-width="1.5"/>
+<line x1="90" y1="578.0" x2="800" y2="578.0" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="582.0" text-anchor="end" font-family="Arial" font-size="12">0.00%</text>
+<line x1="90" y1="477.2" x2="800" y2="477.2" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="481.2" text-anchor="end" font-family="Arial" font-size="12">16.00%</text>
+<line x1="90" y1="376.4" x2="800" y2="376.4" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="380.4" text-anchor="end" font-family="Arial" font-size="12">32.00%</text>
+<line x1="90" y1="275.6" x2="800" y2="275.6" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="279.6" text-anchor="end" font-family="Arial" font-size="12">48.00%</text>
+<line x1="90" y1="174.8" x2="800" y2="174.8" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="178.8" text-anchor="end" font-family="Arial" font-size="12">64.00%</text>
+<line x1="90" y1="74.0" x2="800" y2="74.0" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="78.0" text-anchor="end" font-family="Arial" font-size="12">80.00%</text>
+<line x1="95.0" y1="578" x2="95.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="95.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">0</text>
+<line x1="236.0" y1="578" x2="236.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="236.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">80</text>
+<line x1="377.0" y1="578" x2="377.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="377.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">160</text>
+<line x1="518.0" y1="578" x2="518.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="518.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">240</text>
+<line x1="659.0" y1="578" x2="659.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="659.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">320</text>
+<line x1="800.0" y1="578" x2="800.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="800.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">400</text>
+<polyline fill="none" stroke="#1f77b4" stroke-width="2.3" points="95.0,558.1 130.2,365.1 165.5,304.5 200.8,223.1 236.0,177.0 271.2,159.7 306.5,144.0 341.8,144.3 377.0,137.1 412.2,129.4 447.5,124.8 482.8,121.3 518.0,124.1 553.2,125.6 588.5,113.6 623.8,118.0 659.0,119.9 694.2,121.5 729.5,121.3 764.8,119.9 800.0,120.7"/>
+<circle cx="95.0" cy="558.1" r="3" fill="#1f77b4"/>
+<circle cx="130.2" cy="365.1" r="3" fill="#1f77b4"/>
+<circle cx="165.5" cy="304.5" r="3" fill="#1f77b4"/>
+<circle cx="200.8" cy="223.1" r="3" fill="#1f77b4"/>
+<circle cx="236.0" cy="177.0" r="3" fill="#1f77b4"/>
+<circle cx="271.2" cy="159.7" r="3" fill="#1f77b4"/>
+<circle cx="306.5" cy="144.0" r="3" fill="#1f77b4"/>
+<circle cx="341.8" cy="144.3" r="3" fill="#1f77b4"/>
+<circle cx="377.0" cy="137.1" r="3" fill="#1f77b4"/>
+<circle cx="412.2" cy="129.4" r="3" fill="#1f77b4"/>
+<circle cx="447.5" cy="124.8" r="3" fill="#1f77b4"/>
+<circle cx="482.8" cy="121.3" r="3" fill="#1f77b4"/>
+<circle cx="518.0" cy="124.1" r="3" fill="#1f77b4"/>
+<circle cx="553.2" cy="125.6" r="3" fill="#1f77b4"/>
+<circle cx="588.5" cy="113.6" r="3" fill="#1f77b4"/>
+<circle cx="623.8" cy="118.0" r="3" fill="#1f77b4"/>
+<circle cx="659.0" cy="119.9" r="3" fill="#1f77b4"/>
+<circle cx="694.2" cy="121.5" r="3" fill="#1f77b4"/>
+<circle cx="729.5" cy="121.3" r="3" fill="#1f77b4"/>
+<circle cx="764.8" cy="119.9" r="3" fill="#1f77b4"/>
+<circle cx="800.0" cy="120.7" r="3" fill="#1f77b4"/>
+<line x1="828" y1="96" x2="850" y2="96" stroke="#1f77b4" stroke-width="2.5"/>
+<text x="858" y="100" font-family="Arial" font-size="13">final_on_policy_lr4e-5_400_full_eval</text>
+<text x="447.5" y="638" text-anchor="middle" font-family="Arial" font-size="15">GRPO step</text>
+<text x="24" y="326.0" text-anchor="middle" font-family="Arial" font-size="15" transform="rotate(-90 24 326.0)">Answer reward</text>
+</svg>

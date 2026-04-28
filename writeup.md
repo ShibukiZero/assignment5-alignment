@@ -1055,13 +1055,50 @@ initial policy, but the small KL penalty and the SFT initialization together
 make the later GRPO phase less able to explore the longer reasoning traces that
 our best direct GRPO runs discover.
 
-For the final leaderboard-style long run, we therefore favor the strongest
+For the final leaderboard-style long run, we therefore used the strongest
 direct on-policy GRPO configuration from our ablations rather than the SFT+KL
 variant: Qwen2.5-Math-1.5B with the R1-Zero prompt, learning rate `4e-5`,
 `reinforce_with_baseline`, `masked_mean` length normalization, per-group reward
-standardization, and no reference KL penalty. Under our current single-GPU
-infrastructure, this is the configuration we expect to make the best use of the
-available wall-clock budget.
+standardization, and no reference KL penalty. We trained for 400 GRPO steps and
+evaluated every 20 steps on the full substitute validation split. This final
+run used 3199 validation examples from `competition_math_numeric`; because the
+official course MATH files were unavailable to us, the result below should be
+read as our leaderboard-style substitute-validation result rather than as an
+official 5K MATH leaderboard submission.
+
+![Leaderboard validation answer reward](artifacts/experiments/ch7/leaderboard/leaderboard_validation_reward.svg)
+
+![Leaderboard validation answer reward vs elapsed step time](artifacts/experiments/ch7/leaderboard/leaderboard_validation_reward_elapsed_time.svg)
+
+![Leaderboard validation format accuracy](artifacts/experiments/ch7/leaderboard/leaderboard_format_accuracy.svg)
+
+![Leaderboard rollout answer reward](artifacts/experiments/ch7/leaderboard/leaderboard_rollout_answer_reward.svg)
+
+![Leaderboard rollout response length](artifacts/experiments/ch7/leaderboard/leaderboard_response_length.svg)
+
+![Leaderboard token entropy](artifacts/experiments/ch7/leaderboard/leaderboard_token_entropy.svg)
+
+| metric | value |
+|---|---:|
+| validation examples | 3199 |
+| initial validation answer reward | 3.16% |
+| best validation answer reward | 73.71% at step 280 |
+| final validation answer reward | 72.59% at step 400 |
+| final validation format accuracy | 94.59% |
+| final rollout answer reward | 83.20% |
+| final rollout format reward | 94.14% |
+| final average response token length | 379.2 |
+| final token entropy | 0.1230 |
+
+The final run improves rapidly through the first 200 steps, peaks at 73.71%
+full-validation answer reward at step 280, and then enters a shallow plateau:
+the final step-400 checkpoint remains close to the peak at 72.59%. The rollout
+curves do not show a late collapse. Rollout answer reward remains high at the
+end, while response length stabilizes around a few hundred tokens and token
+entropy stays low but nonzero. The gap between this 73.71% full-validation
+result and the 88.18% 1024-example monitoring result from the ablations is
+therefore mostly an evaluation-split difference, not evidence that the final
+configuration failed to reproduce the ablation trend.
 
 ---
 
