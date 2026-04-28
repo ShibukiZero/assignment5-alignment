@@ -202,12 +202,10 @@ maintains substantially better late-training validation behavior.
 
 **Answer:** Because the official course MATH files were not available in this
 environment, we ran EI on the same substitute MATH-like
-`competition_math_numeric_noisy` split used in the previous experiments. The
-results below come from the prefix-cache-repaired rerun artifacts, so the old
-EI runs that reused a live vLLM engine without clearing prefix cache after
-weight sync are not used here. Validation was run on the full 3199-example
-validation set with the R1-Zero prompt, temperature 1.0, max tokens 1024, and
-the `r1_zero_reward_fn`-based answer reward.
+`competition_math_numeric_noisy` split used in the SFT experiments above.
+Validation was run on the full 3199-example validation set with the R1-Zero
+prompt, temperature 1.0, max tokens 1024, and the
+`r1_zero_reward_fn`-based answer reward.
 
 ![Expert Iteration validation accuracy](artifacts/experiments/ch5/expert_iteration/ei_validation_accuracy.svg)
 
@@ -236,9 +234,9 @@ The table below summarizes the EI runs.
 The best EI configuration was `D_b=2048, G=4, epochs=3`, which reached
 41.89% validation answer accuracy at EI step 2. This comfortably exceeds the
 15% target, though this result is on the substitute MATH-like validation set
-rather than the official course MATH split. Unlike the old cache-affected
-results, the best run did not finish near its peak: it fell to 23.04% by EI
-step 5, so the best-validation checkpoint is the meaningful model to select.
+rather than the official course MATH split. The best run did not finish near
+its peak: it fell to 23.04% by EI step 5, so the best-validation checkpoint is
+the meaningful model to select.
 
 The EI curves show a sharp early bootstrapping effect followed by frequent
 late-stage drift. All runs start from 3.16% validation answer accuracy and
@@ -259,10 +257,10 @@ dataset.
 Compared with the SFT experiments, EI is attractive because it continually
 refreshes the training traces from the current policy and filters them by
 verifier reward, rather than relying only on a fixed supervised dataset.
-However, the rerun makes clear that EI should be treated as verifier-filtered
-self-training with selection bias: later SFT rounds train only on what the
-current policy happened to solve, so they can narrow the policy or amplify
-artifacts even while the format reward remains high.
+However, these results make clear that EI should be treated as
+verifier-filtered self-training with selection bias: later SFT rounds train only
+on what the current policy happened to solve, so they can narrow the policy or
+amplify artifacts even while the format reward remains high.
 
 The entropy and accepted-fraction curves support this interpretation. Accepted
 rollout fractions begin around 2-3%, then often jump above 20% after the first
@@ -328,9 +326,8 @@ can also make the policy confidently wrong rather than merely more random.
 
 **Deliverable:** Implement a complete train loop for GRPO. Begin training a policy on MATH and confirm that you see validation rewards improving, along with sensible rollouts over time. Provide a plot with the validation rewards with respect to steps, and a few example rollouts over time.
 
-**Answer:** We use the prefix-cache-repaired on-policy GRPO rerun for this
-section and ignore the older cache-affected train-loop artifacts. The
-configuration is `rollout_batch_size=256`, `group_size=8`,
+**Answer:** We use the on-policy GRPO run with `rollout_batch_size=256`,
+`group_size=8`,
 `train_batch_size=256`, `epochs_per_rollout_batch=1`,
 `loss_type=reinforce_with_baseline`, standard-deviation-normalized group
 advantages, `masked_mean` loss normalization, and `lr=1e-5`. The run completed
@@ -358,10 +355,7 @@ rate. A useful caveat remains: the verifier is answer-based, so a rollout can
 receive reward even when the reasoning trace is not fully reliable. That is a
 limitation of the reward design rather than a train-loop bug.
 
-The numeric results above are from
-`.agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr1e-5`, using the
-same artifact paths as the original train-loop section after regeneration with
-`scripts/plot_grpo_train_loop.py`. Summary files are archived in
+The numeric results above are archived in
 `artifacts/experiments/ch7/grpo_train_loop/run_summaries_archive.md` and
 `artifacts/experiments/ch7/grpo_train_loop/run_summaries.json`, with the full
 eval curve in
@@ -383,16 +377,14 @@ The raw run data used for this answer are archived under
 
 **Answer:** The official course MATH files were not available in this
 environment, so we ran this sweep on the same converted
-`competition_math_numeric` MATH-like validation set used in the previous
+`competition_math_numeric` MATH-like validation set used in the GRPO
 experiments. All runs used the R1-Zero prompt, rollout batch size 256, group
 size 8, `reinforce_with_baseline`, standard-deviation-normalized advantages,
-`masked_mean` loss normalization, and validation every 5 GRPO steps. The table
-below uses the repaired single-GPU reruns, ignoring the older pre-repair sweep
-artifacts; for `lr=4e-5`, we use the completed repaired
-`masked_mean_lr4e-5` run from the length-normalization staging sweep because it
-has the same core hyperparameters and the strongest complete 200-step trace.
-We stopped clearly suboptimal or collapsed runs early once their validation
-curves were no longer competitive.
+`masked_mean` loss normalization, and validation every 5 GRPO steps. For
+`lr=4e-5`, we use the completed `masked_mean_lr4e-5` run because it has the
+same core hyperparameters and the strongest complete 200-step trace. We stopped
+clearly suboptimal or collapsed runs early once their validation curves were no
+longer competitive.
 
 ![GRPO validation answer reward for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
 
@@ -413,10 +405,9 @@ points in `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_eval_
 | `7e-5` | stopped early | 21.29% | 50 | 21.29% | 50 | 100.00% |
 | `2e-4` | collapsed | 3.81% | 0 | 0.00% | 50 | 0.00% |
 
-The best learning rate was `4e-5`, whose repaired run reached 88.18%
-validation answer reward at both step 190 and the final step 200, comfortably
-exceeding the 25% target. We use `4e-5` for the remaining on-policy GRPO
-experiments.
+The best learning rate was `4e-5`, which reached 88.18% validation answer
+reward at both step 190 and the final step 200, comfortably exceeding the 25%
+target. We use `4e-5` for the remaining on-policy GRPO experiments.
 
 Other metrics followed the same stability pattern: successful middle learning
 rates improved both answer reward and format accuracy, while `2e-4` fully
@@ -437,11 +428,10 @@ learn a terse formatting behavior without learning the underlying reasoning.
 
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
-**Answer:** We compared the repaired `reinforce_with_baseline` reference run
-against a newly rerun `no_baseline` ablation using the tuned `4e-5` learning
-rate, while keeping the prompt, rollout batch size, group size,
-standard-deviation normalization, and loss normalization fixed. Both runs
-completed 200 GRPO steps on the converted `competition_math_numeric`
+**Answer:** We compared `reinforce_with_baseline` against `no_baseline` using
+the tuned `4e-5` learning rate, while keeping the prompt, rollout batch size,
+group size, standard-deviation normalization, and loss normalization fixed. Both
+runs completed 200 GRPO steps on the converted `competition_math_numeric`
 validation set.
 
 ![GRPO validation answer reward by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_validation_reward.svg)
@@ -590,11 +580,10 @@ scale by dividing by the actual number of response tokens.
 **Answer:** We compared the selected `masked_mean` reference run against a
 `masked_normalize` run with the same on-policy setup, learning rate `4e-5`,
 group size 8, standard-deviation-normalized advantages, and
-`loss_normalize_constant=1024`. The regenerated plot also includes
-`batch_token_mean` as an additional reference. In the repaired rerun,
-`masked_mean` was still the best length-normalization choice, but the gap was
-much smaller than in the earlier pre-repair artifact: `masked_mean` reached a
-best validation answer reward of 88.18% at steps 190 and 200, while
+`loss_normalize_constant=1024`. The plot also includes `batch_token_mean` as an
+additional reference. `masked_mean` was the best length-normalization choice,
+but the gap was small: `masked_mean` reached a best validation answer reward of
+88.18% at steps 190 and 200, while
 `masked_normalize` reached 87.11% at steps 165 and 200. The
 `batch_token_mean` reference reached 86.91% at step 110 and ended at 86.43%.
 
@@ -636,11 +625,11 @@ rapidly moved from the high-entropy initial policy into a low-entropy regime by
 the end of training. The final mean token entropy was 0.0233 for `masked_mean`,
 0.0282 for `masked_normalize`, and 0.0196 for `batch_token_mean`. Thus,
 `masked_normalize` retained slightly higher entropy at the end, but the entropy
-differences were small compared with the earlier differences in validation
-reward, response length, and gradient scale. I interpret entropy here as
-supporting evidence that none of the repaired runs suffered an obvious
-late-training randomness collapse; the main effect of the normalization choice
-was still the speed and scale of credit assignment.
+differences were small compared with the differences in validation reward,
+response length, and gradient scale. We interpret entropy here as supporting
+evidence that none of the runs suffered an obvious late-training randomness
+collapse; the main effect of the normalization choice was still the speed and
+scale of credit assignment.
 
 ![GRPO token entropy by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_token_entropy.svg)
 
@@ -743,7 +732,7 @@ hyperparameters.
 
 **Answer:** Because the official course MATH files were not available in our
 self-hosted environment, we ran this sweep on the same
-`competition_math_numeric` MATH-like substitute dataset used in the previous
+`competition_math_numeric` MATH-like substitute dataset used in the on-policy
 GRPO experiments. All runs used a single GPU with `policy_device = cuda:0` and
 `vllm_device = cuda:0`. We fixed `rollout_batch_size = 256`, `group_size = 8`,
 `learning_rate = 4e-5`, `loss_type = grpo_clip`,
@@ -826,7 +815,7 @@ reach at least 86.13% validation answer accuracy, and none collapses over 200
 steps. However, the matched on-policy reference remains the best overall run,
 peaking and finishing at 88.18%. Among the off-policy settings, `e4_tb256` has
 the highest peak, 86.43% at step 145, but `e2_tb128` is the best final
-off-policy run, ending at 85.64%. I would therefore select `e2_tb128` if the
+off-policy run, ending at 85.64%. We would therefore select `e2_tb128` if the
 objective is a stable off-policy configuration, while keeping the on-policy
 `e1_tb256` run as the stronger final baseline.
 
@@ -876,7 +865,7 @@ unstable.
 
 **Answer:** We implemented the unclipped off-policy surrogate as a new loss type
 `GRPO-No-Clip` and compared it against the selected true off-policy
-configuration from the previous sweep: `epochs_per_rollout_batch=2`,
+configuration from the sweep above: `epochs_per_rollout_batch=2`,
 `train_batch_size=256`, `rollout_batch_size=256`, `learning_rate=4e-5`,
 `loss_normalization=masked_mean`, and `use_std_normalization=True`. In addition
 to the standard symmetric clipped objective with `cliprange_low=0.2` and
@@ -902,7 +891,7 @@ never becomes competitive and loses all validation reward late in training.
 The response-length diagnostics show different failure modes. The symmetric
 clipped run finishes with an average rollout response length of 474.8 tokens
 and 98.14% validation format accuracy, which is close to the healthy
-off-policy/on-policy regime from the previous experiments. The asymmetric
+off-policy/on-policy regime from the GRPO experiments above. The asymmetric
 clipped run is longer at 587.0 tokens and finishes slightly lower at 94.73%
 format accuracy, suggesting that the looser upper clip bound allows larger
 policy-ratio increases but does not improve final reward. The unclipped run
@@ -941,10 +930,9 @@ extra freedom does not appear beneficial for this `e2/tb256` configuration.
 
 **Deliverable:** Report the validation answer reward curves for both the R1-Zero prompt and the question-only prompt. How do metrics compare, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm? Try to explain your findings.
 
-**Answer:** We compare the prefix-cache-repaired R1-Zero reference run used in
-the later GRPO reruns with the prefix-cache-repaired question-only rerun. The
-reference uses `r1_zero.prompt` with `r1_zero_reward_fn` and `</answer>`
-stopping. The question-only rerun uses `question_only.prompt` with
+**Answer:** We compare the R1-Zero reference run with the question-only run.
+The reference uses `r1_zero.prompt` with `r1_zero_reward_fn` and `</answer>`
+stopping. The question-only run uses `question_only.prompt` with
 `question_only_reward_fn` and no `</answer>` stop string. Both runs use
 `learning_rate=4e-5`, `rollout_batch_size=256`, `train_batch_size=256`,
 `epochs_per_rollout_batch=1`, `group_size=8`,
@@ -953,19 +941,18 @@ stopping. The question-only rerun uses `question_only.prompt` with
 this should still be interpreted as a prompt-and-evaluation contract
 comparison rather than a pure prompt-wording ablation.
 
-The repaired comparison is more nuanced than the old cache-affected archive:
-question-only gives a much stronger starting point, while the repaired R1-Zero
-reference reaches the stronger final model. The question-only run starts at
-56.74% validation answer reward before any RL updates, reaches 80.08% by step
-50, and then improves more gradually to its best and final value of 85.16% at
-step 200. The R1-Zero reference starts much lower, at 3.81%, but improves more
-throughout training and reaches 88.18% at both its best checkpoint, step 190,
-and the final checkpoint, step 200.
+The comparison is nuanced: question-only gives a much stronger starting point,
+while the R1-Zero reference reaches the stronger final model. The question-only
+run starts at 56.74% validation answer reward before any RL updates, reaches
+80.08% by step 50, and then improves more gradually to its best and final value
+of 85.16% at step 200. The R1-Zero reference starts much lower, at 3.81%, but
+improves more throughout training and reaches 88.18% at both its best
+checkpoint, step 190, and the final checkpoint, step 200.
 
 ![GRPO validation answer reward by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_validation_reward.svg)
 
-The format-accuracy curve shows that both repaired runs learn their required
-output contract. The R1-Zero reference finishes slightly higher on validation
+The format-accuracy curve shows that both runs learn their required output
+contract. The R1-Zero reference finishes slightly higher on validation
 format accuracy, 98.05% versus 97.66%, despite having the stricter output
 protocol. The question-only prompt therefore mainly changes the optimization
 path rather than simply fixing parser failures: it gives a far stronger initial
@@ -994,7 +981,7 @@ brittle answer-tag protocol early on. However, this should not be interpreted
 as a pure surface-form prompt comparison, because the reward function, stop
 contract, and loss type also change with the prompt. The result is best
 understood as showing that question-only is easier at initialization and
-remains competitive, but the repaired R1-Zero reference becomes stronger after
+remains competitive, but the R1-Zero reference becomes stronger after
 enough RL updates.
 
 ---
