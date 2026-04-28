@@ -1014,6 +1014,55 @@ gave us a more reliable platform for the final leaderboard experiment. We treat
 these infrastructure changes as enabling improvements rather than as a separate
 algorithmic contribution.
 
+As a final case study before choosing the long-run configuration, we tested a
+simple budget-allocation idea: spend the first part of the training budget on a
+small SFT warm start, then continue with GRPO while adding a small KL penalty to
+keep the policy near the SFT initialization. Since we did not have access to the
+official course MATH validation files, this comparison uses our same converted
+substitute validation split and the same R1-Zero prompt, vLLM sampling settings,
+and `r1_zero_reward_fn`-based answer reward used throughout our leaderboard-style
+experiments. In the staged plot below, the 100-step SFT warm start is
+compressed to the width of 10 GRPO steps to reflect its much smaller compute
+budget. The vertical dashed line marks the transition from SFT to GRPO, and the
+direct GRPO reference is shifted to begin at the same boundary so that the RL
+portions are easy to compare on a shared axis.
+
+![SFT+KL GRPO staged validation answer reward](artifacts/experiments/ch7/sft_kl_grpo/sft_kl_grpo_staged_validation_reward.svg)
+
+![SFT+KL GRPO reference KL](artifacts/experiments/ch7/sft_kl_grpo/sft_kl_grpo_reference_kl.svg)
+
+![SFT+KL GRPO rollout response length](artifacts/experiments/ch7/sft_kl_grpo/sft_kl_grpo_response_length.svg)
+
+![SFT+KL GRPO token entropy](artifacts/experiments/ch7/sft_kl_grpo/sft_kl_grpo_token_entropy.svg)
+
+| setting | best answer reward | best run step | final answer reward | final format reward | final rollout answer | final average length | final reference KL |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| SFT warm start, 256 examples, 100 steps | 39.26% | 100 | 39.26% | 88.87% | -- | -- | -- |
+| SFT warm start + GRPO, KL coefficient 0.01 | 76.86% | 190 | 76.86% | 98.05% | 57.81% | 346.8 | 0.2036 |
+| Direct GRPO reference | 88.18% | 190 | 88.18% | 98.05% | 80.86% | 466.9 | -- |
+
+The warm start itself is useful: after only 100 SFT optimizer steps on 256
+examples, the policy reaches 39.26% answer reward and 88.87% format reward on
+the validation split. However, the combined SFT+KL GRPO run underperforms the
+direct GRPO reference after the RL phase. The KL-regularized run reaches 76.86%
+answer reward, while the direct GRPO reference reaches 88.18% under the same
+validation protocol. Its rollout-side answer reward is also much lower
+(57.81% versus 80.86%), and its sampled responses are shorter on average
+(346.8 versus 466.9 tokens). The entropy and response-length comparisons show
+the same pattern: the SFT+KL run remains more constrained than the direct GRPO
+reference late in training. This suggests that the SFT warm start improves the
+initial policy, but the small KL penalty and the SFT initialization together
+make the later GRPO phase less able to explore the longer reasoning traces that
+our best direct GRPO runs discover.
+
+For the final leaderboard-style long run, we therefore favor the strongest
+direct on-policy GRPO configuration from our ablations rather than the SFT+KL
+variant: Qwen2.5-Math-1.5B with the R1-Zero prompt, learning rate `4e-5`,
+`reinforce_with_baseline`, `masked_mean` length normalization, per-group reward
+standardization, and no reference KL penalty. Under our current single-GPU
+infrastructure, this is the configuration we expect to make the best use of the
+available wall-clock budget.
+
 ---
 
 # Part 2: Instruction Tuning and RLHF Assignment

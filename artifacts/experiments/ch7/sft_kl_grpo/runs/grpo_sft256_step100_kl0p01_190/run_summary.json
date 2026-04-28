@@ -1,0 +1,21 @@
+{
+  "best_answer_accuracy": 0.7685546875,
+  "final_optimizer_step": 190,
+  "n_grpo_steps": 190,
+  "rollout_batch_size": 256,
+  "group_size": 8,
+  "epochs_per_rollout_batch": 1,
+  "train_batch_size": 256,
+  "gradient_accumulation_steps": 128,
+  "optimizer_updates_per_rollout_batch": 1,
+  "expected_total_optimizer_steps": 190,
+  "loss_type": "reinforce_with_baseline",
+  "cliprange": 0.2,
+  "cliprange_low": 0.2,
+  "cliprange_high": 0.2,
+  "kl_coef": 0.01,
+  "kl_ref_model": "/root/autodl-tmp/a5-alignment/runs/sft_kl_grpo/sft_256_step100/final_policy",
+  "loss_normalization": "masked_mean",
+  "loss_normalize_constant": 1.0,
+  "use_std_normalization": true
+}

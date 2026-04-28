@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="660" viewBox="0 0 1100 660">
+<rect width="100%" height="100%" fill="white"/>
+<text x="550.0" y="36" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700">SFT warm start + KL GRPO staged validation reward</text>
+<line x1="95" y1="578" x2="800" y2="578" stroke="#222" stroke-width="1.5"/>
+<line x1="95" y1="74" x2="95" y2="578" stroke="#222" stroke-width="1.5"/>
+<line x1="128.6" y1="74" x2="128.6" y2="578" stroke="#666" stroke-width="1.5" stroke-dasharray="6 5"/>
+<text x="136.6" y="94" font-family="Arial" font-size="13" fill="#444">start GRPO</text>
+<text x="111.8" y="94" text-anchor="middle" font-family="Arial" font-size="13" fill="#666">SFT warm start, compressed to 10 GRPO steps</text>
+<text x="464.3" y="94" text-anchor="middle" font-family="Arial" font-size="13" fill="#666">GRPO</text>
+<line x1="90" y1="578.0" x2="800" y2="578.0" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="582.0" text-anchor="end" font-family="Arial" font-size="12">0%</text>
+<line x1="90" y1="477.2" x2="800" y2="477.2" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="481.2" text-anchor="end" font-family="Arial" font-size="12">18%</text>
+<line x1="90" y1="376.4" x2="800" y2="376.4" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="380.4" text-anchor="end" font-family="Arial" font-size="12">36%</text>
+<line x1="90" y1="275.6" x2="800" y2="275.6" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="279.6" text-anchor="end" font-family="Arial" font-size="12">54%</text>
+<line x1="90" y1="174.8" x2="800" y2="174.8" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="178.8" text-anchor="end" font-family="Arial" font-size="12">72%</text>
+<line x1="90" y1="74.0" x2="800" y2="74.0" stroke="#ddd" stroke-width="1"/>
+<text x="83" y="78.0" text-anchor="end" font-family="Arial" font-size="12">90%</text>
+<line x1="95.0" y1="578" x2="95.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="95.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">SFT 0</text>
+<line x1="111.8" y1="578" x2="111.8" y2="583" stroke="#222" stroke-width="1"/>
+<text x="111.8" y="602" text-anchor="middle" font-family="Arial" font-size="12">SFT 50</text>
+<line x1="128.6" y1="578" x2="128.6" y2="583" stroke="#222" stroke-width="1"/>
+<text x="128.6" y="602" text-anchor="middle" font-family="Arial" font-size="12">GRPO 0</text>
+<line x1="296.4" y1="578" x2="296.4" y2="583" stroke="#222" stroke-width="1"/>
+<text x="296.4" y="602" text-anchor="middle" font-family="Arial" font-size="12">50</text>
+<line x1="464.3" y1="578" x2="464.3" y2="583" stroke="#222" stroke-width="1"/>
+<text x="464.3" y="602" text-anchor="middle" font-family="Arial" font-size="12">100</text>
+<line x1="632.1" y1="578" x2="632.1" y2="583" stroke="#222" stroke-width="1"/>
+<text x="632.1" y="602" text-anchor="middle" font-family="Arial" font-size="12">150</text>
+<line x1="800.0" y1="578" x2="800.0" y2="583" stroke="#222" stroke-width="1"/>
+<text x="800.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">200</text>
+<polyline fill="none" stroke="#1f77b4" stroke-width="2.3" points="95.0,546.8 128.6,358.2 128.6,339.0 145.4,280.0 162.1,278.9 178.9,255.9 195.7,245.5 212.5,242.2 229.3,225.3 246.1,228.0 262.9,217.6 279.6,219.8 296.4,208.9 313.2,224.7 330.0,211.0 346.8,214.3 363.6,206.1 380.4,208.9 397.1,207.2 413.9,186.4 430.7,190.8 447.5,183.2 464.3,181.5 481.1,183.7 497.9,177.7 514.6,167.8 531.4,176.0 548.2,171.1 565.0,177.7 581.8,182.6 598.6,177.7 615.4,170.6 632.1,168.4 648.9,175.0 665.7,167.8 682.5,154.2 699.3,159.6 716.1,156.4 732.9,149.8 749.6,152.5 766.4,147.6"/>
+<circle cx="95.0" cy="546.8" r="3" fill="#1f77b4"/>
+<circle cx="128.6" cy="358.2" r="3" fill="#1f77b4"/>
+<circle cx="128.6" cy="339.0" r="3" fill="#1f77b4"/>
+<circle cx="145.4" cy="280.0" r="3" fill="#1f77b4"/>
+<circle cx="162.1" cy="278.9" r="3" fill="#1f77b4"/>
+<circle cx="178.9" cy="255.9" r="3" fill="#1f77b4"/>
+<circle cx="195.7" cy="245.5" r="3" fill="#1f77b4"/>
+<circle cx="212.5" cy="242.2" r="3" fill="#1f77b4"/>
+<circle cx="229.3" cy="225.3" r="3" fill="#1f77b4"/>
+<circle cx="246.1" cy="228.0" r="3" fill="#1f77b4"/>
+<circle cx="262.9" cy="217.6" r="3" fill="#1f77b4"/>
+<circle cx="279.6" cy="219.8" r="3" fill="#1f77b4"/>
+<circle cx="296.4" cy="208.9" r="3" fill="#1f77b4"/>
+<circle cx="313.2" cy="224.7" r="3" fill="#1f77b4"/>
+<circle cx="330.0" cy="211.0" r="3" fill="#1f77b4"/>
+<circle cx="346.8" cy="214.3" r="3" fill="#1f77b4"/>
+<circle cx="363.6" cy="206.1" r="3" fill="#1f77b4"/>
+<circle cx="380.4" cy="208.9" r="3" fill="#1f77b4"/>
+<circle cx="397.1" cy="207.2" r="3" fill="#1f77b4"/>
+<circle cx="413.9" cy="186.4" r="3" fill="#1f77b4"/>
+<circle cx="430.7" cy="190.8" r="3" fill="#1f77b4"/>
+<circle cx="447.5" cy="183.2" r="3" fill="#1f77b4"/>
+<circle cx="464.3" cy="181.5" r="3" fill="#1f77b4"/>
+<circle cx="481.1" cy="183.7" r="3" fill="#1f77b4"/>
+<circle cx="497.9" cy="177.7" r="3" fill="#1f77b4"/>
+<circle cx="514.6" cy="167.8" r="3" fill="#1f77b4"/>
+<circle cx="531.4" cy="176.0" r="3" fill="#1f77b4"/>
+<circle cx="548.2" cy="171.1" r="3" fill="#1f77b4"/>
+<circle cx="565.0" cy="177.7" r="3" fill="#1f77b4"/>
+<circle cx="581.8" cy="182.6" r="3" fill="#1f77b4"/>
+<circle cx="598.6" cy="177.7" r="3" fill="#1f77b4"/>
+<circle cx="615.4" cy="170.6" r="3" fill="#1f77b4"/>
+<circle cx="632.1" cy="168.4" r="3" fill="#1f77b4"/>
+<circle cx="648.9" cy="175.0" r="3" fill="#1f77b4"/>
+<circle cx="665.7" cy="167.8" r="3" fill="#1f77b4"/>
+<circle cx="682.5" cy="154.2" r="3" fill="#1f77b4"/>
+<circle cx="699.3" cy="159.6" r="3" fill="#1f77b4"/>
+<circle cx="716.1" cy="156.4" r="3" fill="#1f77b4"/>
+<circle cx="732.9" cy="149.8" r="3" fill="#1f77b4"/>
+<circle cx="749.6" cy="152.5" r="3" fill="#1f77b4"/>
+<circle cx="766.4" cy="147.6" r="3" fill="#1f77b4"/>
+<line x1="828" y1="96" x2="850" y2="96" stroke="#1f77b4" stroke-width="2.5"/>
+<text x="858" y="100" font-family="Arial" font-size="13">SFT warm start + KL GRPO</text>
+<polyline fill="none" stroke="#d62728" stroke-width="2.3" points="128.6,556.7 145.4,410.7 162.1,335.2 178.9,262.5 195.7,190.8 212.5,171.1 229.3,159.6 246.1,147.6 262.9,137.8 279.6,118.1 296.4,114.8 313.2,120.8 330.0,106.0 346.8,102.8 363.6,109.3 380.4,103.9 397.1,90.7 413.9,94.6 430.7,96.8 447.5,88.0 464.3,96.2 481.1,101.7 497.9,105.5 514.6,107.1 531.4,107.1 548.2,95.1 565.0,96.8 581.8,101.7 598.6,90.2 615.4,102.2 632.1,84.7 648.9,89.6 665.7,90.7 682.5,88.0 699.3,90.7 716.1,90.7 732.9,93.5 749.6,89.6 766.4,84.2 783.2,90.7 800.0,84.2"/>
+<circle cx="128.6" cy="556.7" r="3" fill="#d62728"/>
+<circle cx="145.4" cy="410.7" r="3" fill="#d62728"/>
+<circle cx="162.1" cy="335.2" r="3" fill="#d62728"/>
+<circle cx="178.9" cy="262.5" r="3" fill="#d62728"/>
+<circle cx="195.7" cy="190.8" r="3" fill="#d62728"/>
+<circle cx="212.5" cy="171.1" r="3" fill="#d62728"/>
+<circle cx="229.3" cy="159.6" r="3" fill="#d62728"/>
+<circle cx="246.1" cy="147.6" r="3" fill="#d62728"/>
+<circle cx="262.9" cy="137.8" r="3" fill="#d62728"/>
+<circle cx="279.6" cy="118.1" r="3" fill="#d62728"/>
+<circle cx="296.4" cy="114.8" r="3" fill="#d62728"/>
+<circle cx="313.2" cy="120.8" r="3" fill="#d62728"/>
+<circle cx="330.0" cy="106.0" r="3" fill="#d62728"/>
+<circle cx="346.8" cy="102.8" r="3" fill="#d62728"/>
+<circle cx="363.6" cy="109.3" r="3" fill="#d62728"/>
+<circle cx="380.4" cy="103.9" r="3" fill="#d62728"/>
+<circle cx="397.1" cy="90.7" r="3" fill="#d62728"/>
+<circle cx="413.9" cy="94.6" r="3" fill="#d62728"/>
+<circle cx="430.7" cy="96.8" r="3" fill="#d62728"/>
+<circle cx="447.5" cy="88.0" r="3" fill="#d62728"/>
+<circle cx="464.3" cy="96.2" r="3" fill="#d62728"/>
+<circle cx="481.1" cy="101.7" r="3" fill="#d62728"/>
+<circle cx="497.9" cy="105.5" r="3" fill="#d62728"/>
+<circle cx="514.6" cy="107.1" r="3" fill="#d62728"/>
+<circle cx="531.4" cy="107.1" r="3" fill="#d62728"/>
+<circle cx="548.2" cy="95.1" r="3" fill="#d62728"/>
+<circle cx="565.0" cy="96.8" r="3" fill="#d62728"/>
+<circle cx="581.8" cy="101.7" r="3" fill="#d62728"/>
+<circle cx="598.6" cy="90.2" r="3" fill="#d62728"/>
+<circle cx="615.4" cy="102.2" r="3" fill="#d62728"/>
+<circle cx="632.1" cy="84.7" r="3" fill="#d62728"/>
+<circle cx="648.9" cy="89.6" r="3" fill="#d62728"/>
+<circle cx="665.7" cy="90.7" r="3" fill="#d62728"/>
+<circle cx="682.5" cy="88.0" r="3" fill="#d62728"/>
+<circle cx="699.3" cy="90.7" r="3" fill="#d62728"/>
+<circle cx="716.1" cy="90.7" r="3" fill="#d62728"/>
+<circle cx="732.9" cy="93.5" r="3" fill="#d62728"/>
+<circle cx="749.6" cy="89.6" r="3" fill="#d62728"/>
+<circle cx="766.4" cy="84.2" r="3" fill="#d62728"/>
+<circle cx="783.2" cy="90.7" r="3" fill="#d62728"/>
+<circle cx="800.0" cy="84.2" r="3" fill="#d62728"/>
+<line x1="828" y1="120" x2="850" y2="120" stroke="#d62728" stroke-width="2.5"/>
+<text x="858" y="124" font-family="Arial" font-size="13">Direct GRPO reference</text>
+<text x="447.5" y="638" text-anchor="middle" font-family="Arial" font-size="15">Staged training step</text>
+<text x="24" y="326.0" text-anchor="middle" font-family="Arial" font-size="15" transform="rotate(-90 24 326.0)">Answer reward</text>
+</svg>

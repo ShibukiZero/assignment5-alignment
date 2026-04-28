@@ -1,0 +1,6 @@
+{
+  "sft_run": ".agents/logs/reruns/sft_kl_grpo/sft_256_step100",
+  "grpo_run": ".agents/logs/reruns/sft_kl_grpo/grpo_sft256_step100_kl0p01_190",
+  "reference_run": "artifacts/experiments/ch7/grpo_length_normalization/runs/masked_mean",
+  "sample_rollouts_omitted": true
+}
