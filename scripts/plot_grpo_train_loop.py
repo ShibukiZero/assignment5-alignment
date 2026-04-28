@@ -25,6 +25,7 @@ COLORS = [
     "#2ca02c",
     "#9467bd",
 ]
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 
 @dataclass(frozen=True)
@@ -463,7 +464,7 @@ def archive_run(run: RunData, output_dir: Path) -> Path:
     archive_dir = output_dir / "runs" / run.label
     archive_dir.parent.mkdir(parents=True, exist_ok=True)
     if run.run_dir.resolve() != archive_dir.resolve():
-        shutil.copytree(run.run_dir, archive_dir, dirs_exist_ok=True)
+        shutil.copytree(run.run_dir, archive_dir, dirs_exist_ok=True, ignore=ARCHIVE_IGNORE)
     return archive_dir
 
 
@@ -629,7 +630,11 @@ def write_run_summaries(run: RunData, output_dir: Path, archive_dir: Path) -> No
         f"{percent(run.final_rollout.answer_accuracy)} | "
         f"{run.final_rollout.avg_response_token_length:.1f} |",
         "",
-        f"Raw run files are archived under `{archive_dir}/`.",
+        (
+            f"Raw run files are archived under `{archive_dir}/`. "
+            "`sample_rollouts.jsonl` files are intentionally omitted because aggregate "
+            "rollout summaries are sufficient for the writeup."
+        ),
         "",
     ]
     (output_dir / "run_summaries_archive.md").write_text(

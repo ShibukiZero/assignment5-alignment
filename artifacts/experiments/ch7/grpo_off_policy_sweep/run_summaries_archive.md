@@ -15,4 +15,4 @@
 | `focused_e2_tb128` | focused | true_off_policy | completed | 86.13% | 120 | 85.64% | 200 | `.agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e2_tb128` |
 | `focused_e4_tb256` | focused | true_off_policy | completed | 86.43% | 145 | 82.23% | 200 | `.agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e4_tb256` |
 
-Raw run files are archived under `artifacts/experiments/ch7/grpo_off_policy_sweep/runs/`.
+Raw run files are archived under `artifacts/experiments/ch7/grpo_off_policy_sweep/runs/`. `sample_rollouts.jsonl` files are intentionally omitted because aggregate rollout summaries are sufficient for the writeup.

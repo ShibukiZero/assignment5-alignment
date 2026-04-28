@@ -6,4 +6,4 @@
 | `GRPO-No-Clip (e2/tb256)` | `no_clip` | `grpo_no_clip` | 0.20 | 0.20 | late collapse | 24.61% | 125 | 0.00% | 200 | `.agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/no_clip_e2_tb256` |
 | `GRPO-Clip 0.20/0.28 (e2/tb256)` | `asymmetric_clip` | `grpo_clip` | 0.20 | 0.28 | completed | 83.79% | 150 | 78.91% | 200 | `.agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/clip_low0p2_high0p28_e2_tb256` |
 
-Raw run files are archived under `artifacts/experiments/ch7/grpo_off_policy_clip_ablation/runs/`.
+Raw run files are archived under `artifacts/experiments/ch7/grpo_off_policy_clip_ablation/runs/`. `sample_rollouts.jsonl` files are intentionally omitted because aggregate rollout summaries are sufficient for the writeup.

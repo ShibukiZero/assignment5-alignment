@@ -22,4 +22,4 @@ Generated artifacts:
 - `artifacts/experiments/ch7/grpo_length_normalization/run_summaries.json`
 - `artifacts/experiments/ch7/grpo_length_normalization/archive_manifest.json`
 
-Raw run files are archived under `artifacts/experiments/ch7/grpo_length_normalization/runs/`. Each run archive directory is removed before copying so stale files from older runs cannot remain mixed with the repaired rerun logs.
+Raw run files are archived under `artifacts/experiments/ch7/grpo_length_normalization/runs/`. `sample_rollouts.jsonl` files are intentionally omitted because aggregate rollout summaries are sufficient for the writeup. Each run archive directory is removed before copying so stale files from older runs cannot remain mixed with the repaired rerun logs.

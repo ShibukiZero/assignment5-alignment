@@ -10,4 +10,4 @@ Default source logs:
 - `std_normalization`: `.agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5`
 - `no_std_normalization`: `.agents/logs/reruns/grpo_group_standard_deviation_retry_single_gpu/grpo_group_standard_deviation/no_std_normalization`
 
-Raw run files are archived under `artifacts/experiments/ch7/grpo_group_standard_deviation/runs/`.
+Raw run files are archived under `artifacts/experiments/ch7/grpo_group_standard_deviation/runs/`. `sample_rollouts.jsonl` files are intentionally omitted because aggregate rollout summaries are sufficient for the writeup.

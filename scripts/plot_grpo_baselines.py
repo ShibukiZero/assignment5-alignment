@@ -39,6 +39,7 @@ COLORS = [
     "#e377c2",
     "#7f7f7f",
 ]
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 
 @dataclass(frozen=True)
@@ -433,7 +434,7 @@ def archive_runs(runs: list[RunData], output_dir: Path) -> None:
         archive_dir = runs_dir / run.label
         if run.log_dir.resolve() == archive_dir.resolve():
             continue
-        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True)
+        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True, ignore=ARCHIVE_IGNORE)
 
 
 def write_eval_points(runs: list[RunData], output_dir: Path) -> None:
@@ -645,7 +646,11 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
                 for label, log_dir in DEFAULT_RUN_SPECS
             ],
             "",
-            "Raw run files are archived under `artifacts/experiments/ch7/grpo_baselines/runs/`.",
+            (
+                "Raw run files are archived under `artifacts/experiments/ch7/grpo_baselines/runs/`. "
+                "`sample_rollouts.jsonl` files are intentionally omitted because aggregate "
+                "rollout summaries are sufficient for the writeup."
+            ),
         ]
     )
     (output_dir / "run_summaries_archive.md").write_text(

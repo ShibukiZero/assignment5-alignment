@@ -4,4 +4,4 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `grpo_on_policy_lr1e-5` | `1e-05` | 200 | 3.81% | 67.77% @ 195 | 67.29% | 95.61% | 60.16% | 207.2 |
 
-Raw run files are archived under `artifacts/experiments/ch7/grpo_train_loop/runs/grpo_on_policy_lr1e-5/`.
+Raw run files are archived under `artifacts/experiments/ch7/grpo_train_loop/runs/grpo_on_policy_lr1e-5/`. `sample_rollouts.jsonl` files are intentionally omitted because aggregate rollout summaries are sufficient for the writeup.

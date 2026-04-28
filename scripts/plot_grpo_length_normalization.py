@@ -47,6 +47,7 @@ COLORS = [
     "#e377c2",
     "#7f7f7f",
 ]
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 
 @dataclass(frozen=True)
@@ -456,7 +457,7 @@ def archive_runs(runs: list[RunData], output_dir: Path) -> None:
         if source_dir != target_dir:
             if archive_dir.exists():
                 shutil.rmtree(archive_dir)
-            shutil.copytree(run.log_dir, archive_dir)
+            shutil.copytree(run.log_dir, archive_dir, ignore=ARCHIVE_IGNORE)
             copied = True
         manifest.append(
             {
@@ -702,6 +703,8 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
             (
                 "Raw run files are archived under "
                 "`artifacts/experiments/ch7/grpo_length_normalization/runs/`. "
+                "`sample_rollouts.jsonl` files are intentionally omitted because "
+                "aggregate rollout summaries are sufficient for the writeup. "
                 "Each run archive directory is removed before copying so stale "
                 "files from older runs cannot remain mixed with the repaired "
                 "rerun logs."

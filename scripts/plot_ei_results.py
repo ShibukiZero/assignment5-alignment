@@ -27,6 +27,7 @@ DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch5/expert_iteration"
 DEFAULT_SOURCE_NOTE = (
     "prefix-cache-repaired single-GPU rerun; old EI artifacts are intentionally ignored"
 )
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 COLORS = [
     "#1f77b4",
@@ -607,7 +608,7 @@ def archive_run_logs(runs: list[RunData], output_dir: Path, keep_existing_runs: 
         destination = runs_dir / run.run_name
         if destination.exists():
             shutil.rmtree(destination)
-        shutil.copytree(run.source_dir, destination)
+        shutil.copytree(run.source_dir, destination, ignore=ARCHIVE_IGNORE)
 
 
 def main() -> None:

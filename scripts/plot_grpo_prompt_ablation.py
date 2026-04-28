@@ -292,7 +292,11 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
     markdown_lines.extend(
         [
             "",
-            "Raw run files are archived under `artifacts/experiments/ch7/grpo_prompt_ablation/runs/`.",
+            (
+                "Raw run files are archived under `artifacts/experiments/ch7/grpo_prompt_ablation/runs/`. "
+                "`sample_rollouts.jsonl` files are intentionally omitted because aggregate "
+                "rollout summaries are sufficient for the writeup."
+            ),
             "",
         ]
     )

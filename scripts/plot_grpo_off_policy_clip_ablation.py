@@ -39,6 +39,7 @@ COLORS = [
     "#2ca02c",
     "#9467bd",
 ]
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 
 @dataclass(frozen=True)
@@ -526,7 +527,7 @@ def archive_runs(runs: list[RunData], output_dir: Path) -> None:
         archive_dir = runs_dir / run.label.replace(" ", "_").replace("/", "_")
         if run.log_dir.resolve() == archive_dir.resolve():
             continue
-        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True)
+        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True, ignore=ARCHIVE_IGNORE)
 
 
 def cumulative_eval_minutes(run: RunData) -> list[tuple[float, float]]:
@@ -614,7 +615,12 @@ def write_run_summaries(runs: list[RunData], output_dir: Path) -> None:
     lines.extend(
         [
             "",
-            "Raw run files are archived under `artifacts/experiments/ch7/grpo_off_policy_clip_ablation/runs/`.",
+            (
+                "Raw run files are archived under "
+                "`artifacts/experiments/ch7/grpo_off_policy_clip_ablation/runs/`. "
+                "`sample_rollouts.jsonl` files are intentionally omitted because aggregate "
+                "rollout summaries are sufficient for the writeup."
+            ),
             "",
         ]
     )
