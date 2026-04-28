@@ -1,39 +1,42 @@
 [
   {
-    "run_name": "GRPO-Clip (e2/tb256)",
+    "run_name": "GRPO-Clip 0.20/0.20 (e2/tb256)",
+    "variant": "symmetric_clip",
     "loss_type": "grpo_clip",
-    "log_dir": ".agents/logs/ch7/grpo_off_policy_sweep/focused_e2_tb256",
-    "status": "late collapse",
+    "log_dir": ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e2_tb256",
+    "status": "completed",
     "learning_rate": 4e-05,
     "epochs_per_rollout_batch": 2,
     "train_batch_size": 256,
     "optimizer_updates_per_rollout_batch": 2,
+    "cliprange_low": 0.2,
+    "cliprange_high": 0.2,
     "best_eval": {
-      "grpo_step": 65,
-      "answer_accuracy": 0.34375,
-      "format_accuracy": 0.7646484375
+      "grpo_step": 145,
+      "answer_accuracy": 0.86328125,
+      "format_accuracy": 0.9833984375
     },
     "final_eval": {
       "grpo_step": 200,
-      "answer_accuracy": 0.0,
-      "format_accuracy": 0.0
+      "answer_accuracy": 0.8232421875,
+      "format_accuracy": 0.9814453125
     },
     "final_rollout": {
       "grpo_step": 200,
-      "answer_accuracy": 0.0,
-      "format_accuracy": 0.0,
-      "avg_response_token_length": 1024.0
+      "answer_accuracy": 0.54296875,
+      "format_accuracy": 0.87109375,
+      "avg_response_token_length": 474.78125
     },
     "last_finite_train": {
-      "optimizer_step": 389,
-      "token_entropy": 0.12430672720074654,
-      "grad_norm": 28.75,
-      "loss": 0.0,
-      "clip_fraction": 0.0,
-      "approx_kl": 0.0
+      "optimizer_step": 400,
+      "token_entropy": 0.0329442024230957,
+      "grad_norm": 0.0908203125,
+      "loss": -0.0009855126263573766,
+      "clip_fraction": 0.013797033409900905,
+      "approx_kl": 0.0013070665299892426
     },
     "run_summary": {
-      "best_answer_accuracy": 0.34375,
+      "best_answer_accuracy": 0.86328125,
       "final_optimizer_step": 400,
       "n_grpo_steps": 200,
       "rollout_batch_size": 256,
@@ -45,46 +48,53 @@
       "expected_total_optimizer_steps": 400,
       "loss_type": "grpo_clip",
       "cliprange": 0.2,
+      "cliprange_low": 0.2,
+      "cliprange_high": 0.2,
+      "kl_coef": 0.0,
+      "kl_ref_model": "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B",
       "loss_normalization": "masked_mean",
       "loss_normalize_constant": 1.0,
-      "use_std_normalization": false
+      "use_std_normalization": true
     }
   },
   {
     "run_name": "GRPO-No-Clip (e2/tb256)",
+    "variant": "no_clip",
     "loss_type": "grpo_no_clip",
-    "log_dir": ".agents/logs/ch7/grpo_off_policy_clip_ablation/focused_e2_tb256_no_clip",
-    "status": "completed",
+    "log_dir": ".agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/no_clip_e2_tb256",
+    "status": "late collapse",
     "learning_rate": 4e-05,
     "epochs_per_rollout_batch": 2,
     "train_batch_size": 256,
     "optimizer_updates_per_rollout_batch": 2,
+    "cliprange_low": 0.2,
+    "cliprange_high": 0.2,
     "best_eval": {
-      "grpo_step": 195,
-      "answer_accuracy": 0.7841796875,
-      "format_accuracy": 0.9423828125
+      "grpo_step": 125,
+      "answer_accuracy": 0.24609375,
+      "format_accuracy": 0.998046875
     },
     "final_eval": {
       "grpo_step": 200,
-      "answer_accuracy": 0.7822265625,
-      "format_accuracy": 0.9453125
+      "answer_accuracy": 0.0,
+      "format_accuracy": 0.0
     },
     "final_rollout": {
       "grpo_step": 200,
-      "answer_accuracy": 0.49609375,
-      "format_accuracy": 0.83984375,
-      "avg_response_token_length": 491.88671875
+      "answer_accuracy": 0.0,
+      "format_accuracy": 0.0,
+      "avg_response_token_length": 155.796875
     },
     "last_finite_train": {
       "optimizer_step": 400,
-      "token_entropy": 0.19890213012695312,
-      "grad_norm": 0.08349609375,
-      "loss": -0.00026271952083334327,
+      "token_entropy": 0.15163612365722656,
+      "grad_norm": 0.0,
+      "loss": 0.0,
       "clip_fraction": null,
-      "approx_kl": 0.00015571340918540955
+      "approx_kl": -5.498528480529785e-06
     },
     "run_summary": {
-      "best_answer_accuracy": 0.7841796875,
+      "best_answer_accuracy": 0.24609375,
       "final_optimizer_step": 400,
       "n_grpo_steps": 200,
       "rollout_batch_size": 256,
@@ -96,9 +106,71 @@
       "expected_total_optimizer_steps": 400,
       "loss_type": "grpo_no_clip",
       "cliprange": 0.2,
+      "cliprange_low": 0.2,
+      "cliprange_high": 0.2,
+      "kl_coef": 0.0,
+      "kl_ref_model": "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B",
       "loss_normalization": "masked_mean",
       "loss_normalize_constant": 1.0,
-      "use_std_normalization": false
+      "use_std_normalization": true
+    }
+  },
+  {
+    "run_name": "GRPO-Clip 0.20/0.28 (e2/tb256)",
+    "variant": "asymmetric_clip",
+    "loss_type": "grpo_clip",
+    "log_dir": ".agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/clip_low0p2_high0p28_e2_tb256",
+    "status": "completed",
+    "learning_rate": 4e-05,
+    "epochs_per_rollout_batch": 2,
+    "train_batch_size": 256,
+    "optimizer_updates_per_rollout_batch": 2,
+    "cliprange_low": 0.2,
+    "cliprange_high": 0.28,
+    "best_eval": {
+      "grpo_step": 150,
+      "answer_accuracy": 0.837890625,
+      "format_accuracy": 0.9716796875
+    },
+    "final_eval": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.7890625,
+      "format_accuracy": 0.947265625
+    },
+    "final_rollout": {
+      "grpo_step": 200,
+      "answer_accuracy": 0.48828125,
+      "format_accuracy": 0.875,
+      "avg_response_token_length": 587.01171875
+    },
+    "last_finite_train": {
+      "optimizer_step": 400,
+      "token_entropy": 0.5968399047851562,
+      "grad_norm": 0.28515625,
+      "loss": -0.004455674439668655,
+      "clip_fraction": 0.014303219862085825,
+      "approx_kl": 0.002418261021375656
+    },
+    "run_summary": {
+      "best_answer_accuracy": 0.837890625,
+      "final_optimizer_step": 400,
+      "n_grpo_steps": 200,
+      "rollout_batch_size": 256,
+      "group_size": 8,
+      "epochs_per_rollout_batch": 2,
+      "train_batch_size": 256,
+      "gradient_accumulation_steps": 128,
+      "optimizer_updates_per_rollout_batch": 2,
+      "expected_total_optimizer_steps": 400,
+      "loss_type": "grpo_clip",
+      "cliprange": 0.2,
+      "cliprange_low": 0.2,
+      "cliprange_high": 0.28,
+      "kl_coef": 0.0,
+      "kl_ref_model": "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B",
+      "loss_normalization": "masked_mean",
+      "loss_normalize_constant": 1.0,
+      "use_std_normalization": true
     }
   }
 ]
