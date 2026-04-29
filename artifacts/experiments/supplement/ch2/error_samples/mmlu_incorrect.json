@@ -1,0 +1,82 @@
+[
+  {
+    "subject": "miscellaneous",
+    "question": "Which of these movies does not star Jim Carrey?",
+    "choices": {},
+    "answer": "A",
+    "parsed_prediction": "C",
+    "model_output": "The correct answer is C.\n\n"
+  },
+  {
+    "subject": "moral scenarios",
+    "question": "For which of these two scenarios does the main character (who uses I/me/my) do something clearly morally wrong, according to ordinary moral standards in the US as of 2020? Scenario 1 | I turned the AC off and left my dog in the car. Scenario 2 | I think my pie will win a blue ribbon because I paid for the best scores.",
+    "choices": {},
+    "answer": "A",
+    "parsed_prediction": "B",
+    "model_output": "The correct answer is B.\n\n"
+  },
+  {
+    "subject": "college biology",
+    "question": "Hardy-Weinberg equilibrium generally assumes all of the following EXCEPT",
+    "choices": {},
+    "answer": "B",
+    "parsed_prediction": "D",
+    "model_output": "The correct answer is D. Absence of selection.\n\n"
+  },
+  {
+    "subject": "high school microeconomics",
+    "question": "When the opportunity for price discrimination arises,",
+    "choices": {},
+    "answer": "C",
+    "parsed_prediction": "B",
+    "model_output": "The correct answer is B.\n\n"
+  },
+  {
+    "subject": "philosophy",
+    "question": "Rawls argues that parties in the original position would not accept utilitarianism because:",
+    "choices": {},
+    "answer": "B",
+    "parsed_prediction": "C",
+    "model_output": "The correct answer is C.\n\n"
+  },
+  {
+    "subject": "moral scenarios",
+    "question": "For which of these two scenarios does the main character (who uses I/me/my) do something clearly morally wrong, according to ordinary moral standards in the US as of 2020? Scenario 1 | I served the customer his hamburger with nail clippings and double ketchup. Scenario 2 | I added chalk to the customer's sandwich.",
+    "choices": {},
+    "answer": "A",
+    "parsed_prediction": "B",
+    "model_output": "The correct answer is B.\n\n"
+  },
+  {
+    "subject": "moral disputes",
+    "question": " Sandel believes that the use of genetic enhancement is inherently wrong because",
+    "choices": {},
+    "answer": "D",
+    "parsed_prediction": "C",
+    "model_output": "The correct answer is C.\n\n"
+  },
+  {
+    "subject": "high school statistics",
+    "question": "A university sent out a survey to a random sample of 120 recent graduates to see how those graduates feel about the education they received. Thirty-two of the graduates did not respond to the survey. Which of these would be the best way to proceed?",
+    "choices": {},
+    "answer": "C",
+    "parsed_prediction": "B",
+    "model_output": "The correct answer is B.\n\n"
+  },
+  {
+    "subject": "moral scenarios",
+    "question": "For which of these two scenarios does the main character (who uses I/me/my) do something clearly morally wrong, according to ordinary moral standards in the US as of 2020? Scenario 1 | As a business owner, I must take some money out of my employee's checks for taxes. Scenario 2 | I called the police on the teacher for violent threats.",
+    "choices": {},
+    "answer": "D",
+    "parsed_prediction": "B",
+    "model_output": "The correct answer is B.\n\n"
+  },
+  {
+    "subject": "machine learning",
+    "question": "Statement 1| The SVM learning algorithm is guaranteed to find the globally optimal hypothesis with respect to its object function. Statement 2| After being mapped into feature space Q through a radial basis kernel function, a Perceptron may be able to achieve better classification performance than in its original space (though we can’t guarantee this).",
+    "choices": {},
+    "answer": "A",
+    "parsed_prediction": "C",
+    "model_output": "The correct answer is C. The SVM learning algorithm is guaranteed to find the globally optimal hypothesis with respect to its object function. However, after being mapped into feature space Q through a radial basis kernel function, a Perceptron may be able to achieve better classification performance than in its original space (though we can’t guarantee"
+  }
+]
