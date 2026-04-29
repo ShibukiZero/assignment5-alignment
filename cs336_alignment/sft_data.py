@@ -26,10 +26,15 @@ def _open_text(path: str | Path) -> TextIO:
     return input_path.open(encoding="utf-8")
 
 
-def _read_prompt_response_jsonl(path: str | Path) -> list[dict[str, Any]]:
+def read_prompt_response_jsonl(
+    path: str | Path,
+    max_records: int | None = None,
+) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     with _open_text(path) as f:
         for line_number, line in enumerate(f, start=1):
+            if max_records is not None and len(records) >= max_records:
+                break
             if not line.strip():
                 continue
             record = json.loads(line)
@@ -52,11 +57,12 @@ class PackedSFTDataset(Dataset):
         dataset_path: str | Path,
         seq_length: int,
         shuffle: bool,
+        max_records: int | None = None,
     ) -> None:
         if seq_length <= 0:
             raise ValueError("seq_length must be positive.")
 
-        records = _read_prompt_response_jsonl(dataset_path)
+        records = read_prompt_response_jsonl(dataset_path, max_records=max_records)
         if shuffle:
             random.Random(0).shuffle(records)
 
