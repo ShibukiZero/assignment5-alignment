@@ -24,6 +24,7 @@ from cs336_alignment.sft import (
     sft_microbatch_train_step,
     tokenize_prompt_and_output,
 )
+from cs336_alignment.sft_data import PackedSFTDataset, iterate_batches
 
 
 def run_tokenize_prompt_and_output(
@@ -393,7 +394,12 @@ def get_packed_sft_dataset(
         "input_ids" contains the token IDs for the language modeling inputs, and "labels" contains
         the token IDs for the language modeling labels.
     """
-    raise NotImplementedError
+    return PackedSFTDataset(
+        tokenizer=tokenizer,
+        dataset_path=dataset_path,
+        seq_length=seq_length,
+        shuffle=shuffle,
+    )
 
 
 def run_iterate_batches(
@@ -416,7 +422,7 @@ def run_iterate_batches(
     Returns:
         Iterable over batches, where each batch has size `batch_size`.
     """
-    raise NotImplementedError
+    return iterate_batches(dataset=dataset, batch_size=batch_size, shuffle=shuffle)
 
 
 def run_parse_mmlu_response(
