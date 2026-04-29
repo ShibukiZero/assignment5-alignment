@@ -1,0 +1,4 @@
+role,run,kl_coef,best_step,best_answer_accuracy,final_step,final_answer_accuracy,final_format_accuracy,final_rollout_answer_accuracy,final_avg_response_token_length,final_reference_kl
+SFT warm start,sft_256_step100,,100,0.392578125,100,0.392578125,0.888671875,,,
+GRPO after SFT + KL,grpo_sft256_step100_kl0p01_190,0.01,190,0.7685546875,190,0.7685546875,0.98046875,0.578125,346.83203125,0.20359420776367188
+Direct GRPO reference,direct_grpo_lr4e-5,0.0,190,0.8818359375,200,0.8818359375,0.98046875,0.80859375,466.91796875,

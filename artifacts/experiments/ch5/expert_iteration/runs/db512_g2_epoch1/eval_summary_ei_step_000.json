@@ -8,5 +8,5 @@
   "max_tokens": 1024,
   "stop": "</answer>",
   "include_stop_str_in_output": true,
-  "eval_seconds": 199.11563396453857
+  "eval_seconds": 156.3952054977417
 }

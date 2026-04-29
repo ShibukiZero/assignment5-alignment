@@ -28,3 +28,11 @@ Initially, all tests should fail with `NotImplementedError`s.
 To connect your implementation to the tests, complete the
 functions in [./tests/adapters.py](./tests/adapters.py).
 
+## Main Writeup Dataset Substitutions
+
+The current `writeup.md` does not use the official course MATH dataset. It uses
+`competition_math_numeric` as the substitute dataset for the zero-shot
+baseline, SFT, and GRPO experiments, with SFT using its contaminated SFT split,
+and uses `competition_math_numeric_noisy` for expert iteration; this `noisy`
+variant is created by randomly corrupting answers at about a 15% rate rather
+than by generating R1 response traces as described in the original assignment.

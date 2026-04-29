@@ -1,0 +1,23 @@
+[
+  {
+    "run_name": "masked_mean",
+    "loss_normalization": "masked_mean",
+    "source_log_dir": ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
+    "archived_run_dir": "artifacts/experiments/ch7/grpo_length_normalization/runs/masked_mean",
+    "copied": true
+  },
+  {
+    "run_name": "masked_normalize",
+    "loss_normalization": "masked_normalize",
+    "source_log_dir": ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/runs/masked_normalize_lr4e-5/log",
+    "archived_run_dir": "artifacts/experiments/ch7/grpo_length_normalization/runs/masked_normalize",
+    "copied": true
+  },
+  {
+    "run_name": "batch_token_mean",
+    "loss_normalization": "batch_token_mean",
+    "source_log_dir": ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/runs/batch_token_mean_lr4e-5/log",
+    "archived_run_dir": "artifacts/experiments/ch7/grpo_length_normalization/runs/batch_token_mean",
+    "copied": true
+  }
+]

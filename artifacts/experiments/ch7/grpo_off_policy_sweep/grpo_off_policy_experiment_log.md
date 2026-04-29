@@ -2,25 +2,25 @@
 
 ## Setup
 
-- Fixed `rollout_batch_size = 256` for all broad and focused off-policy runs.
-- Fixed `learning_rate = 4e-5`, `loss_type = grpo_clip`, `loss_normalization = masked_mean`, and `use_std_normalization = false` based on earlier on-policy GRPO ablations.
-- Broad sweep varied `epochs_per_rollout_batch in {1, 2, 4}` and `train_batch_size in {256, 128}`.
-- We kept the `e1, tb256` point as an on-policy-style control inside the broad sweep because it uses the off-policy infrastructure but performs no rollout reuse.
-- These settings span optimizer-update counts of `1`, `2`, `4`, and `8` per rollout batch.
+- All runs use a single GPU with `policy_device = cuda:0` and `vllm_device = cuda:0`.
+- Fixed `rollout_batch_size = 256`, `group_size = 8`, and `learning_rate = 4e-5`.
+- Fixed `loss_type = grpo_clip`, `loss_normalization = masked_mean`, and `use_std_normalization = true`.
+- The broad sweep varied `epochs_per_rollout_batch` and `train_batch_size` to change the number and character of optimizer updates per rollout batch.
+- The focused sweep extended `e2/tb256`, `e2/tb128`, and `e4/tb256` to 200 GRPO steps.
+- The on-policy reference is `on_policy_reference_e1_tb256_std_norm`, using the matched `masked_mean`, `use_std_normalization = true`, `lr = 4e-5` configuration.
 
 ## Broad Findings
 
-- The control run `broad_e1_tb256_control` reached 61.52% by step 40.
-- Among the true off-policy broad runs, `broad_e2_tb128` was the strongest peak performer at 46.09%.
-- Both `tb128` settings collapsed by the end of the 40-step broad sweep, while the `tb256` settings remained finite.
-
-## Focused Choice
-
-- We selected `focused_e2_tb256` for the 200-step focused run because it was the most stable true off-policy configuration in the broad sweep.
-- The on-policy comparison run is `on_policy_reference_e1_tb256`, which uses `epochs_per_rollout_batch = 1`, `train_batch_size = 256`, and `reinforce_with_baseline` at the same `4e-5` learning rate.
+- `broad_e2_tb128` was the strongest broad run, peaking at 83.20% on step 35 and finishing at 81.54%.
+- Moderate off-policy reuse worked best. The best broad setting used two epochs and `train_batch_size = 128`, for four optimizer updates per rollout batch.
+- Smaller train batches under `e2` remained usable, but their 40-step rewards were lower than `e2/tb128`.
+- Repeating the same full rollout batch for many epochs was unstable.
+- The aggressive full-batch settings `broad_e8_tb256`, `broad_e16_tb256` collapsed to zero validation reward by the end of the broad sweep.
 
 ## Focused Outcome
 
-- `focused_e2_tb256` peaked at 34.38% on step 65, then suffered a late collapse and finished at 0.00%.
-- The on-policy reference peaked at 80.08% and finished at 77.64%.
-- Diagnostics show that the off-policy run stayed competitive for much of training but eventually hit a numerical blow-up on the second update of the rollout batch, followed by zero-reward, max-length degenerate generations.
+- Among off-policy focused runs, `focused_e4_tb256` had the highest peak, reaching 86.43% on step 145.
+- Among off-policy focused runs, `focused_e2_tb128` was the most stable by final validation answer reward, ending at 85.64%.
+- The on-policy reference peaked at 88.18% and finished at 88.18%.
+- The off-policy focused peaks are close to each other, but none exceeds the matched on-policy reference.
+- Token entropy and rollout response length are plotted for both broad and focused runs because the unstable settings show clear entropy/length pathologies near collapse.

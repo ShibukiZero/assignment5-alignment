@@ -1,0 +1,20 @@
+{
+  "run": "final_on_policy_lr4e-5_400_full_eval",
+  "source_log_dir": ".agents/logs/leaderboard/final_on_policy_lr4e-5_400_full_eval",
+  "archived_run_dir": "artifacts/experiments/ch7/leaderboard/runs/final_on_policy_lr4e-5_400_full_eval",
+  "copied_file_count": 424,
+  "large_files_omitted": true,
+  "sample_rollouts_omitted": true,
+  "skipped_patterns": [
+    "*.safetensors",
+    "*.bin",
+    "*.pt",
+    "*.pth",
+    "optimizer*",
+    "scheduler*",
+    "checkpoint*",
+    "best_policy",
+    "final_policy",
+    "sample_rollouts.jsonl"
+  ]
+}

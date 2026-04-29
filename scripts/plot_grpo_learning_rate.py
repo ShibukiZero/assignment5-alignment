@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create writeup-ready plots and tables for the Ch7 GRPO learning-rate sweep."""
+"""Create writeup-ready plots and archives for the repaired GRPO LR sweep."""
 
 from __future__ import annotations
 
@@ -32,47 +32,47 @@ DEFAULT_RUNS = [
     (
         "lr=3e-6",
         3e-6,
-        ".agents/logs/ch7/grpo_learning_rate_manual_sweep/lr3e-6",
+        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr3e-6",
     ),
     (
         "lr=5e-6",
         5e-6,
-        ".agents/logs/ch7/grpo_learning_rate_manual_sweep/lr5e-6",
+        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr5e-6",
     ),
     (
         "lr=1e-5",
         1e-5,
-        ".agents/logs/ch7/grpo_on_policy_lr1e-5",
+        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr1e-5",
     ),
     (
         "lr=2e-5",
         2e-5,
-        ".agents/logs/ch7/grpo_learning_rate_manual_sweep/lr2e-5",
+        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr2e-5",
     ),
     (
         "lr=3e-5",
         3e-5,
-        ".agents/logs/ch7/grpo_learning_rate_manual_sweep/lr3e-5",
+        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr3e-5",
     ),
     (
         "lr=4e-5",
         4e-5,
-        ".agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr4e-5",
+        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
     ),
     (
         "lr=5e-5",
         5e-5,
-        ".agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr5e-5",
+        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr5e-5",
     ),
     (
         "lr=7e-5",
         7e-5,
-        ".agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr7e-5",
+        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr7e-5",
     ),
     (
         "lr=2e-4",
         2e-4,
-        ".agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr2e-4",
+        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr2e-4",
     ),
 ]
 
@@ -205,8 +205,8 @@ def percent(value: float) -> float:
 
 def nice_y_max(max_value: float) -> float:
     if max_value <= 0:
-        return 1.0
-    return math.ceil(max_value * 10) / 10
+        return 0.1
+    return min(1.0, max(0.1, math.ceil(max_value * 10) / 10))
 
 
 def points_to_polyline(
@@ -451,6 +451,9 @@ def write_summary(runs: list[RunData], csv_path: Path, md_path: Path) -> None:
                 ]
             )
 
+    best_checkpoint_run = max(runs, key=lambda run: run.best_eval.answer_accuracy)
+    best_final_run = max(runs, key=lambda run: run.final_eval.answer_accuracy)
+
     lines = [
         "# GRPO Learning Rate Sweep Summary",
         "",
@@ -473,14 +476,79 @@ def write_summary(runs: list[RunData], csv_path: Path, md_path: Path) -> None:
     lines.extend(
         [
             "",
-            "Use `lr=4e-5` as the selected on-policy learning rate. It achieved the "
-            "best validation answer reward and remained substantially better than the "
-            "lower learning rates at the final checkpoint. Larger rates showed unstable "
-            "or collapsed behavior.",
+            f"Best checkpoint: `{best_checkpoint_run.label}` at "
+            f"{percent(best_checkpoint_run.best_eval.answer_accuracy):.2f}% "
+            f"answer reward on step {best_checkpoint_run.best_eval.step}.",
+            f"Best final checkpoint: `{best_final_run.label}` at "
+            f"{percent(best_final_run.final_eval.answer_accuracy):.2f}% "
+            f"answer reward on step {best_final_run.final_eval.step}.",
             "",
         ]
     )
     md_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def write_run_summaries(runs: list[RunData], json_path: Path, archive_path: Path) -> None:
+    payload: list[dict[str, Any]] = []
+    for run in runs:
+        best = run.best_eval
+        final = run.final_eval
+        payload.append(
+            {
+                "learning_rate": run.learning_rate,
+                "label": run.label,
+                "status": run.status,
+                "best_answer_reward": best.answer_accuracy,
+                "best_step": best.step,
+                "best_format_accuracy": best.format_accuracy,
+                "final_answer_reward": final.answer_accuracy,
+                "final_step": final.step,
+                "final_format_accuracy": final.format_accuracy,
+                "source_log_dir": str(run.log_dir),
+            }
+        )
+
+    with json_path.open("w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+        f.write("\n")
+
+    lines = [
+        "# GRPO Learning Rate Run Summaries Archive",
+        "",
+        "This archive summarizes the repaired-infra learning-rate runs used for "
+        "the `grpo_learning_rate` writeup section. It intentionally ignores "
+        "the older pre-repair sweep artifacts.",
+        "",
+        "| learning rate | status | best answer | best step | best format | final answer | final step | final format | source log |",
+        "|---:|---|---:|---:|---:|---:|---:|---:|---|",
+    ]
+    for run_summary in payload:
+        lines.append(
+            "| "
+            f"`{run_summary['label'].removeprefix('lr=')}` | "
+            f"{run_summary['status']} | "
+            f"{run_summary['best_answer_reward']:.10f} | "
+            f"{run_summary['best_step']} | "
+            f"{run_summary['best_format_accuracy']:.10f} | "
+            f"{run_summary['final_answer_reward']:.10f} | "
+            f"{run_summary['final_step']} | "
+            f"{run_summary['final_format_accuracy']:.10f} | "
+            f"`{run_summary['source_log_dir']}` |"
+        )
+    lines.extend(
+        [
+            "",
+            "Generated artifacts:",
+            "",
+            "- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg`",
+            "- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg`",
+            "- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_eval_points.csv`",
+            "- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_summary.csv`",
+            "- `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_summary.md`",
+            "- `artifacts/experiments/ch7/grpo_learning_rate/run_summaries.json`",
+        ]
+    )
+    archive_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -517,7 +585,6 @@ def main() -> None:
         y_label="Validation answer reward",
         output_path=output_dir / "grpo_learning_rate_validation_reward.svg",
         y_min=0.0,
-        y_max=0.8,
     )
     render_svg_line_plot(
         series=format_series,
@@ -536,6 +603,11 @@ def main() -> None:
         runs=runs,
         csv_path=output_dir / "grpo_learning_rate_summary.csv",
         md_path=output_dir / "grpo_learning_rate_summary.md",
+    )
+    write_run_summaries(
+        runs=runs,
+        json_path=output_dir / "run_summaries.json",
+        archive_path=output_dir / "run_summaries_archive.md",
     )
 
     print(f"Wrote GRPO learning-rate artifacts to {output_dir}")

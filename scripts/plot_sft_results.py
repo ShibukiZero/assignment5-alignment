@@ -58,6 +58,14 @@ class RunData:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--rerun-log-root",
+        default=None,
+        help=(
+            "Root containing both size* and filtered_full* rerun directories. "
+            "When set, this overrides --size-sweep-log-root and --filtered-log-root."
+        ),
+    )
     parser.add_argument("--size-sweep-log-root", default=DEFAULT_SIZE_SWEEP_LOG_ROOT)
     parser.add_argument("--filtered-log-root", default=DEFAULT_FILTERED_LOG_ROOT)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
@@ -146,6 +154,37 @@ def load_runs(log_root: Path) -> list[RunData]:
             run = load_run(child)
             if run is not None:
                 runs.append(run)
+    return sorted(runs, key=sort_key)
+
+
+def select_log_roots(args: argparse.Namespace) -> tuple[list[Path], list[Path]]:
+    if args.rerun_log_root is None:
+        return [Path(args.size_sweep_log_root)], [Path(args.filtered_log_root)]
+
+    rerun_root = Path(args.rerun_log_root)
+    size_dirs = sorted(
+        child
+        for child in rerun_root.iterdir()
+        if child.is_dir() and child.name.startswith("size")
+    )
+    filtered_dirs = sorted(
+        child
+        for child in rerun_root.iterdir()
+        if child.is_dir() and child.name.startswith("filtered_full")
+    )
+    if not size_dirs:
+        raise ValueError(f"No size* run directories found under {rerun_root}")
+    if not filtered_dirs:
+        raise ValueError(f"No filtered_full* run directories found under {rerun_root}")
+    return size_dirs, filtered_dirs
+
+
+def load_runs_from_dirs(run_dirs: list[Path]) -> list[RunData]:
+    runs: list[RunData] = []
+    for run_dir in run_dirs:
+        run = load_run(run_dir)
+        if run is not None:
+            runs.append(run)
     return sorted(runs, key=sort_key)
 
 
@@ -371,8 +410,9 @@ def write_summary_markdown(runs: list[RunData], output_path: Path) -> None:
 
 def main() -> None:
     args = parse_args()
-    size_runs = load_runs(Path(args.size_sweep_log_root))
-    filtered_runs = load_runs(Path(args.filtered_log_root))
+    size_dirs, filtered_dirs = select_log_roots(args)
+    size_runs = load_runs_from_dirs(size_dirs)
+    filtered_runs = load_runs_from_dirs(filtered_dirs)
     all_runs = sorted(size_runs + filtered_runs, key=sort_key)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

@@ -214,6 +214,8 @@ def run_compute_policy_gradient_loss(
     cliprange: float,
     cliprange_low: float | None = None,
     cliprange_high: float | None = None,
+    ref_log_probs: torch.Tensor | None = None,
+    kl_coef: float = 0.0,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
     """
     Wrapper that delegates to the appropriate policy gradient loss function above.
@@ -227,6 +229,8 @@ def run_compute_policy_gradient_loss(
         cliprange=cliprange,
         cliprange_low=cliprange_low,
         cliprange_high=cliprange_high,
+        ref_log_probs=ref_log_probs,
+        kl_coef=kl_coef,
     )
 
 
@@ -275,6 +279,8 @@ def run_grpo_microbatch_train_step(
     cliprange: float | None = None,
     cliprange_low: float | None = None,
     cliprange_high: float | None = None,
+    ref_log_probs: torch.Tensor | None = None,
+    kl_coef: float = 0.0,
     loss_normalization: Literal["masked_mean", "masked_normalize", "batch_token_mean"] = "masked_mean",
     loss_normalize_constant: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
@@ -316,6 +322,8 @@ def run_grpo_microbatch_train_step(
         cliprange=cliprange,
         cliprange_low=cliprange_low,
         cliprange_high=cliprange_high,
+        ref_log_probs=ref_log_probs,
+        kl_coef=kl_coef,
         loss_normalization=loss_normalization,
         loss_normalize_constant=loss_normalize_constant,
     )

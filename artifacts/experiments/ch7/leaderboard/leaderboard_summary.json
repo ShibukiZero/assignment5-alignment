@@ -1,0 +1,38 @@
+{
+  "run": "final_on_policy_lr4e-5_400_full_eval",
+  "source_log_dir": ".agents/logs/leaderboard/final_on_policy_lr4e-5_400_full_eval",
+  "train_path": "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/train.jsonl",
+  "val_path": "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl",
+  "model": "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B",
+  "learning_rate": 4e-05,
+  "n_grpo_steps": 400,
+  "eval_num_examples": 3199,
+  "eval_temperature": 1.0,
+  "eval_top_p": 1.0,
+  "eval_max_tokens": 1024,
+  "best_eval": {
+    "grpo_step": 280,
+    "answer_accuracy": 0.7371053454204439,
+    "format_accuracy": 0.9562363238512035,
+    "elapsed_step_hours": 3.1404339390330844
+  },
+  "final_eval": {
+    "grpo_step": 400,
+    "answer_accuracy": 0.7258518286964677,
+    "format_accuracy": 0.9459206001875586,
+    "elapsed_step_hours": 4.594786145687103
+  },
+  "final_rollout": {
+    "grpo_step": 400,
+    "answer_accuracy": 0.83203125,
+    "format_accuracy": 0.94140625,
+    "avg_response_token_length": 379.171875
+  },
+  "final_train": {
+    "grpo_step": 400,
+    "optimizer_step": 400,
+    "token_entropy": 0.12299346923828125,
+    "grad_norm": 0.11865234375,
+    "loss": -0.0018714693942456506
+  }
+}

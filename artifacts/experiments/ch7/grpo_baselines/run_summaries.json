@@ -4,36 +4,49 @@
     "loss_type": "reinforce_with_baseline",
     "learning_rate": 4e-05,
     "status": "completed",
+    "source_log_dir": ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
     "archived_run_dir": "artifacts/experiments/ch7/grpo_baselines/runs/reinforce_with_baseline",
     "best_eval": {
-      "grpo_step": 75,
-      "answer_accuracy": 0.744140625,
-      "format_accuracy": 0.9501953125
+      "grpo_step": 190,
+      "answer_accuracy": 0.8818359375,
+      "format_accuracy": 0.9765625
     },
     "final_eval": {
       "grpo_step": 200,
-      "answer_accuracy": 0.7001953125,
-      "format_accuracy": 0.876953125
+      "answer_accuracy": 0.8818359375,
+      "format_accuracy": 0.98046875
     },
     "final_rollout": {
       "grpo_step": 200,
-      "answer_accuracy": 0.6484375,
-      "format_accuracy": 0.7421875,
-      "avg_response_token_length": 393.625
+      "answer_accuracy": 0.80859375,
+      "format_accuracy": 0.94140625,
+      "avg_response_token_length": 466.91796875
     },
     "final_train": {
       "grpo_step": 200,
-      "token_entropy": 0.05519247055053711,
-      "grad_norm": 1.0234375,
-      "loss": -0.0028545452441903763
+      "token_entropy": 0.023288726806640625,
+      "grad_norm": 0.1357421875,
+      "loss": -0.0005381013343139784
     },
     "run_summary": {
-      "best_answer_accuracy": 0.744140625,
+      "best_answer_accuracy": 0.8818359375,
       "final_optimizer_step": 200,
       "n_grpo_steps": 200,
       "rollout_batch_size": 256,
       "group_size": 8,
+      "epochs_per_rollout_batch": 1,
+      "train_batch_size": 256,
+      "gradient_accumulation_steps": 128,
+      "optimizer_updates_per_rollout_batch": 1,
+      "expected_total_optimizer_steps": 200,
       "loss_type": "reinforce_with_baseline",
+      "cliprange": 0.2,
+      "cliprange_low": 0.2,
+      "cliprange_high": 0.2,
+      "kl_coef": 0.0,
+      "kl_ref_model": "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B",
+      "loss_normalization": "masked_mean",
+      "loss_normalize_constant": 1.0,
       "use_std_normalization": true
     }
   },
@@ -42,36 +55,47 @@
     "loss_type": "no_baseline",
     "learning_rate": 4e-05,
     "status": "completed",
+    "source_log_dir": ".agents/logs/reruns/grpo_ablation_repairs_single_gpu/grpo_baselines/no_baseline",
     "archived_run_dir": "artifacts/experiments/ch7/grpo_baselines/runs/no_baseline",
     "best_eval": {
-      "grpo_step": 135,
-      "answer_accuracy": 0.2568359375,
-      "format_accuracy": 0.9921875
+      "grpo_step": 90,
+      "answer_accuracy": 0.26171875,
+      "format_accuracy": 0.9521484375
     },
     "final_eval": {
       "grpo_step": 200,
-      "answer_accuracy": 0.24609375,
-      "format_accuracy": 0.9853515625
+      "answer_accuracy": 0.1845703125,
+      "format_accuracy": 0.85546875
     },
     "final_rollout": {
       "grpo_step": 200,
-      "answer_accuracy": 0.39453125,
-      "format_accuracy": 0.98046875,
-      "avg_response_token_length": 20.9296875
+      "answer_accuracy": 0.2265625,
+      "format_accuracy": 0.8125,
+      "avg_response_token_length": 103.640625
     },
     "final_train": {
       "grpo_step": 200,
-      "token_entropy": 0.3955841064453125,
-      "grad_norm": 0.8828125,
-      "loss": 0.10759252475691028
+      "token_entropy": 2.4541015625,
+      "grad_norm": 1.421875,
+      "loss": 0.5903487796895206
     },
     "run_summary": {
-      "best_answer_accuracy": 0.2568359375,
+      "best_answer_accuracy": 0.26171875,
       "final_optimizer_step": 200,
       "n_grpo_steps": 200,
       "rollout_batch_size": 256,
       "group_size": 8,
+      "epochs_per_rollout_batch": 1,
+      "train_batch_size": 256,
+      "gradient_accumulation_steps": 128,
+      "optimizer_updates_per_rollout_batch": 1,
+      "expected_total_optimizer_steps": 200,
       "loss_type": "no_baseline",
+      "cliprange": 0.2,
+      "cliprange_low": 0.2,
+      "cliprange_high": 0.2,
+      "kl_coef": 0.0,
+      "kl_ref_model": "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B",
       "loss_normalization": "masked_mean",
       "loss_normalize_constant": 1.0,
       "use_std_normalization": true

@@ -3,8 +3,8 @@
   "train_path": "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric_noisy/train.jsonl",
   "val_path": "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric_noisy/validation.jsonl",
   "prompt_template": "cs336_alignment/prompts/r1_zero.prompt",
-  "output_dir": "/root/autodl-tmp/a5-alignment/runs/ei_first_grid_db512_lr5e-5_bs16/db512_g2_epoch1",
-  "log_dir": ".agents/logs/ch5/ei_first_grid_db512_lr5e-5_bs16/db512_g2_epoch1",
+  "output_dir": "/root/autodl-tmp/a5-alignment/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch1",
+  "log_dir": ".agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch1",
   "n_ei_steps": 5,
   "rollout_batch_size": 512,
   "rollouts_per_question": 2,
@@ -18,7 +18,7 @@
   "reset_optimizer_each_ei_step": false,
   "seed": 0,
   "policy_device": "cuda:0",
-  "vllm_device": "cuda:1",
+  "vllm_device": "cuda:0",
   "vllm_gpu_memory_utilization": 0.85,
   "max_new_tokens": 1024,
   "min_new_tokens": 4,
@@ -31,5 +31,7 @@
   "entropy_batch_size": 4,
   "entropy_max_records": null,
   "score_rollout_entropy": true,
+  "quiet_reward_parser_logs": true,
+  "reward_timeout_seconds": 5,
   "save_checkpoints": false
 }

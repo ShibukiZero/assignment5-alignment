@@ -17,14 +17,14 @@ from typing import Any
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_baselines"
 TARGET_STEPS = 200
 
-DEFAULT_RUNS = [
+DEFAULT_RUN_SPECS = [
     (
         "reinforce_with_baseline",
-        ".agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr4e-5",
+        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
     ),
     (
         "no_baseline",
-        ".agents/logs/ch7/grpo_on_policy_ablations/baselines/no_baseline_lr4e-5",
+        ".agents/logs/reruns/grpo_ablation_repairs_single_gpu/grpo_baselines/no_baseline",
     ),
 ]
 
@@ -39,6 +39,7 @@ COLORS = [
     "#e377c2",
     "#7f7f7f",
 ]
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 
 @dataclass(frozen=True)
@@ -158,6 +159,11 @@ def parse_extra_run(spec: str) -> tuple[str, str]:
     return parts[0], parts[1]
 
 
+def default_run_specs(output_dir: Path) -> list[tuple[str, str]]:
+    del output_dir
+    return list(DEFAULT_RUN_SPECS)
+
+
 def load_run(label: str, log_dir: Path) -> RunData:
     metrics_path = log_dir / "metrics.jsonl"
     if not metrics_path.exists():
@@ -224,8 +230,8 @@ def load_run(label: str, log_dir: Path) -> RunData:
     )
 
 
-def load_runs(extra_specs: list[str] | None) -> list[RunData]:
-    run_specs = list(DEFAULT_RUNS)
+def load_runs(output_dir: Path, extra_specs: list[str] | None) -> list[RunData]:
+    run_specs = default_run_specs(output_dir)
     if extra_specs:
         run_specs.extend(parse_extra_run(spec) for spec in extra_specs)
     return [load_run(label, Path(log_dir)) for label, log_dir in run_specs]
@@ -428,7 +434,7 @@ def archive_runs(runs: list[RunData], output_dir: Path) -> None:
         archive_dir = runs_dir / run.label
         if run.log_dir.resolve() == archive_dir.resolve():
             continue
-        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True)
+        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True, ignore=ARCHIVE_IGNORE)
 
 
 def write_eval_points(runs: list[RunData], output_dir: Path) -> None:
@@ -463,6 +469,70 @@ def write_eval_points(runs: list[RunData], output_dir: Path) -> None:
     )
 
 
+def write_train_points(runs: list[RunData], output_dir: Path) -> None:
+    rows: list[list[Any]] = []
+    for run in runs:
+        for point in run.train_points:
+            rows.append(
+                [
+                    run.label,
+                    run.loss_type,
+                    run.learning_rate,
+                    point.step,
+                    point.loss,
+                    point.grad_norm,
+                    point.token_entropy,
+                    point.train_answer_accuracy,
+                    point.train_format_accuracy,
+                ]
+            )
+    write_csv(
+        output_dir / "grpo_baselines_train_points.csv",
+        [
+            "run",
+            "loss_type",
+            "learning_rate",
+            "grpo_step",
+            "loss",
+            "grad_norm",
+            "token_entropy",
+            "train_answer_accuracy",
+            "train_format_accuracy",
+        ],
+        rows,
+    )
+
+
+def write_rollout_points(runs: list[RunData], output_dir: Path) -> None:
+    rows: list[list[Any]] = []
+    for run in runs:
+        for point in run.rollout_points:
+            rows.append(
+                [
+                    run.label,
+                    run.loss_type,
+                    run.learning_rate,
+                    point.step,
+                    point.answer_accuracy,
+                    point.format_accuracy,
+                    point.avg_response_token_length,
+                ]
+            )
+    write_csv(
+        output_dir / "grpo_baselines_rollout_points.csv",
+        [
+            "run",
+            "loss_type",
+            "learning_rate",
+            "grpo_step",
+            "rollout_answer_accuracy",
+            "rollout_format_accuracy",
+            "avg_response_token_length",
+        ],
+        rows,
+    )
+
+
 def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
     summary_rows: list[list[Any]] = []
     run_summaries: list[dict[str, Any]] = []
@@ -491,6 +561,7 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
                 "loss_type": run.loss_type,
                 "learning_rate": run.learning_rate,
                 "status": run.status,
+                "source_log_dir": str(run.log_dir),
                 "archived_run_dir": str(output_dir / "runs" / run.label),
                 "best_eval": {
                     "grpo_step": run.best_eval.step,
@@ -568,7 +639,18 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
     markdown_lines.extend(
         [
             "",
-            "Raw run files are archived under `artifacts/experiments/ch7/grpo_baselines/runs/`.",
+            "Default source logs:",
+            "",
+            *[
+                f"- `{label}`: `{log_dir}`"
+                for label, log_dir in DEFAULT_RUN_SPECS
+            ],
+            "",
+            (
+                "Raw run files are archived under `artifacts/experiments/ch7/grpo_baselines/runs/`. "
+                "`sample_rollouts.jsonl` files are intentionally omitted because aggregate "
+                "rollout summaries are sufficient for the writeup."
+            ),
         ]
     )
     (output_dir / "run_summaries_archive.md").write_text(
@@ -581,12 +663,14 @@ def main() -> None:
     args = parse_args()
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    runs = load_runs(args.include_run)
+    runs = load_runs(output_dir, args.include_run)
 
     if not args.skip_run_archive:
         archive_runs(runs, output_dir)
 
     write_eval_points(runs, output_dir)
+    write_train_points(runs, output_dir)
+    write_rollout_points(runs, output_dir)
     write_summary_files(runs, output_dir)
 
     answer_series = [
@@ -603,6 +687,23 @@ def main() -> None:
         )
         for run in runs
     ]
+    entropy_series = [
+        (
+            run.label,
+            [(point.step, point.token_entropy) for point in run.train_points],
+        )
+        for run in runs
+    ]
+    response_length_series = [
+        (
+            run.label,
+            [
+                (point.step, point.avg_response_token_length)
+                for point in run.rollout_points
+            ],
+        )
+        for run in runs
+    ]
 
     render_svg_line_plot(
         series=answer_series,
@@ -610,7 +711,6 @@ def main() -> None:
         x_label="GRPO step",
         y_label="validation answer reward",
         output_path=output_dir / "grpo_baselines_validation_reward.svg",
-        y_max=0.8,
     )
     render_svg_line_plot(
         series=format_series,
@@ -619,6 +719,22 @@ def main() -> None:
         y_label="validation format accuracy",
         output_path=output_dir / "grpo_baselines_format_accuracy.svg",
         y_max=1.0,
+    )
+    render_svg_line_plot(
+        series=entropy_series,
+        title="GRPO token entropy by baseline choice",
+        x_label="GRPO step",
+        y_label="token entropy (nats)",
+        output_path=output_dir / "grpo_baselines_token_entropy.svg",
+        y_min=0.0,
+    )
+    render_svg_line_plot(
+        series=response_length_series,
+        title="GRPO rollout response length by baseline choice",
+        x_label="GRPO step",
+        y_label="average rollout response tokens",
+        output_path=output_dir / "grpo_baselines_response_length.svg",
+        y_min=0.0,
     )
 
 

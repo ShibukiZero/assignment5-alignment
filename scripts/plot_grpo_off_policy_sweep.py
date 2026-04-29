@@ -18,32 +18,50 @@ DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_off_policy_sweep"
 
 BROAD_RUN_SPECS = [
     (
-        "broad_e1_tb256_control",
-        ".agents/logs/ch7/grpo_off_policy_sweep/broad_e1_tb256",
-        "broad",
-        "on_policy_style_control",
-    ),
-    (
         "broad_e2_tb256",
-        ".agents/logs/ch7/grpo_off_policy_sweep/broad_e2_tb256",
+        ".agents/logs/reruns/off_policy_sweep_retry_single_gpu_std_norm/broad_e2_tb256",
         "broad",
         "true_off_policy",
     ),
     (
         "broad_e2_tb128",
-        ".agents/logs/ch7/grpo_off_policy_sweep/broad_e2_tb128",
+        ".agents/logs/reruns/off_policy_sweep_retry_single_gpu_std_norm/broad_e2_tb128",
         "broad",
         "true_off_policy",
     ),
     (
         "broad_e4_tb256",
-        ".agents/logs/ch7/grpo_off_policy_sweep/broad_e4_tb256",
+        ".agents/logs/reruns/off_policy_sweep_retry_single_gpu_std_norm/broad_e4_tb256",
         "broad",
         "true_off_policy",
     ),
     (
         "broad_e4_tb128",
-        ".agents/logs/ch7/grpo_off_policy_sweep/broad_e4_tb128",
+        ".agents/logs/reruns/off_policy_sweep_retry_single_gpu_std_norm/broad_e4_tb128",
+        "broad",
+        "true_off_policy",
+    ),
+    (
+        "broad_e2_tb64",
+        ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/broad_e2_tb64",
+        "broad",
+        "true_off_policy",
+    ),
+    (
+        "broad_e2_tb32",
+        ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/broad_e2_tb32",
+        "broad",
+        "true_off_policy",
+    ),
+    (
+        "broad_e8_tb256",
+        ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/broad_e8_tb256",
+        "broad",
+        "true_off_policy",
+    ),
+    (
+        "broad_e16_tb256",
+        ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/broad_e16_tb256",
         "broad",
         "true_off_policy",
     ),
@@ -51,14 +69,26 @@ BROAD_RUN_SPECS = [
 
 FOCUSED_RUN_SPECS = [
     (
-        "on_policy_reference_e1_tb256",
-        ".agents/logs/ch7/grpo_on_policy_ablations/std_normalization/no_std_lr4e-5",
+        "on_policy_reference_e1_tb256_std_norm",
+        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
         "focused",
         "on_policy_reference",
     ),
     (
         "focused_e2_tb256",
-        ".agents/logs/ch7/grpo_off_policy_sweep/focused_e2_tb256",
+        ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e2_tb256",
+        "focused",
+        "true_off_policy",
+    ),
+    (
+        "focused_e2_tb128",
+        ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e2_tb128",
+        "focused",
+        "true_off_policy",
+    ),
+    (
+        "focused_e4_tb256",
+        ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e4_tb256",
         "focused",
         "true_off_policy",
     ),
@@ -74,7 +104,12 @@ COLORS = [
     "#8c564b",
     "#e377c2",
     "#7f7f7f",
+    "#bcbd22",
+    "#393b79",
+    "#637939",
+    "#843c39",
 ]
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 
 @dataclass(frozen=True)
@@ -557,12 +592,14 @@ def render_svg_line_plot(
 
 def archive_runs(runs: list[RunData], output_dir: Path) -> None:
     runs_dir = output_dir / "runs"
+    if runs_dir.exists():
+        shutil.rmtree(runs_dir)
     runs_dir.mkdir(parents=True, exist_ok=True)
     for run in runs:
         archive_dir = runs_dir / run.label
         if run.log_dir.resolve() == archive_dir.resolve():
             continue
-        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True)
+        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True, ignore=ARCHIVE_IGNORE)
 
 
 def cumulative_eval_minutes(run: RunData) -> list[tuple[float, float]]:
@@ -599,6 +636,7 @@ def write_run_summaries(runs: list[RunData], output_dir: Path) -> None:
                 "run_name": run.label,
                 "phase": run.phase,
                 "role": run.role,
+                "source_log_dir": str(run.log_dir),
                 "archived_run_dir": str(output_dir / "runs" / run.label),
                 "learning_rate": run.learning_rate,
                 "epochs_per_rollout_batch": run.epochs_per_rollout_batch,
@@ -639,19 +677,24 @@ def write_run_summaries(runs: list[RunData], output_dir: Path) -> None:
     lines = [
         "# GRPO Off-Policy Sweep Run Archive",
         "",
-        "| run | phase | role | status | best answer | best step | final answer | final step |",
-        "|---|---|---|---|---:|---:|---:|---:|",
+        "| run | phase | role | status | best answer | best step | final answer | final step | source log |",
+        "|---|---|---|---|---:|---:|---:|---:|---|",
     ]
     for run in runs:
         lines.append(
             f"| `{run.label}` | {run.phase} | {run.role} | {run.status} | "
             f"{percent(run.best_eval.answer_accuracy)} | {run.best_eval.step} | "
-            f"{percent(run.final_eval.answer_accuracy)} | {run.final_eval.step} |"
+            f"{percent(run.final_eval.answer_accuracy)} | {run.final_eval.step} | "
+            f"`{run.log_dir}` |"
         )
     lines.extend(
         [
             "",
-            "Raw run files are archived under `artifacts/experiments/ch7/grpo_off_policy_sweep/runs/`.",
+            (
+                "Raw run files are archived under `artifacts/experiments/ch7/grpo_off_policy_sweep/runs/`. "
+                "`sample_rollouts.jsonl` files are intentionally omitted because aggregate "
+                "rollout summaries are sufficient for the writeup."
+            ),
             "",
         ]
     )
@@ -678,7 +721,11 @@ def write_broad_tables(runs: list[RunData], output_dir: Path) -> None:
                 run.final_eval.answer_accuracy,
                 run.final_eval.step,
                 run.final_eval.format_accuracy,
+                run.final_rollout.answer_accuracy,
+                run.final_rollout.format_accuracy,
                 run.final_rollout.avg_response_token_length,
+                run.last_finite_train.token_entropy,
+                run.last_finite_train.grad_norm,
             ]
         )
     write_csv(
@@ -696,7 +743,11 @@ def write_broad_tables(runs: list[RunData], output_dir: Path) -> None:
             "final_answer_accuracy",
             "final_step",
             "final_format_accuracy",
+            "final_rollout_answer_accuracy",
+            "final_rollout_format_accuracy",
             "final_avg_response_token_length",
+            "last_finite_token_entropy",
+            "last_finite_grad_norm",
         ],
         rows,
     )
@@ -878,46 +929,50 @@ def write_diagnostics(runs: list[RunData], output_dir: Path) -> None:
 def write_experiment_log(all_runs: list[RunData], output_dir: Path) -> None:
     broad = broad_runs(all_runs)
     focused = focused_runs(all_runs)
-    best_true_off_policy_broad = max(
-        (run for run in broad if run.role == "true_off_policy"),
-        key=lambda run: run.best_eval.answer_accuracy,
-    )
-    focused_off_policy = next(
-        run for run in focused if run.role == "true_off_policy"
-    )
-    on_policy_reference = next(
-        run for run in focused if run.role == "on_policy_reference"
-    )
+    focused_off_policy = [run for run in focused if run.role == "true_off_policy"]
+    on_policy_reference = next(run for run in focused if run.role == "on_policy_reference")
+    best_broad = max(broad, key=lambda run: run.best_eval.answer_accuracy)
+    best_focused_peak = max(focused_off_policy, key=lambda run: run.best_eval.answer_accuracy)
+    best_focused_final = max(focused_off_policy, key=lambda run: run.final_eval.answer_accuracy)
+    collapsed_broad = [run for run in broad if run.status in {"collapsed", "late collapse"}]
 
     lines = [
         "# GRPO Off-Policy Sweep Experiment Log",
         "",
         "## Setup",
         "",
-        "- Fixed `rollout_batch_size = 256` for all broad and focused off-policy runs.",
-        "- Fixed `learning_rate = 4e-5`, `loss_type = grpo_clip`, `loss_normalization = masked_mean`, and `use_std_normalization = false` based on earlier on-policy GRPO ablations.",
-        "- Broad sweep varied `epochs_per_rollout_batch in {1, 2, 4}` and `train_batch_size in {256, 128}`.",
-        "- We kept the `e1, tb256` point as an on-policy-style control inside the broad sweep because it uses the off-policy infrastructure but performs no rollout reuse.",
-        "- These settings span optimizer-update counts of `1`, `2`, `4`, and `8` per rollout batch.",
+        "- All runs use a single GPU with `policy_device = cuda:0` and `vllm_device = cuda:0`.",
+        "- Fixed `rollout_batch_size = 256`, `group_size = 8`, and `learning_rate = 4e-5`.",
+        "- Fixed `loss_type = grpo_clip`, `loss_normalization = masked_mean`, and `use_std_normalization = true`.",
+        "- The broad sweep varied `epochs_per_rollout_batch` and `train_batch_size` to change the number and character of optimizer updates per rollout batch.",
+        "- The focused sweep extended `e2/tb256`, `e2/tb128`, and `e4/tb256` to 200 GRPO steps.",
+        f"- The on-policy reference is `{on_policy_reference.label}`, using the matched `masked_mean`, `use_std_normalization = true`, `lr = 4e-5` configuration.",
         "",
         "## Broad Findings",
         "",
-        f"- The control run `broad_e1_tb256_control` reached {percent(next(run for run in broad if run.label == 'broad_e1_tb256_control').best_eval.answer_accuracy)} by step {next(run for run in broad if run.label == 'broad_e1_tb256_control').best_eval.step}.",
-        f"- Among the true off-policy broad runs, `{best_true_off_policy_broad.label}` was the strongest peak performer at {percent(best_true_off_policy_broad.best_eval.answer_accuracy)}.",
-        "- Both `tb128` settings collapsed by the end of the 40-step broad sweep, while the `tb256` settings remained finite.",
-        "",
-        "## Focused Choice",
-        "",
-        f"- We selected `{focused_off_policy.label}` for the 200-step focused run because it was the most stable true off-policy configuration in the broad sweep.",
-        f"- The on-policy comparison run is `{on_policy_reference.label}`, which uses `epochs_per_rollout_batch = 1`, `train_batch_size = 256`, and `reinforce_with_baseline` at the same `4e-5` learning rate.",
-        "",
-        "## Focused Outcome",
-        "",
-        f"- `{focused_off_policy.label}` peaked at {percent(focused_off_policy.best_eval.answer_accuracy)} on step {focused_off_policy.best_eval.step}, then suffered a late collapse and finished at {percent(focused_off_policy.final_eval.answer_accuracy)}.",
-        f"- The on-policy reference peaked at {percent(on_policy_reference.best_eval.answer_accuracy)} and finished at {percent(on_policy_reference.final_eval.answer_accuracy)}.",
-        "- Diagnostics show that the off-policy run stayed competitive for much of training but eventually hit a numerical blow-up on the second update of the rollout batch, followed by zero-reward, max-length degenerate generations.",
-        "",
+        f"- `{best_broad.label}` was the strongest broad run, peaking at {percent(best_broad.best_eval.answer_accuracy)} on step {best_broad.best_eval.step} and finishing at {percent(best_broad.final_eval.answer_accuracy)}.",
+        "- Moderate off-policy reuse worked best. The best broad setting used two epochs and `train_batch_size = 128`, for four optimizer updates per rollout batch.",
+        "- Smaller train batches under `e2` remained usable, but their 40-step rewards were lower than `e2/tb128`.",
+        "- Repeating the same full rollout batch for many epochs was unstable.",
     ]
+    if collapsed_broad:
+        collapsed_labels = ", ".join(f"`{run.label}`" for run in collapsed_broad)
+        lines.append(
+            f"- The aggressive full-batch settings {collapsed_labels} collapsed to zero validation reward by the end of the broad sweep."
+        )
+    lines.extend(
+        [
+            "",
+            "## Focused Outcome",
+            "",
+            f"- Among off-policy focused runs, `{best_focused_peak.label}` had the highest peak, reaching {percent(best_focused_peak.best_eval.answer_accuracy)} on step {best_focused_peak.best_eval.step}.",
+            f"- Among off-policy focused runs, `{best_focused_final.label}` was the most stable by final validation answer reward, ending at {percent(best_focused_final.final_eval.answer_accuracy)}.",
+            f"- The on-policy reference peaked at {percent(on_policy_reference.best_eval.answer_accuracy)} and finished at {percent(on_policy_reference.final_eval.answer_accuracy)}.",
+            "- The off-policy focused peaks are close to each other, but none exceeds the matched on-policy reference.",
+            "- Token entropy and rollout response length are plotted for both broad and focused runs because the unstable settings show clear entropy/length pathologies near collapse.",
+            "",
+        ]
+    )
     (output_dir / "grpo_off_policy_experiment_log.md").write_text(
         "\n".join(lines),
         encoding="utf-8",
@@ -940,7 +995,7 @@ def main() -> None:
     write_broad_tables(broad, output_dir)
     write_focused_tables(focused, output_dir)
     write_eval_points(runs, output_dir)
-    write_diagnostics(focused, output_dir)
+    write_diagnostics(runs, output_dir)
     write_experiment_log(runs, output_dir)
 
     broad_answer_series = [
@@ -957,9 +1012,55 @@ def main() -> None:
         y_label="Validation answer reward",
         output_path=output_dir / "grpo_off_policy_broad_validation_reward.svg",
         y_min=0.0,
-        y_max=0.7,
+        y_max=None,
         x_tick_decimals=0,
         y_percent_axis=True,
+    )
+
+    broad_entropy_series = [
+        (
+            run.label,
+            [
+                (point.step, point.token_entropy)
+                for point in run.tail_train_points
+                if math.isfinite(point.token_entropy)
+            ],
+        )
+        for run in broad
+    ]
+    render_svg_line_plot(
+        series=broad_entropy_series,
+        title="Off-policy GRPO broad sweep: token entropy",
+        x_label="GRPO step",
+        y_label="Token entropy (nats)",
+        output_path=output_dir / "grpo_off_policy_broad_token_entropy.svg",
+        y_min=0.0,
+        y_max=None,
+        x_tick_decimals=0,
+        y_percent_axis=False,
+    )
+
+    broad_length_series = [
+        (
+            run.label,
+            [
+                (point.step, point.avg_response_token_length)
+                for point in run.rollout_points
+                if math.isfinite(point.avg_response_token_length)
+            ],
+        )
+        for run in broad
+    ]
+    render_svg_line_plot(
+        series=broad_length_series,
+        title="Off-policy GRPO broad sweep: rollout response length",
+        x_label="GRPO step",
+        y_label="Average rollout response tokens",
+        output_path=output_dir / "grpo_off_policy_broad_response_length.svg",
+        y_min=0.0,
+        y_max=None,
+        x_tick_decimals=0,
+        y_percent_axis=False,
     )
 
     focused_answer_series = [
@@ -971,12 +1072,12 @@ def main() -> None:
     ]
     render_svg_line_plot(
         series=focused_answer_series,
-        title="On-policy vs off-policy focused comparison: validation answer reward",
+        title="On-policy reference vs off-policy GRPO focused comparison: validation answer reward",
         x_label="GRPO step",
         y_label="Validation answer reward",
         output_path=output_dir / "grpo_off_policy_focused_validation_reward.svg",
         y_min=0.0,
-        y_max=0.85,
+        y_max=None,
         x_tick_decimals=0,
         y_percent_axis=True,
     )
@@ -987,12 +1088,12 @@ def main() -> None:
     ]
     render_svg_line_plot(
         series=focused_wall_clock_series,
-        title="On-policy vs off-policy focused comparison: answer reward vs wall-clock time",
+        title="On-policy reference vs off-policy GRPO focused comparison: answer reward vs wall-clock time",
         x_label="Wall-clock time (minutes)",
         y_label="Validation answer reward",
         output_path=output_dir / "grpo_off_policy_focused_validation_reward_wall_clock.svg",
         y_min=0.0,
-        y_max=0.85,
+        y_max=None,
         x_tick_decimals=1,
         y_percent_axis=True,
     )
@@ -1010,7 +1111,7 @@ def main() -> None:
     ]
     render_svg_line_plot(
         series=focused_entropy_series,
-        title="On-policy vs off-policy focused comparison: token entropy",
+        title="On-policy reference vs off-policy GRPO focused comparison: token entropy",
         x_label="GRPO step",
         y_label="Token entropy (nats)",
         output_path=output_dir / "grpo_off_policy_focused_token_entropy.svg",
@@ -1033,7 +1134,7 @@ def main() -> None:
     ]
     render_svg_line_plot(
         series=focused_length_series,
-        title="On-policy vs off-policy focused comparison: rollout response length",
+        title="On-policy reference vs off-policy GRPO focused comparison: rollout response length",
         x_label="GRPO step",
         y_label="Average rollout response tokens",
         output_path=output_dir / "grpo_off_policy_focused_response_length.svg",

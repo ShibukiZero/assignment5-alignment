@@ -4,28 +4,29 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import random
 import time
 from pathlib import Path
 from statistics import mean
 from typing import Any
-from unittest.mock import patch
 
 import torch
 from torch.optim import AdamW
 from tqdm import tqdm
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    PreTrainedModel,
-    PreTrainedTokenizerBase,
-)
 from vllm import LLM, SamplingParams
-from vllm.model_executor import set_random_seed as vllm_set_random_seed
 
+from cs336_alignment.backend_lifecycle import BackendLifecycleManager
 from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
+from cs336_alignment.experiment_logging import (
+    ExperimentLogWriter,
+    get_ground_truth,
+    get_question,
+    load_prompt_template,
+    read_jsonl,
+)
+from cs336_alignment.experiment_metrics import cuda_memory_metrics
+from cs336_alignment.reward_scoring import score_responses
 from cs336_alignment.sft import (
     get_response_log_probs,
     sft_microbatch_train_step,
@@ -41,7 +42,6 @@ DEFAULT_TRAIN_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_n
 DEFAULT_VAL_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
 DEFAULT_PROMPT_TEMPLATE = "cs336_alignment/prompts/r1_zero.prompt"
 DEFAULT_LOG_DIR = ".agents/logs/ch4/sft_experiment"
-BYTES_PER_GIB = 1024**3
 
 
 def parse_args() -> argparse.Namespace:
@@ -91,6 +91,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--eval-temperature", type=float, default=1.0)
     parser.add_argument("--eval-top-p", type=float, default=1.0)
     parser.add_argument(
+        "--reward-workers",
+        type=int,
+        default=1,
+        help="Number of worker processes for CPU-side validation reward scoring.",
+    )
+    parser.add_argument(
+        "--quiet-reward-parser-logs",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Suppress noisy dependency parser logs during CPU-side reward scoring.",
+    )
+    parser.add_argument(
+        "--reward-timeout-seconds",
+        type=int,
+        default=5,
+        help="Per-response reward scoring timeout. Timed-out responses receive zero reward.",
+    )
+    parser.add_argument(
         "--filter-correct-sft",
         action="store_true",
         help="Keep only SFT traces that receive answer_reward == 1.",
@@ -101,98 +119,6 @@ def parse_args() -> argparse.Namespace:
         help="Save best_policy and final_policy under --output-dir. Leave off for smoke/debug runs.",
     )
     return parser.parse_args()
-
-
-def read_jsonl(path: str, max_examples: int | None = None) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    with Path(path).open(encoding="utf-8") as f:
-        for line in f:
-            if max_examples is not None and len(rows) >= max_examples:
-                break
-            rows.append(json.loads(line))
-    if not rows:
-        raise ValueError(f"No examples found in {path}")
-    return rows
-
-
-def load_prompt_template(path: str) -> str:
-    template = Path(path).read_text(encoding="utf-8")
-    if "{question}" not in template:
-        raise ValueError(f"Prompt template must contain '{{question}}': {path}")
-    return template
-
-
-def get_question(example: dict[str, Any]) -> str:
-    question = example.get("question") or example.get("problem")
-    if question is None:
-        raise ValueError("Example must contain `question` or `problem`.")
-    return question
-
-
-def get_ground_truth(example: dict[str, Any]) -> str:
-    ground_truth = example.get("ground_truth", example.get("answer"))
-    if ground_truth is None:
-        raise ValueError("Example must contain `ground_truth` or `answer`.")
-    return str(ground_truth)
-
-
-def init_policy(model_id: str, device: str) -> tuple[PreTrainedModel, PreTrainedTokenizerBase]:
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
-    if tokenizer.pad_token_id is None and tokenizer.eos_token_id is not None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        torch_dtype=torch.bfloat16,
-        attn_implementation="flash_attention_2",
-    )
-    model.to(device)
-    model.train()
-    return model, tokenizer
-
-
-def init_vllm(
-    model_id: str,
-    device: str,
-    seed: int,
-    gpu_memory_utilization: float,
-) -> LLM:
-    """Start a vLLM model on a GPU separate from the training policy."""
-    vllm_set_random_seed(seed)
-    world_size_patch = patch("torch.distributed.get_world_size", return_value=1)
-    profiling_patch = patch(
-        "vllm.worker.worker.Worker._assert_memory_footprint_increased_during_profiling",
-        return_value=None,
-    )
-    with world_size_patch, profiling_patch:
-        return LLM(
-            model=model_id,
-            device=device,
-            dtype=torch.float16,
-            enable_prefix_caching=True,
-            gpu_memory_utilization=gpu_memory_utilization,
-        )
-
-
-def sync_policy_cuda_devices(policy: PreTrainedModel) -> None:
-    devices = {
-        parameter.device
-        for parameter in policy.parameters()
-        if parameter.device.type == "cuda"
-    }
-    for device in devices:
-        torch.cuda.synchronize(device)
-
-
-def load_policy_into_vllm_instance(policy: PreTrainedModel, llm: LLM) -> None:
-    """Copy the current HF policy weights into the already-running vLLM model."""
-    sync_policy_cuda_devices(policy)
-    state_dict = policy.state_dict()
-    llm_engine = getattr(llm, "llm_engine", getattr(llm, "engine", None))
-    if llm_engine is None:
-        raise AttributeError("Could not find vLLM engine on the LLM object.")
-    vllm_model = llm_engine.model_executor.driver_worker.model_runner.model
-    vllm_model.load_weights(state_dict.items())
 
 
 def maybe_filter_correct_sft(examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -233,6 +159,9 @@ def evaluate_with_vllm(
     max_new_tokens: int,
     temperature: float,
     top_p: float,
+    reward_workers: int,
+    quiet_reward_parser_logs: bool,
+    reward_timeout_seconds: int | None,
 ) -> dict[str, Any]:
     prompts = [prompt_template.format(question=get_question(example)) for example in val_examples]
     sampling_params = SamplingParams(
@@ -244,11 +173,23 @@ def evaluate_with_vllm(
     )
     outputs = llm.generate(prompts, sampling_params)
 
+    scoring_items = [
+        (prompt, output.outputs[0].text, get_ground_truth(example))
+        for example, prompt, output in zip(val_examples, prompts, outputs)
+    ]
+    responses = [response for _, response, _ in scoring_items]
+    ground_truths = [ground_truth for _, _, ground_truth in scoring_items]
+    scores_list = score_responses(
+        responses=responses,
+        ground_truths=ground_truths,
+        reward_fn_name="r1_zero",
+        reward_workers=reward_workers,
+        quiet_parser_logs=quiet_reward_parser_logs,
+        timeout_seconds=reward_timeout_seconds,
+    )
+
     records: list[dict[str, Any]] = []
-    for example, prompt, output in zip(val_examples, prompts, outputs):
-        response = output.outputs[0].text
-        ground_truth = get_ground_truth(example)
-        scores = r1_zero_reward_fn(response, ground_truth)
+    for (prompt, response, ground_truth), scores in zip(scoring_items, scores_list):
         records.append(
             {
                 "prompt": prompt,
@@ -268,52 +209,30 @@ def evaluate_with_vllm(
             "temperature": temperature,
             "top_p": top_p,
             "max_tokens": max_new_tokens,
+            "reward_workers": reward_workers,
+            "quiet_reward_parser_logs": quiet_reward_parser_logs,
+            "reward_timeout_seconds": reward_timeout_seconds,
             "stop": "</answer>",
             "include_stop_str_in_output": True,
         },
     }
 
 
-def append_jsonl(path: Path, record: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(record, ensure_ascii=False) + "\n")
-
-
-def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-
-
-def cuda_memory_metrics(device: str) -> dict[str, float]:
-    if not device.startswith("cuda"):
-        return {}
-    cuda_device = torch.device(device)
-    return {
-        "cuda_memory_allocated_gib": torch.cuda.memory_allocated(cuda_device) / BYTES_PER_GIB,
-        "cuda_memory_reserved_gib": torch.cuda.memory_reserved(cuda_device) / BYTES_PER_GIB,
-        "cuda_max_memory_allocated_gib": torch.cuda.max_memory_allocated(cuda_device)
-        / BYTES_PER_GIB,
-        "cuda_max_memory_reserved_gib": torch.cuda.max_memory_reserved(cuda_device)
-        / BYTES_PER_GIB,
-    }
-
-
 def run_eval_and_log(
-    policy: PreTrainedModel,
-    llm: LLM,
+    backend_manager: BackendLifecycleManager,
     val_examples: list[dict[str, Any]],
     prompt_template: str,
     max_new_tokens: int,
     temperature: float,
     top_p: float,
-    output_dir: Path,
-    log_dir: Path,
-    metrics_path: Path,
+    reward_workers: int,
+    quiet_reward_parser_logs: bool,
+    reward_timeout_seconds: int | None,
+    writer: ExperimentLogWriter,
     train_step: int,
 ) -> dict[str, Any]:
     start = time.time()
-    load_policy_into_vllm_instance(policy, llm)
+    llm = backend_manager.enter_inference_phase(sync_weights=True)
     eval_result = evaluate_with_vllm(
         llm=llm,
         val_examples=val_examples,
@@ -321,10 +240,12 @@ def run_eval_and_log(
         max_new_tokens=max_new_tokens,
         temperature=temperature,
         top_p=top_p,
+        reward_workers=reward_workers,
+        quiet_reward_parser_logs=quiet_reward_parser_logs,
+        reward_timeout_seconds=reward_timeout_seconds,
     )
     summary = eval_result["summary"]
-    append_jsonl(
-        metrics_path,
+    writer.append_metric(
         {
             "type": "eval",
             "train_step": train_step,
@@ -332,10 +253,10 @@ def run_eval_and_log(
             **summary,
         },
     )
-    generations_path = output_dir / f"eval_generations_step_{train_step:06d}.jsonl"
     for record in eval_result["records"]:
-        append_jsonl(generations_path, record)
-    write_json(log_dir / f"eval_summary_step_{train_step:06d}.json", summary)
+        writer.append_eval_generation(train_step, record)
+    writer.write_eval_summary(train_step, summary)
+    backend_manager.enter_training_phase()
     return summary
 
 
@@ -345,10 +266,10 @@ def main() -> None:
     torch.manual_seed(args.seed)
     output_dir = Path(args.output_dir)
     log_dir = Path(args.log_dir)
-    metrics_path = log_dir / "metrics.jsonl"
+    writer = ExperimentLogWriter("sft", output_dir=output_dir, log_dir=log_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
-    write_json(log_dir / "config.json", vars(args))
+    writer.write_config(vars(args))
 
     if args.train_batch_size % args.gradient_accumulation_steps != 0:
         raise ValueError("train_batch_size must be divisible by gradient_accumulation_steps.")
@@ -366,14 +287,21 @@ def main() -> None:
     val_examples = read_jsonl(args.val_path, max_examples=args.eval_max_examples)
     prompt_template = load_prompt_template(args.prompt_template)
 
-    policy, tokenizer = init_policy(args.model, args.policy_device)
-    llm = init_vllm(
+    backend_manager = BackendLifecycleManager.from_defaults(
         model_id=args.model,
-        device=args.vllm_device,
+        policy_device=args.policy_device,
+        vllm_device=args.vllm_device,
         seed=args.seed,
-        gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+        vllm_gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+        enable_sleep_mode=True,
+        sleep_level=2,
+        keep_policy_resident_on_device=True,
+        keep_optimizer_state_resident_on_device=False,
     )
-    optimizer = AdamW(policy.parameters(), lr=args.learning_rate)
+    policy, tokenizer, optimizer = backend_manager.initialize_rl_runtime(
+        optimizer_factory=lambda parameters: AdamW(parameters, lr=args.learning_rate)
+    )
+    policy, tokenizer = backend_manager.enter_training_phase()
     rng = random.Random(args.seed)
     optimizer.zero_grad(set_to_none=True)
 
@@ -426,8 +354,7 @@ def main() -> None:
         optimizer.step()
         optimizer.zero_grad(set_to_none=True)
 
-        append_jsonl(
-            metrics_path,
+        writer.append_metric(
             {
                 "type": "train",
                 "train_step": train_step,
@@ -446,16 +373,16 @@ def main() -> None:
 
         if train_step % args.eval_every == 0:
             summary = run_eval_and_log(
-                policy=policy,
-                llm=llm,
+                backend_manager=backend_manager,
                 val_examples=val_examples,
                 prompt_template=prompt_template,
                 max_new_tokens=args.max_new_tokens,
                 temperature=args.eval_temperature,
                 top_p=args.eval_top_p,
-                output_dir=output_dir,
-                log_dir=log_dir,
-                metrics_path=metrics_path,
+                reward_workers=args.reward_workers,
+                quiet_reward_parser_logs=args.quiet_reward_parser_logs,
+                reward_timeout_seconds=args.reward_timeout_seconds,
+                writer=writer,
                 train_step=train_step,
             )
             answer_accuracy = float(summary["answer_accuracy"])
@@ -467,16 +394,16 @@ def main() -> None:
 
     final_step = args.max_steps
     summary = run_eval_and_log(
-        policy=policy,
-        llm=llm,
+        backend_manager=backend_manager,
         val_examples=val_examples,
         prompt_template=prompt_template,
         max_new_tokens=args.max_new_tokens,
         temperature=args.eval_temperature,
         top_p=args.eval_top_p,
-        output_dir=output_dir,
-        log_dir=log_dir,
-        metrics_path=metrics_path,
+        reward_workers=args.reward_workers,
+        quiet_reward_parser_logs=args.quiet_reward_parser_logs,
+        reward_timeout_seconds=args.reward_timeout_seconds,
+        writer=writer,
         train_step=final_step,
     )
     if float(summary["answer_accuracy"]) > best_answer_accuracy and args.save_checkpoints:

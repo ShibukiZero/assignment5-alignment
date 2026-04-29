@@ -23,11 +23,11 @@ DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_prompt_ablation"
 DEFAULT_RUNS = [
     (
         "r1_zero_reference",
-        ".agents/logs/ch7/grpo_on_policy_ablations/std_normalization/no_std_lr4e-5",
+        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
     ),
     (
         "question_only",
-        ".agents/logs/ch7/grpo_prompt_ablation/question_only_e1_tb256",
+        ".agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/question_only_e1_tb256_std_norm",
     ),
 ]
 
@@ -292,7 +292,11 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
     markdown_lines.extend(
         [
             "",
-            "Raw run files are archived under `artifacts/experiments/ch7/grpo_prompt_ablation/runs/`.",
+            (
+                "Raw run files are archived under `artifacts/experiments/ch7/grpo_prompt_ablation/runs/`. "
+                "`sample_rollouts.jsonl` files are intentionally omitted because aggregate "
+                "rollout summaries are sufficient for the writeup."
+            ),
             "",
         ]
     )
@@ -311,9 +315,11 @@ def write_experiment_log(runs: list[RunData], output_dir: Path) -> None:
         "",
         "## Setup",
         "",
-        "- We compare two prompt-and-evaluation contracts under the same on-policy training budget (`n_grpo_steps = 200`, `rollout_batch_size = 256`, `train_batch_size = 256`, `learning_rate = 4e-5`, `group_size = 8`, and `use_std_normalization = false`).",
+        "- We compare the R1-Zero on-policy reference line used in the off-policy sweep with the prefix-cache-repaired question-only rerun.",
+        "- Both runs use a 200-step GRPO budget with `rollout_batch_size = 256`, `train_batch_size = 256`, `learning_rate = 4e-5`, `group_size = 8`, `epochs_per_rollout_batch = 1`, and `use_std_normalization = true`.",
         f"- The reference run uses `{prompt_template(r1_zero)}` with `r1_zero_reward_fn` and the standard `</answer>` stop condition.",
         f"- The ablation run uses `{prompt_template(question_only)}` with `question_only_reward_fn` and no `</answer>` stop condition.",
+        "- The reference uses `reinforce_with_baseline`; the question-only rerun uses `grpo_clip`, so this remains a prompt-and-evaluation contract comparison rather than a pure prompt-wording ablation.",
         "",
         "## Findings",
         "",

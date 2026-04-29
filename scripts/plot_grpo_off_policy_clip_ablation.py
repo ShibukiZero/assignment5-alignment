@@ -17,14 +17,19 @@ from typing import Any
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_off_policy_clip_ablation"
 RUN_SPECS = [
     (
-        "GRPO-Clip (e2/tb256)",
-        ".agents/logs/ch7/grpo_off_policy_sweep/focused_e2_tb256",
-        "grpo_clip",
+        "GRPO-Clip 0.20/0.20 (e2/tb256)",
+        ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e2_tb256",
+        "symmetric_clip",
     ),
     (
         "GRPO-No-Clip (e2/tb256)",
-        ".agents/logs/ch7/grpo_off_policy_clip_ablation/focused_e2_tb256_no_clip",
-        "grpo_no_clip",
+        ".agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/no_clip_e2_tb256",
+        "no_clip",
+    ),
+    (
+        "GRPO-Clip 0.20/0.28 (e2/tb256)",
+        ".agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/clip_low0p2_high0p28_e2_tb256",
+        "asymmetric_clip",
     ),
 ]
 
@@ -34,6 +39,7 @@ COLORS = [
     "#2ca02c",
     "#9467bd",
 ]
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 
 @dataclass(frozen=True)
@@ -76,7 +82,7 @@ class StepSummary:
 class RunData:
     label: str
     log_dir: Path
-    loss_type: str
+    variant: str
     config: dict[str, Any]
     run_summary: dict[str, Any]
     eval_points: list[EvalPoint]
@@ -103,6 +109,18 @@ class RunData:
     @property
     def train_batch_size(self) -> int:
         return int(self.config["train_batch_size"])
+
+    @property
+    def loss_type(self) -> str:
+        return str(self.config["loss_type"])
+
+    @property
+    def cliprange_low(self) -> float | None:
+        return maybe_float(self.config.get("cliprange_low"))
+
+    @property
+    def cliprange_high(self) -> float | None:
+        return maybe_float(self.config.get("cliprange_high"))
 
     @property
     def optimizer_updates_per_rollout_batch(self) -> int:
@@ -207,7 +225,7 @@ def maybe_float(value: Any) -> float | None:
     return float(value)
 
 
-def load_run(label: str, log_dir: Path, loss_type: str) -> RunData:
+def load_run(label: str, log_dir: Path, variant: str) -> RunData:
     metrics_path = log_dir / "metrics.jsonl"
     if not metrics_path.exists():
         raise FileNotFoundError(f"Missing metrics file: {metrics_path}")
@@ -281,7 +299,7 @@ def load_run(label: str, log_dir: Path, loss_type: str) -> RunData:
     return RunData(
         label=label,
         log_dir=log_dir,
-        loss_type=loss_type,
+        variant=variant,
         config=config,
         run_summary=run_summary,
         eval_points=sorted(eval_points, key=lambda point: point.step),
@@ -295,7 +313,7 @@ def load_run(label: str, log_dir: Path, loss_type: str) -> RunData:
 
 
 def load_runs() -> list[RunData]:
-    return [load_run(label, Path(log_dir), loss_type) for label, log_dir, loss_type in RUN_SPECS]
+    return [load_run(label, Path(log_dir), variant) for label, log_dir, variant in RUN_SPECS]
 
 
 def nice_y_max(max_value: float) -> float:
@@ -502,12 +520,14 @@ def render_svg_line_plot(
 
 def archive_runs(runs: list[RunData], output_dir: Path) -> None:
     runs_dir = output_dir / "runs"
+    if runs_dir.exists():
+        shutil.rmtree(runs_dir)
     runs_dir.mkdir(parents=True, exist_ok=True)
     for run in runs:
         archive_dir = runs_dir / run.label.replace(" ", "_").replace("/", "_")
         if run.log_dir.resolve() == archive_dir.resolve():
             continue
-        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True)
+        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True, ignore=ARCHIVE_IGNORE)
 
 
 def cumulative_eval_minutes(run: RunData) -> list[tuple[float, float]]:
@@ -534,6 +554,7 @@ def write_run_summaries(runs: list[RunData], output_dir: Path) -> None:
         payload.append(
             {
                 "run_name": run.label,
+                "variant": run.variant,
                 "loss_type": run.loss_type,
                 "log_dir": str(run.log_dir),
                 "status": run.status,
@@ -541,6 +562,8 @@ def write_run_summaries(runs: list[RunData], output_dir: Path) -> None:
                 "epochs_per_rollout_batch": run.epochs_per_rollout_batch,
                 "train_batch_size": run.train_batch_size,
                 "optimizer_updates_per_rollout_batch": run.optimizer_updates_per_rollout_batch,
+                "cliprange_low": run.cliprange_low,
+                "cliprange_high": run.cliprange_high,
                 "best_eval": {
                     "grpo_step": run.best_eval.step,
                     "answer_accuracy": run.best_eval.answer_accuracy,
@@ -576,19 +599,28 @@ def write_run_summaries(runs: list[RunData], output_dir: Path) -> None:
     lines = [
         "# GRPO Off-Policy Clip Ablation Run Archive",
         "",
-        "| run | loss | status | best answer | best step | final answer | final step |",
-        "|---|---|---|---:|---:|---:|---:|",
+        "| run | variant | loss | clip low | clip high | status | best answer | best step | final answer | final step | source log |",
+        "|---|---|---|---:|---:|---|---:|---:|---:|---:|---|",
     ]
     for run in runs:
+        clip_low = "" if run.cliprange_low is None else f"{run.cliprange_low:.2f}"
+        clip_high = "" if run.cliprange_high is None else f"{run.cliprange_high:.2f}"
         lines.append(
-            f"| `{run.label}` | `{run.loss_type}` | {run.status} | "
+            f"| `{run.label}` | `{run.variant}` | `{run.loss_type}` | "
+            f"{clip_low} | {clip_high} | {run.status} | "
             f"{percent(run.best_eval.answer_accuracy)} | {run.best_eval.step} | "
-            f"{percent(run.final_eval.answer_accuracy)} | {run.final_eval.step} |"
+            f"{percent(run.final_eval.answer_accuracy)} | {run.final_eval.step} | "
+            f"`{run.log_dir}` |"
         )
     lines.extend(
         [
             "",
-            "Raw run files are archived under `artifacts/experiments/ch7/grpo_off_policy_clip_ablation/runs/`.",
+            (
+                "Raw run files are archived under "
+                "`artifacts/experiments/ch7/grpo_off_policy_clip_ablation/runs/`. "
+                "`sample_rollouts.jsonl` files are intentionally omitted because aggregate "
+                "rollout summaries are sufficient for the writeup."
+            ),
             "",
         ]
     )
@@ -604,7 +636,10 @@ def write_ablation_summary(runs: list[RunData], output_dir: Path) -> None:
         rows.append(
             [
                 run.label,
+                run.variant,
                 run.loss_type,
+                run.cliprange_low if run.cliprange_low is not None else "",
+                run.cliprange_high if run.cliprange_high is not None else "",
                 run.status,
                 run.best_eval.answer_accuracy,
                 run.best_eval.step,
@@ -622,7 +657,10 @@ def write_ablation_summary(runs: list[RunData], output_dir: Path) -> None:
         output_dir / "grpo_off_policy_clip_ablation_summary.csv",
         [
             "run",
+            "variant",
             "loss_type",
+            "cliprange_low",
+            "cliprange_high",
             "status",
             "best_answer_accuracy",
             "best_step",
@@ -641,12 +679,15 @@ def write_ablation_summary(runs: list[RunData], output_dir: Path) -> None:
     lines = [
         "# GRPO Off-Policy Clip Ablation Summary",
         "",
-        "| run | loss | status | best answer | best step | final answer | final format | final avg length | last finite grad norm |",
-        "|---|---|---|---:|---:|---:|---:|---:|---:|",
+        "| run | variant | loss | clip low | clip high | status | best answer | best step | final answer | final format | final avg length | last finite grad norm |",
+        "|---|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|",
     ]
     for run in runs:
+        clip_low = "" if run.cliprange_low is None else f"{run.cliprange_low:.2f}"
+        clip_high = "" if run.cliprange_high is None else f"{run.cliprange_high:.2f}"
         lines.append(
-            f"| `{run.label}` | `{run.loss_type}` | {run.status} | "
+            f"| `{run.label}` | `{run.variant}` | `{run.loss_type}` | "
+            f"{clip_low} | {clip_high} | {run.status} | "
             f"{percent(run.best_eval.answer_accuracy)} | {run.best_eval.step} | "
             f"{percent(run.final_eval.answer_accuracy)} | {percent(run.final_eval.format_accuracy)} | "
             f"{run.final_rollout.avg_response_token_length:.1f} | {run.last_finite_train.grad_norm:.4f} |"
@@ -666,7 +707,10 @@ def write_eval_points(runs: list[RunData], output_dir: Path) -> None:
             rows.append(
                 [
                     run.label,
+                    run.variant,
                     run.loss_type,
+                    run.cliprange_low if run.cliprange_low is not None else "",
+                    run.cliprange_high if run.cliprange_high is not None else "",
                     point.step,
                     wall_clock.get(point.step, ""),
                     point.answer_accuracy,
@@ -679,7 +723,10 @@ def write_eval_points(runs: list[RunData], output_dir: Path) -> None:
         output_dir / "grpo_off_policy_clip_ablation_eval_points.csv",
         [
             "run",
+            "variant",
             "loss_type",
+            "cliprange_low",
+            "cliprange_high",
             "grpo_step",
             "cumulative_eval_minutes",
             "answer_accuracy",
@@ -700,7 +747,10 @@ def write_diagnostics(runs: list[RunData], output_dir: Path) -> None:
             rows.append(
                 [
                     run.label,
+                    run.variant,
                     run.loss_type,
+                    run.cliprange_low if run.cliprange_low is not None else "",
+                    run.cliprange_high if run.cliprange_high is not None else "",
                     train_point.step,
                     train_point.optimizer_step,
                     train_point.rollout_epoch,
@@ -718,7 +768,10 @@ def write_diagnostics(runs: list[RunData], output_dir: Path) -> None:
         output_dir / "grpo_off_policy_clip_ablation_diagnostics.csv",
         [
             "run",
+            "variant",
             "loss_type",
+            "cliprange_low",
+            "cliprange_high",
             "grpo_step",
             "optimizer_step",
             "rollout_epoch",
@@ -736,24 +789,26 @@ def write_diagnostics(runs: list[RunData], output_dir: Path) -> None:
 
 
 def write_experiment_log(runs: list[RunData], output_dir: Path) -> None:
-    clip_run = next(run for run in runs if run.loss_type == "grpo_clip")
-    no_clip_run = next(run for run in runs if run.loss_type == "grpo_no_clip")
+    symmetric_run = next(run for run in runs if run.variant == "symmetric_clip")
+    no_clip_run = next(run for run in runs if run.variant == "no_clip")
+    asymmetric_run = next(run for run in runs if run.variant == "asymmetric_clip")
 
     lines = [
         "# GRPO Off-Policy Clip Ablation Experiment Log",
         "",
         "## Setup",
         "",
-        "- Both runs use the same true off-policy configuration from the previous sweep: `epochs_per_rollout_batch = 2`, `train_batch_size = 256`, `rollout_batch_size = 256`, `learning_rate = 4e-5`, `loss_normalization = masked_mean`, and `use_std_normalization = false`.",
-        "- The ablation changes only the policy-gradient loss: `GRPO-Clip` versus `GRPO-No-Clip`.",
-        "- Both runs were evaluated every 5 GRPO steps on 1024 validation examples with the same sampling settings.",
+        "- All runs use the same true off-policy `e2/tb256` configuration: `epochs_per_rollout_batch = 2`, `train_batch_size = 256`, `rollout_batch_size = 256`, `learning_rate = 4e-5`, `loss_normalization = masked_mean`, and `use_std_normalization = true`.",
+        "- The ablation compares symmetric GRPO-Clip with bounds `[0.8, 1.2]`, unclipped GRPO, and asymmetric GRPO-Clip with bounds `[0.8, 1.28]`.",
+        "- All runs were evaluated every 5 GRPO steps on 1024 validation examples with the same sampling settings.",
         "",
         "## Findings",
         "",
-        f"- `{clip_run.label}` peaked at {percent(clip_run.best_eval.answer_accuracy)} on step {clip_run.best_eval.step}, then entered a late collapse and finished at {percent(clip_run.final_eval.answer_accuracy)}.",
-        f"- `{no_clip_run.label}` peaked at {percent(no_clip_run.best_eval.answer_accuracy)} on step {no_clip_run.best_eval.step} and remained stable through the final evaluation at {percent(no_clip_run.final_eval.answer_accuracy)}.",
-        f"- The clipped run ended with rollout length {clip_run.final_rollout.avg_response_token_length:.1f} and zero format / answer reward, while the unclipped run ended with rollout length {no_clip_run.final_rollout.avg_response_token_length:.1f} and {percent(no_clip_run.final_eval.format_accuracy)} final format accuracy.",
-        "- Tail-train diagnostics for the clipped run show NaN loss, NaN gradient norm, and `clip_fraction = 1.0`, whereas the unclipped run keeps finite entropy and gradient norm values.",
+        f"- `{symmetric_run.label}` peaked at {percent(symmetric_run.best_eval.answer_accuracy)} on step {symmetric_run.best_eval.step} and finished at {percent(symmetric_run.final_eval.answer_accuracy)}.",
+        f"- `{no_clip_run.label}` peaked at {percent(no_clip_run.best_eval.answer_accuracy)} on step {no_clip_run.best_eval.step} and finished at {percent(no_clip_run.final_eval.answer_accuracy)}.",
+        f"- `{asymmetric_run.label}` peaked at {percent(asymmetric_run.best_eval.answer_accuracy)} on step {asymmetric_run.best_eval.step} and finished at {percent(asymmetric_run.final_eval.answer_accuracy)}.",
+        f"- Final rollout lengths were {symmetric_run.final_rollout.avg_response_token_length:.1f} for symmetric clipping, {no_clip_run.final_rollout.avg_response_token_length:.1f} for no clipping, and {asymmetric_run.final_rollout.avg_response_token_length:.1f} for asymmetric clipping.",
+        "- The summary CSV and diagnostics CSV include `variant`, `cliprange_low`, and `cliprange_high` so the symmetric and asymmetric clipped objectives are distinguishable even though both use `loss_type = grpo_clip`.",
         "",
     ]
     (output_dir / "grpo_off_policy_clip_ablation_experiment_log.md").write_text(
@@ -792,7 +847,7 @@ def main() -> None:
         y_label="Validation answer reward",
         output_path=output_dir / "grpo_off_policy_clip_ablation_validation_reward.svg",
         y_min=0.0,
-        y_max=0.85,
+        y_max=None,
         x_tick_decimals=0,
         y_percent_axis=True,
     )
@@ -806,7 +861,7 @@ def main() -> None:
         output_path=output_dir
         / "grpo_off_policy_clip_ablation_validation_reward_wall_clock.svg",
         y_min=0.0,
-        y_max=0.85,
+        y_max=None,
         x_tick_decimals=1,
         y_percent_axis=True,
     )

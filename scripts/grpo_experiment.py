@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import random
 import time
@@ -17,7 +16,20 @@ from torch.optim import AdamW
 from tqdm import tqdm
 from vllm import LLM, SamplingParams
 
-from cs336_alignment.drgrpo_grader import question_only_reward_fn, r1_zero_reward_fn
+from cs336_alignment.backend_lifecycle import BackendLifecycleManager, init_policy
+from cs336_alignment.experiment_logging import (
+    ExperimentLogWriter,
+    get_ground_truth,
+    get_question,
+    load_prompt_template,
+    read_jsonl,
+)
+from cs336_alignment.experiment_metrics import cuda_memory_metrics, mean_or_none
+from cs336_alignment.reward_scoring import (
+    quiet_reward_parser_logs,
+    resolve_reward_fn,
+    score_response_with_reward_fn,
+)
 from cs336_alignment.grpo import (
     compute_group_normalized_rewards,
     grpo_microbatch_train_step,
@@ -28,16 +40,6 @@ from cs336_alignment.sft import get_response_log_probs, tokenize_prompt_and_outp
 from sft_experiment import (
     DEFAULT_MODEL,
     DEFAULT_PROMPT_TEMPLATE,
-    append_jsonl,
-    cuda_memory_metrics,
-    get_ground_truth,
-    get_question,
-    init_policy,
-    init_vllm,
-    load_policy_into_vllm_instance,
-    load_prompt_template,
-    read_jsonl,
-    write_json,
 )
 
 
@@ -46,14 +48,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_TRAIN_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/train.jsonl"
 DEFAULT_VAL_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
 DEFAULT_LOG_DIR = ".agents/logs/ch7/grpo_on_policy"
-
-
-def resolve_reward_fn(name: str):
-    if name == "r1_zero":
-        return r1_zero_reward_fn
-    if name == "question_only":
-        return question_only_reward_fn
-    raise ValueError(f"Unknown reward function: {name}")
 
 
 def resolve_sampling_stop(reward_fn_name: str) -> tuple[list[str] | None, bool]:
@@ -136,6 +130,23 @@ def parse_args() -> argparse.Namespace:
         help="Upper clipping width for GRPO-Clip, giving ratio upper bound 1 + cliprange_high.",
     )
     parser.add_argument(
+        "--kl-coef",
+        type=float,
+        default=0.0,
+        help=(
+            "Optional coefficient for a token-level KL penalty against a frozen reference model. "
+            "Set to 0.0 to disable KL and keep the original training objective."
+        ),
+    )
+    parser.add_argument(
+        "--kl-ref-model",
+        default=None,
+        help=(
+            "Optional reference model checkpoint/path used when --kl-coef > 0. "
+            "Defaults to --model."
+        ),
+    )
+    parser.add_argument(
         "--loss-normalization",
         choices=["masked_mean", "masked_normalize", "batch_token_mean"],
         default="masked_mean",
@@ -188,14 +199,19 @@ def parse_args() -> argparse.Namespace:
         default="r1_zero",
         help="Reward function used for both training and validation.",
     )
+    parser.add_argument(
+        "--quiet-reward-parser-logs",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Suppress noisy dependency parser logs during reward scoring.",
+    )
+    parser.add_argument(
+        "--reward-timeout-seconds",
+        type=int,
+        default=5,
+        help="Per-response reward scoring timeout. Timed-out responses receive zero reward.",
+    )
     return parser.parse_args()
-
-
-def write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
-        for record in records:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
 def sample_question_batch(
@@ -215,6 +231,7 @@ def build_rollout_records(
     prompt_template: str,
     outputs: list[Any],
     reward_fn: Any,
+    reward_timeout_seconds: int | None,
 ) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for (question_index, example), request_output in zip(question_batch, outputs):
@@ -223,7 +240,12 @@ def build_rollout_records(
         ground_truth = get_ground_truth(example)
         for rollout_index, completion in enumerate(request_output.outputs):
             response = completion.text
-            scores = reward_fn(response, ground_truth)
+            scores = score_response_with_reward_fn(
+                response=response,
+                ground_truth=ground_truth,
+                reward_fn=reward_fn,
+                timeout_seconds=reward_timeout_seconds,
+            )
             token_ids = getattr(completion, "token_ids", None)
             records.append(
                 {
@@ -253,6 +275,7 @@ def generate_rollouts(
     temperature: float,
     top_p: float,
     seed: int,
+    reward_timeout_seconds: int | None,
 ) -> list[dict[str, Any]]:
     prompts = [
         prompt_template.format(question=get_question(example))
@@ -274,6 +297,7 @@ def generate_rollouts(
         prompt_template=prompt_template,
         outputs=outputs,
         reward_fn=reward_fn,
+        reward_timeout_seconds=reward_timeout_seconds,
     )
 
 
@@ -309,12 +333,6 @@ def attach_advantages(
     return advantages, raw_rewards, metadata
 
 
-def mean_or_none(values: list[float]) -> float | None:
-    if not values:
-        return None
-    return mean(values)
-
-
 def summarize_rollouts(
     records: list[dict[str, Any]],
     advantage_metadata: dict[str, float],
@@ -348,8 +366,7 @@ def summarize_rollouts(
 
 
 def evaluate_policy(
-    policy: torch.nn.Module,
-    llm: LLM,
+    backend_manager: BackendLifecycleManager,
     val_examples: list[dict[str, Any]],
     prompt_template: str,
     reward_fn: Any,
@@ -358,14 +375,13 @@ def evaluate_policy(
     max_new_tokens: int,
     temperature: float,
     top_p: float,
-    output_dir: Path,
-    log_dir: Path,
-    metrics_path: Path,
+    writer: ExperimentLogWriter,
     grpo_step: int,
     optimizer_step: int,
+    reward_timeout_seconds: int | None,
 ) -> dict[str, Any]:
     start = time.time()
-    load_policy_into_vllm_instance(policy, llm)
+    llm = backend_manager.enter_inference_phase(sync_weights=True)
     prompts = [prompt_template.format(question=get_question(example)) for example in val_examples]
     sampling_params = SamplingParams(
         temperature=temperature,
@@ -380,7 +396,12 @@ def evaluate_policy(
     for example, prompt, output in zip(val_examples, prompts, outputs):
         response = output.outputs[0].text
         ground_truth = get_ground_truth(example)
-        scores = reward_fn(response, ground_truth)
+        scores = score_response_with_reward_fn(
+            response=response,
+            ground_truth=ground_truth,
+            reward_fn=reward_fn,
+            timeout_seconds=reward_timeout_seconds,
+        )
         records.append(
             {
                 "prompt": prompt,
@@ -402,8 +423,7 @@ def evaluate_policy(
         "include_stop_str_in_output": include_stop_str_in_output,
         "eval_seconds": time.time() - start,
     }
-    append_jsonl(
-        metrics_path,
+    writer.append_metric(
         {
             "type": "eval",
             "grpo_step": grpo_step,
@@ -411,10 +431,10 @@ def evaluate_policy(
             **summary,
         },
     )
-    generation_path = output_dir / f"eval_generations_grpo_step_{grpo_step:06d}.jsonl"
     for record in records:
-        append_jsonl(generation_path, record)
-    write_json(log_dir / f"eval_summary_grpo_step_{grpo_step:06d}.json", summary)
+        writer.append_eval_generation(grpo_step, record)
+    writer.write_eval_summary(grpo_step, summary)
+    backend_manager.enter_training_phase()
     return summary
 
 
@@ -434,32 +454,32 @@ def tokenize_rollout_records(
     )
 
 
-def compute_old_log_probs(
-    policy: torch.nn.Module,
+def compute_rollout_log_probs(
+    model: torch.nn.Module,
     rollout_tensors: dict[str, torch.Tensor],
     device: str,
     microbatch_size: int,
 ) -> torch.Tensor:
-    was_training = policy.training
-    policy.eval()
+    was_training = model.training
+    model.eval()
     input_ids = rollout_tensors["input_ids"]
     labels = rollout_tensors["labels"]
-    old_log_probs: list[torch.Tensor] = []
+    cached_log_probs: list[torch.Tensor] = []
 
     with torch.inference_mode():
         for start in range(0, input_ids.shape[0], microbatch_size):
             end = start + microbatch_size
             scored = get_response_log_probs(
-                model=policy,
+                model=model,
                 input_ids=input_ids[start:end].to(device),
                 labels=labels[start:end].to(device),
                 return_token_entropy=False,
             )
-            old_log_probs.append(scored["log_probs"].detach().cpu())
+            cached_log_probs.append(scored["log_probs"].detach().cpu())
 
     if was_training:
-        policy.train()
-    return torch.cat(old_log_probs, dim=0)
+        model.train()
+    return torch.cat(cached_log_probs, dim=0)
 
 
 def train_on_rollout_batch(
@@ -470,6 +490,7 @@ def train_on_rollout_batch(
     advantages: torch.Tensor,
     raw_rewards: torch.Tensor,
     old_log_probs: torch.Tensor | None,
+    ref_log_probs: torch.Tensor | None,
     epochs_per_rollout_batch: int,
     train_batch_size: int,
     gradient_accumulation_steps: int,
@@ -477,9 +498,10 @@ def train_on_rollout_batch(
     cliprange: float,
     cliprange_low: float | None,
     cliprange_high: float | None,
+    kl_coef: float,
     device: str,
     rng: random.Random,
-    metrics_path: Path,
+    writer: ExperimentLogWriter,
     grpo_step: int,
     optimizer_step: int,
     learning_rate: float,
@@ -511,6 +533,8 @@ def train_on_rollout_batch(
             micro_entropies: list[float] = []
             micro_clip_fractions: list[float] = []
             micro_approx_kls: list[float] = []
+            micro_reference_kls: list[float] = []
+            micro_kl_penalties: list[float] = []
             batch_token_denominator = 1.0
             if loss_normalization == "batch_token_mean":
                 batch_token_denominator = float(
@@ -535,6 +559,11 @@ def train_on_rollout_batch(
                     if old_log_probs is not None
                     else None
                 )
+                micro_ref_log_probs = (
+                    ref_log_probs[micro_indices].to(device)
+                    if ref_log_probs is not None
+                    else None
+                )
                 loss, metadata = grpo_microbatch_train_step(
                     policy_log_probs=scored["log_probs"],
                     response_mask=response_mask,
@@ -546,6 +575,8 @@ def train_on_rollout_batch(
                     cliprange=cliprange,
                     cliprange_low=cliprange_low,
                     cliprange_high=cliprange_high,
+                    ref_log_probs=micro_ref_log_probs,
+                    kl_coef=kl_coef,
                     loss_normalization=loss_normalization,
                     loss_normalize_constant=(
                         batch_token_denominator
@@ -569,6 +600,20 @@ def train_on_rollout_batch(
                         dim=None,
                     )
                     micro_approx_kls.append(float(approx_kl.detach().cpu().item()))
+                if "kl" in metadata:
+                    reference_kl = masked_mean(
+                        tensor=metadata["kl"],
+                        mask=response_mask,
+                        dim=None,
+                    )
+                    micro_reference_kls.append(float(reference_kl.detach().cpu().item()))
+                if "kl_penalty" in metadata:
+                    weighted_kl_penalty = masked_mean(
+                        tensor=metadata["kl_penalty"],
+                        mask=response_mask,
+                        dim=None,
+                    )
+                    micro_kl_penalties.append(float(weighted_kl_penalty.detach().cpu().item()))
                 if "is_clipped" in metadata:
                     clip_fraction = masked_mean(
                         tensor=metadata["is_clipped"].to(dtype=torch.float32),
@@ -578,7 +623,7 @@ def train_on_rollout_batch(
                     micro_clip_fractions.append(float(clip_fraction.detach().cpu().item()))
 
                 del input_ids, labels, response_mask, scored
-                del micro_advantages, micro_raw_rewards, micro_old_log_probs
+                del micro_advantages, micro_raw_rewards, micro_old_log_probs, micro_ref_log_probs
                 del loss, metadata, token_entropy
 
             grad_norm = torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=1.0)
@@ -597,8 +642,7 @@ def train_on_rollout_batch(
                 else mean(micro_scaled_losses)
             )
             optimizer_step += 1
-            append_jsonl(
-                metrics_path,
+            writer.append_metric(
                 {
                     "type": "train",
                     "grpo_step": grpo_step,
@@ -613,6 +657,8 @@ def train_on_rollout_batch(
                     "token_entropy": mean(micro_entropies),
                     "clip_fraction": mean_or_none(micro_clip_fractions),
                     "approx_kl": mean_or_none(micro_approx_kls),
+                    "reference_kl": mean_or_none(micro_reference_kls),
+                    "kl_penalty": mean_or_none(micro_kl_penalties),
                     "train_reward": mean(record["reward"] for record in train_records),
                     "train_format_accuracy": mean(
                         record["format_reward"] for record in train_records
@@ -625,6 +671,8 @@ def train_on_rollout_batch(
                     "cliprange": cliprange,
                     "cliprange_low": cliprange_low,
                     "cliprange_high": cliprange_high,
+                    "kl_coef": kl_coef,
+                    "reference_model_cached": ref_log_probs is not None,
                     "loss_normalization": loss_normalization,
                     "loss_normalize_constant": loss_normalize_constant,
                     "rollout_batch_size": len(records),
@@ -667,6 +715,8 @@ def validate_grpo_args(args: argparse.Namespace) -> None:
         raise ValueError("cliprange_low must be non-negative.")
     if args.cliprange_high is not None and args.cliprange_high < 0:
         raise ValueError("cliprange_high must be non-negative.")
+    if args.kl_coef < 0:
+        raise ValueError("kl_coef must be non-negative.")
     if args.cliprange_low is None:
         args.cliprange_low = args.cliprange
     if args.cliprange_high is None:
@@ -695,16 +745,18 @@ def expected_optimizer_updates_per_rollout(
 
 def main() -> None:
     args = parse_args()
+    if args.quiet_reward_parser_logs:
+        quiet_reward_parser_logs()
     validate_grpo_args(args)
     random.seed(args.seed)
     torch.manual_seed(args.seed)
 
     output_dir = Path(args.output_dir)
     log_dir = Path(args.log_dir)
-    metrics_path = log_dir / "metrics.jsonl"
+    writer = ExperimentLogWriter("grpo", output_dir=output_dir, log_dir=log_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
-    write_json(log_dir / "config.json", vars(args))
+    writer.write_config(vars(args))
 
     train_examples = read_jsonl(args.train_path, max_examples=args.max_train_questions)
     eval_max_examples = args.eval_max_examples if args.eval_max_examples > 0 else None
@@ -713,19 +765,33 @@ def main() -> None:
     reward_fn = resolve_reward_fn(args.reward_fn)
     stop_sequences, include_stop_str_in_output = resolve_sampling_stop(args.reward_fn)
 
-    policy, tokenizer = init_policy(args.model, args.policy_device)
-    llm = init_vllm(
+    backend_manager = BackendLifecycleManager.from_defaults(
         model_id=args.model,
-        device=args.vllm_device,
+        policy_device=args.policy_device,
+        vllm_device=args.vllm_device,
         seed=args.seed,
-        gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+        vllm_gpu_memory_utilization=args.vllm_gpu_memory_utilization,
+        enable_sleep_mode=True,
+        sleep_level=2,
+        keep_policy_resident_on_device=True,
+        keep_optimizer_state_resident_on_device=False,
     )
-    optimizer = AdamW(
-        policy.parameters(),
-        lr=args.learning_rate,
-        weight_decay=0.0,
-        betas=(0.9, 0.95),
+    policy, tokenizer, optimizer = backend_manager.initialize_rl_runtime(
+        optimizer_factory=lambda parameters: AdamW(
+            parameters,
+            lr=args.learning_rate,
+            weight_decay=0.0,
+            betas=(0.9, 0.95),
+        )
     )
+    policy, tokenizer = backend_manager.enter_training_phase()
+    reference_policy = None
+    if args.kl_coef > 0.0:
+        reference_model_id = args.kl_ref_model or args.model
+        reference_policy, _ = init_policy(reference_model_id, args.policy_device)
+        reference_policy.eval()
+        for parameter in reference_policy.parameters():
+            parameter.requires_grad_(False)
     rng = random.Random(args.seed)
     optimizer_step = 0
     best_answer_accuracy = -1.0
@@ -749,13 +815,14 @@ def main() -> None:
     logger.info("loss type: %s", args.loss_type)
     logger.info("cliprange: %.4f", args.cliprange)
     logger.info("cliprange low/high: %.4f / %.4f", args.cliprange_low, args.cliprange_high)
+    logger.info("kl coef: %.6f", args.kl_coef)
+    logger.info("kl reference model: %s", args.kl_ref_model or args.model)
     logger.info("loss normalization: %s", args.loss_normalization)
     logger.info("loss normalize constant: %.4f", args.loss_normalize_constant)
     logger.info("std normalization: %s", args.use_std_normalization)
 
     initial_summary = evaluate_policy(
-        policy=policy,
-        llm=llm,
+        backend_manager=backend_manager,
         val_examples=val_examples,
         prompt_template=prompt_template,
         reward_fn=reward_fn,
@@ -764,11 +831,10 @@ def main() -> None:
         max_new_tokens=args.max_new_tokens,
         temperature=args.eval_temperature,
         top_p=args.eval_top_p,
-        output_dir=output_dir,
-        log_dir=log_dir,
-        metrics_path=metrics_path,
+        writer=writer,
         grpo_step=0,
         optimizer_step=optimizer_step,
+        reward_timeout_seconds=args.reward_timeout_seconds,
     )
     best_answer_accuracy = float(initial_summary["answer_accuracy"])
 
@@ -780,7 +846,7 @@ def main() -> None:
             rng=rng,
         )
 
-        load_policy_into_vllm_instance(policy, llm)
+        llm = backend_manager.enter_inference_phase(sync_weights=True)
         rollout_start = time.time()
         rollout_records = generate_rollouts(
             llm=llm,
@@ -795,6 +861,7 @@ def main() -> None:
             temperature=args.sampling_temperature,
             top_p=args.sampling_top_p,
             seed=args.seed + grpo_step,
+            reward_timeout_seconds=args.reward_timeout_seconds,
         )
         rollout_seconds = time.time() - rollout_start
         advantages, raw_rewards, advantage_metadata = attach_advantages(
@@ -804,12 +871,10 @@ def main() -> None:
             normalize_by_std=args.use_std_normalization,
         )
 
-        step_output_dir = output_dir / f"grpo_step_{grpo_step:06d}"
-        step_log_dir = log_dir / f"grpo_step_{grpo_step:06d}"
-        write_jsonl(step_output_dir / "rollouts.jsonl", rollout_records)
+        writer.write_rollouts(grpo_step, rollout_records)
         if args.sample_rollouts_to_log > 0:
-            write_jsonl(
-                step_log_dir / "sample_rollouts.jsonl",
+            writer.write_sample_rollouts(
+                grpo_step,
                 rollout_records[: args.sample_rollouts_to_log],
             )
 
@@ -820,14 +885,23 @@ def main() -> None:
             group_size=args.group_size,
             rollout_seconds=rollout_seconds,
         )
-        append_jsonl(metrics_path, rollout_summary)
-        write_json(step_log_dir / "rollout_summary.json", rollout_summary)
+        writer.append_metric(rollout_summary)
+        writer.write_rollout_summary(grpo_step, rollout_summary)
 
+        policy, tokenizer = backend_manager.enter_training_phase()
         rollout_tensors = tokenize_rollout_records(rollout_records, tokenizer)
         old_log_probs = None
         if args.loss_type in {"grpo_clip", "grpo_no_clip"}:
-            old_log_probs = compute_old_log_probs(
-                policy=policy,
+            old_log_probs = compute_rollout_log_probs(
+                model=policy,
+                rollout_tensors=rollout_tensors,
+                device=args.policy_device,
+                microbatch_size=args.train_batch_size // args.gradient_accumulation_steps,
+            )
+        ref_log_probs = None
+        if reference_policy is not None:
+            ref_log_probs = compute_rollout_log_probs(
+                model=reference_policy,
                 rollout_tensors=rollout_tensors,
                 device=args.policy_device,
                 microbatch_size=args.train_batch_size // args.gradient_accumulation_steps,
@@ -841,14 +915,16 @@ def main() -> None:
             advantages=advantages,
             raw_rewards=raw_rewards,
             old_log_probs=old_log_probs,
+            ref_log_probs=ref_log_probs,
             epochs_per_rollout_batch=args.epochs_per_rollout_batch,
             train_batch_size=args.train_batch_size,
             gradient_accumulation_steps=args.gradient_accumulation_steps,
             loss_type=args.loss_type,
             cliprange=args.cliprange,
+            kl_coef=args.kl_coef,
             device=args.policy_device,
             rng=rng,
-            metrics_path=metrics_path,
+            writer=writer,
             grpo_step=grpo_step,
             optimizer_step=optimizer_step,
             learning_rate=args.learning_rate,
@@ -860,8 +936,7 @@ def main() -> None:
 
         if grpo_step % args.eval_every == 0:
             eval_summary = evaluate_policy(
-                policy=policy,
-                llm=llm,
+                backend_manager=backend_manager,
                 val_examples=val_examples,
                 prompt_template=prompt_template,
                 reward_fn=reward_fn,
@@ -870,11 +945,10 @@ def main() -> None:
                 max_new_tokens=args.max_new_tokens,
                 temperature=args.eval_temperature,
                 top_p=args.eval_top_p,
-                output_dir=output_dir,
-                log_dir=log_dir,
-                metrics_path=metrics_path,
+                writer=writer,
                 grpo_step=grpo_step,
                 optimizer_step=optimizer_step,
+                reward_timeout_seconds=args.reward_timeout_seconds,
             )
             answer_accuracy = float(eval_summary["answer_accuracy"])
             if answer_accuracy > best_answer_accuracy:
@@ -883,8 +957,7 @@ def main() -> None:
                     policy.save_pretrained(output_dir / "best_policy")
                     tokenizer.save_pretrained(output_dir / "best_policy")
 
-        append_jsonl(
-            metrics_path,
+        writer.append_metric(
             {
                 "type": "grpo_step_summary",
                 "grpo_step": grpo_step,
@@ -897,8 +970,7 @@ def main() -> None:
 
     if args.n_grpo_steps % args.eval_every != 0:
         final_eval = evaluate_policy(
-            policy=policy,
-            llm=llm,
+            backend_manager=backend_manager,
             val_examples=val_examples,
             prompt_template=prompt_template,
             reward_fn=reward_fn,
@@ -907,11 +979,10 @@ def main() -> None:
             max_new_tokens=args.max_new_tokens,
             temperature=args.eval_temperature,
             top_p=args.eval_top_p,
-            output_dir=output_dir,
-            log_dir=log_dir,
-            metrics_path=metrics_path,
+            writer=writer,
             grpo_step=args.n_grpo_steps,
             optimizer_step=optimizer_step,
+            reward_timeout_seconds=args.reward_timeout_seconds,
         )
         final_answer_accuracy = float(final_eval["answer_accuracy"])
         if final_answer_accuracy > best_answer_accuracy:
@@ -935,11 +1006,13 @@ def main() -> None:
         "cliprange": args.cliprange,
         "cliprange_low": args.cliprange_low,
         "cliprange_high": args.cliprange_high,
+        "kl_coef": args.kl_coef,
+        "kl_ref_model": args.kl_ref_model or args.model,
         "loss_normalization": args.loss_normalization,
         "loss_normalize_constant": args.loss_normalize_constant,
         "use_std_normalization": args.use_std_normalization,
     }
-    write_json(log_dir / "run_summary.json", run_summary)
+    writer.write_run_summary(run_summary)
     if args.save_checkpoints:
         policy.save_pretrained(output_dir / "final_policy")
         tokenizer.save_pretrained(output_dir / "final_policy")

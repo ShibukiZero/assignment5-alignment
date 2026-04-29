@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_RUN_DIR = ".agents/logs/ch7/grpo_on_policy_lr1e-5"
+DEFAULT_RUN_DIR = ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr1e-5"
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_train_loop"
 DEFAULT_RUN_NAME = "grpo_on_policy_lr1e-5"
 SELECTED_ROLLOUT_STEPS = (1, 50, 100, 150, 200)
@@ -25,6 +25,7 @@ COLORS = [
     "#2ca02c",
     "#9467bd",
 ]
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 
 @dataclass(frozen=True)
@@ -463,7 +464,7 @@ def archive_run(run: RunData, output_dir: Path) -> Path:
     archive_dir = output_dir / "runs" / run.label
     archive_dir.parent.mkdir(parents=True, exist_ok=True)
     if run.run_dir.resolve() != archive_dir.resolve():
-        shutil.copytree(run.run_dir, archive_dir, dirs_exist_ok=True)
+        shutil.copytree(run.run_dir, archive_dir, dirs_exist_ok=True, ignore=ARCHIVE_IGNORE)
     return archive_dir
 
 
@@ -629,7 +630,11 @@ def write_run_summaries(run: RunData, output_dir: Path, archive_dir: Path) -> No
         f"{percent(run.final_rollout.answer_accuracy)} | "
         f"{run.final_rollout.avg_response_token_length:.1f} |",
         "",
-        f"Raw run files are archived under `{archive_dir}/`.",
+        (
+            f"Raw run files are archived under `{archive_dir}/`. "
+            "`sample_rollouts.jsonl` files are intentionally omitted because aggregate "
+            "rollout summaries are sufficient for the writeup."
+        ),
         "",
     ]
     (output_dir / "run_summaries_archive.md").write_text(
@@ -716,7 +721,7 @@ def main() -> None:
         y_label="Validation answer reward",
         output_path=output_dir / "grpo_train_loop_validation_reward.svg",
         y_min=0.0,
-        y_max=0.35,
+        y_max=0.75,
         x_tick_decimals=0,
         y_percent_axis=True,
     )
@@ -732,7 +737,7 @@ def main() -> None:
         y_label="Validation format accuracy",
         output_path=output_dir / "grpo_train_loop_format_accuracy.svg",
         y_min=0.0,
-        y_max=0.8,
+        y_max=1.0,
         x_tick_decimals=0,
         y_percent_axis=True,
     )

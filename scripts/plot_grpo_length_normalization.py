@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create writeup-ready artifacts for the Ch7 GRPO length-normalization ablation."""
+"""Create writeup-ready artifacts for the repaired Ch7 GRPO length-normalization ablation."""
 
 from __future__ import annotations
 
@@ -16,15 +16,23 @@ from typing import Any
 
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_length_normalization"
 TARGET_STEPS = 200
+STAGING_LOG_ROOT = (
+    ".agents/logs/ch7/grpo_on_policy_ablations/"
+    "length_normalization_rerun_staging_single_gpu"
+)
 
 DEFAULT_RUNS = [
     (
         "masked_mean",
-        ".agents/logs/ch7/grpo_learning_rate_aggressive_grid/lr4e-5",
+        f"{STAGING_LOG_ROOT}/masked_mean_lr4e-5",
     ),
     (
         "masked_normalize",
-        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization/masked_normalize_lr4e-5",
+        f"{STAGING_LOG_ROOT}/runs/masked_normalize_lr4e-5/log",
+    ),
+    (
+        "batch_token_mean",
+        f"{STAGING_LOG_ROOT}/runs/batch_token_mean_lr4e-5/log",
     ),
 ]
 
@@ -39,6 +47,7 @@ COLORS = [
     "#e377c2",
     "#7f7f7f",
 ]
+ARCHIVE_IGNORE = shutil.ignore_patterns("sample_rollouts.jsonl")
 
 
 @dataclass(frozen=True)
@@ -232,6 +241,15 @@ def load_runs(extra_specs: list[str] | None) -> list[RunData]:
     run_specs = list(DEFAULT_RUNS)
     if extra_specs:
         run_specs.extend(parse_extra_run(spec) for spec in extra_specs)
+    labels = [label for label, _ in run_specs]
+    duplicate_labels = sorted(
+        {label for label in labels if labels.count(label) > 1}
+    )
+    if duplicate_labels:
+        raise ValueError(
+            "Run labels must be unique for artifact archival: "
+            + ", ".join(duplicate_labels)
+        )
     return [load_run(label, Path(log_dir)) for label, log_dir in run_specs]
 
 
@@ -428,11 +446,32 @@ def render_svg_line_plot(
 def archive_runs(runs: list[RunData], output_dir: Path) -> None:
     runs_dir = output_dir / "runs"
     runs_dir.mkdir(parents=True, exist_ok=True)
+    manifest: list[dict[str, Any]] = []
     for run in runs:
+        if Path(run.label).is_absolute() or ".." in Path(run.label).parts:
+            raise ValueError(f"Unsafe archive label: {run.label}")
         archive_dir = runs_dir / run.label
-        if run.log_dir.resolve() == archive_dir.resolve():
-            continue
-        shutil.copytree(run.log_dir, archive_dir, dirs_exist_ok=True)
+        source_dir = run.log_dir.resolve()
+        target_dir = archive_dir.resolve()
+        copied = False
+        if source_dir != target_dir:
+            if archive_dir.exists():
+                shutil.rmtree(archive_dir)
+            shutil.copytree(run.log_dir, archive_dir, ignore=ARCHIVE_IGNORE)
+            copied = True
+        manifest.append(
+            {
+                "run_name": run.label,
+                "loss_normalization": run.loss_normalization,
+                "source_log_dir": str(run.log_dir),
+                "archived_run_dir": str(archive_dir),
+                "copied": copied,
+            }
+        )
+    (output_dir / "archive_manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def write_eval_points(runs: list[RunData], output_dir: Path) -> None:
@@ -550,6 +589,7 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
                 run.final_rollout.avg_response_token_length,
                 run.final_train.token_entropy,
                 run.final_train.grad_norm,
+                run.log_dir,
             ]
         )
         run_summaries.append(
@@ -559,6 +599,7 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
                 "loss_normalize_constant": run.loss_normalize_constant,
                 "learning_rate": run.learning_rate,
                 "status": run.status,
+                "source_log_dir": str(run.log_dir),
                 "archived_run_dir": str(output_dir / "runs" / run.label),
                 "best_eval": {
                     "grpo_step": run.best_eval.step,
@@ -606,6 +647,7 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
             "final_rollout_avg_response_token_length",
             "final_token_entropy",
             "final_grad_norm",
+            "source_log_dir",
         ],
         summary_rows,
     )
@@ -618,10 +660,16 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
         "# GRPO Length Normalization Summary",
         "",
         (
-            "| run | normalization | status | best answer | best step | "
-            "final answer | final format | final rollout answer | final avg length |"
+            "This archive summarizes the repaired single-GPU length-normalization "
+            "rerun used for the `grpo_length_normalization` writeup section. "
+            "It intentionally ignores older pre-repair artifacts."
         ),
-        "|---|---|---|---:|---:|---:|---:|---:|---:|",
+        "",
+        (
+            "| run | normalization | status | best answer | best step | "
+            "final answer | final format | final rollout answer | final avg length | source log |"
+        ),
+        "|---|---|---|---:|---:|---:|---:|---:|---:|---|",
     ]
     for run in runs:
         markdown_lines.append(
@@ -631,15 +679,35 @@ def write_summary_files(runs: list[RunData], output_dir: Path) -> None:
                 f"{percent(run.final_eval.answer_accuracy)} | "
                 f"{percent(run.final_eval.format_accuracy)} | "
                 f"{percent(run.final_rollout.answer_accuracy)} | "
-                f"{run.final_rollout.avg_response_token_length:.1f} |"
+                f"{run.final_rollout.avg_response_token_length:.1f} | "
+                f"`{run.log_dir}` |"
             )
         )
     markdown_lines.extend(
         [
             "",
+            "Generated artifacts:",
+            "",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_validation_reward.svg`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_format_accuracy.svg`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_response_length.svg`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_grad_norm.svg`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_token_entropy.svg`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_eval_points.csv`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_rollout_points.csv`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_train_points.csv`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_summary.csv`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/run_summaries.json`",
+            "- `artifacts/experiments/ch7/grpo_length_normalization/archive_manifest.json`",
+            "",
             (
                 "Raw run files are archived under "
-                "`artifacts/experiments/ch7/grpo_length_normalization/runs/`."
+                "`artifacts/experiments/ch7/grpo_length_normalization/runs/`. "
+                "`sample_rollouts.jsonl` files are intentionally omitted because "
+                "aggregate rollout summaries are sufficient for the writeup. "
+                "Each run archive directory is removed before copying so stale "
+                "files from older runs cannot remain mixed with the repaired "
+                "rerun logs."
             ),
         ]
     )
@@ -694,6 +762,13 @@ def main() -> None:
         )
         for run in runs
     ]
+    token_entropy_series = [
+        (
+            run.label,
+            [(point.step, point.token_entropy) for point in run.train_points],
+        )
+        for run in runs
+    ]
 
     render_svg_line_plot(
         series=answer_series,
@@ -701,7 +776,6 @@ def main() -> None:
         x_label="GRPO step",
         y_label="validation answer reward",
         output_path=output_dir / "grpo_length_normalization_validation_reward.svg",
-        y_max=0.8,
     )
     render_svg_line_plot(
         series=format_series,
@@ -724,6 +798,13 @@ def main() -> None:
         x_label="GRPO step",
         y_label="pre-clip gradient norm",
         output_path=output_dir / "grpo_length_normalization_grad_norm.svg",
+    )
+    render_svg_line_plot(
+        series=token_entropy_series,
+        title="GRPO token entropy by length normalization",
+        x_label="GRPO step",
+        y_label="mean token entropy",
+        output_path=output_dir / "grpo_length_normalization_token_entropy.svg",
     )
 
 

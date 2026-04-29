@@ -146,6 +146,20 @@ def compute_grpo_no_clip_loss(
     return per_token_loss, metadata
 
 
+def compute_reference_kl_penalty(
+    policy_log_probs: Tensor,
+    ref_log_probs: Tensor,
+) -> Tensor:
+    """Estimate token-wise KL penalty against a frozen reference model.
+
+    We use the sampled-token Monte Carlo term `log pi(a) - log pi_ref(a)`,
+    which is the standard per-token penalty used in many RLHF/GRPO pipelines.
+    """
+    if policy_log_probs.shape != ref_log_probs.shape:
+        raise ValueError("ref_log_probs must have the same shape as policy_log_probs.")
+    return policy_log_probs - ref_log_probs
+
+
 def compute_policy_gradient_loss(
     policy_log_probs: Tensor,
     loss_type: Literal["no_baseline", "reinforce_with_baseline", "grpo_clip", "grpo_no_clip"],
@@ -155,24 +169,27 @@ def compute_policy_gradient_loss(
     cliprange: float,
     cliprange_low: float | None = None,
     cliprange_high: float | None = None,
+    ref_log_probs: Tensor | None = None,
+    kl_coef: float = 0.0,
 ) -> tuple[Tensor, dict[str, Tensor]]:
     """Dispatch to the requested per-token policy-gradient loss."""
+    if kl_coef < 0:
+        raise ValueError("kl_coef must be non-negative.")
+
     if loss_type == "no_baseline":
         loss = compute_naive_policy_gradient_loss(
             raw_rewards_or_advantages=raw_rewards,
             policy_log_probs=policy_log_probs,
         )
-        return loss, {}
-
-    if loss_type == "reinforce_with_baseline":
+        metadata: dict[str, Tensor] = {}
+    elif loss_type == "reinforce_with_baseline":
         loss = compute_naive_policy_gradient_loss(
             raw_rewards_or_advantages=advantages,
             policy_log_probs=policy_log_probs,
         )
-        return loss, {}
-
-    if loss_type == "grpo_clip":
-        return compute_grpo_clip_loss(
+        metadata = {}
+    elif loss_type == "grpo_clip":
+        loss, metadata = compute_grpo_clip_loss(
             advantages=advantages,
             policy_log_probs=policy_log_probs,
             old_log_probs=old_log_probs,
@@ -180,15 +197,34 @@ def compute_policy_gradient_loss(
             cliprange_low=cliprange_low,
             cliprange_high=cliprange_high,
         )
-
-    if loss_type == "grpo_no_clip":
-        return compute_grpo_no_clip_loss(
+    elif loss_type == "grpo_no_clip":
+        loss, metadata = compute_grpo_no_clip_loss(
             advantages=advantages,
             policy_log_probs=policy_log_probs,
             old_log_probs=old_log_probs,
         )
+    else:
+        raise ValueError(f"Unknown policy-gradient loss_type: {loss_type}")
 
-    raise ValueError(f"Unknown policy-gradient loss_type: {loss_type}")
+    if kl_coef > 0.0:
+        if ref_log_probs is None:
+            raise ValueError("ref_log_probs is required when kl_coef > 0.")
+        kl_penalty = compute_reference_kl_penalty(
+            policy_log_probs=policy_log_probs,
+            ref_log_probs=ref_log_probs,
+        )
+        weighted_kl_penalty = kl_coef * kl_penalty
+        loss = loss + weighted_kl_penalty
+        metadata = dict(metadata)
+        metadata["kl"] = kl_penalty
+        metadata["kl_penalty"] = weighted_kl_penalty
+        metadata["kl_coef"] = torch.tensor(
+            kl_coef,
+            dtype=policy_log_probs.dtype,
+            device=policy_log_probs.device,
+        )
+
+    return loss, metadata
 
 
 def masked_mean(tensor: Tensor, mask: Tensor, dim: int | None = None) -> Tensor:
@@ -213,6 +249,8 @@ def grpo_microbatch_train_step(
     cliprange: float | None = None,
     cliprange_low: float | None = None,
     cliprange_high: float | None = None,
+    ref_log_probs: Tensor | None = None,
+    kl_coef: float = 0.0,
     loss_normalization: Literal["masked_mean", "masked_normalize", "batch_token_mean"] = "masked_mean",
     loss_normalize_constant: float = 1.0,
 ) -> tuple[Tensor, dict[str, Tensor]]:
@@ -223,6 +261,12 @@ def grpo_microbatch_train_step(
         raise ValueError("gradient_accumulation_steps must be positive.")
     if loss_normalization in {"masked_normalize", "batch_token_mean"} and loss_normalize_constant <= 0:
         raise ValueError("loss_normalize_constant must be positive.")
+    if kl_coef < 0:
+        raise ValueError("kl_coef must be non-negative.")
+    if kl_coef > 0 and ref_log_probs is None:
+        raise ValueError("ref_log_probs is required when kl_coef > 0.")
+    if ref_log_probs is not None and ref_log_probs.shape != policy_log_probs.shape:
+        raise ValueError("ref_log_probs must have the same shape as policy_log_probs.")
 
     if loss_type == "no_baseline":
         if raw_rewards is None:
@@ -280,6 +324,8 @@ def grpo_microbatch_train_step(
         cliprange=loss_cliprange,
         cliprange_low=loss_cliprange_low,
         cliprange_high=loss_cliprange_high,
+        ref_log_probs=ref_log_probs,
+        kl_coef=kl_coef,
     )
     if loss_normalization == "masked_mean":
         per_example_loss = masked_mean(tensor=per_token_loss, mask=response_mask, dim=-1)
