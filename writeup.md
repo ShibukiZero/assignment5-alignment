@@ -1254,7 +1254,18 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** 2-4 sentences with a description of what sorts of tasks are implicitly included in the instruction tuning dataset, as well commentary about the data quality. Use concrete examples.
 
-**Answer:** TODO.
+**Answer:** The sampled instruction-tuning examples cover a broad mix of
+traditional NLP and assistant tasks, including creative writing, long-form
+guide generation, open-domain question answering, reading comprehension over
+provided passages, summarization, procedural instructions, report writing, and
+product-review generation. The prompts are usually clear and the responses are
+generally well-structured and on-task, which makes the data useful for broad
+instruction following. However, the sample also shows some quality issues:
+several responses are generic or formulaic, one children's-story example uses
+an unsafe machine-explosion resolution, some product-review style responses
+invent first-person experience, and the sampled text contains occasional
+mojibake artifacts such as `鈥?`. Overall, the data is diverse and mostly
+usable, but not uniformly high-quality or perfectly safe.
 
 ---
 
