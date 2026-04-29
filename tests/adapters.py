@@ -16,6 +16,7 @@ from cs336_alignment.grpo import (
     grpo_microbatch_train_step,
     masked_mean,
 )
+from cs336_alignment.metrics import parse_gsm8k_response, parse_mmlu_response
 from cs336_alignment.sft import (
     compute_entropy,
     get_response_log_probs,
@@ -441,7 +442,7 @@ def run_parse_mmlu_response(
         str (one of "A", "B", "C", or "D") if the model output can be parsed into a prediction,
         else None.
     """
-    raise NotImplementedError
+    return parse_mmlu_response(mmlu_example=mmlu_example, model_output=model_output)
 
 
 def run_parse_gsm8k_response(
@@ -458,7 +459,7 @@ def run_parse_gsm8k_response(
         str with the predicted numeric answer if the model output can be parsed into a prediction,
         else None.
     """
-    raise NotImplementedError
+    return parse_gsm8k_response(model_output=model_output)
 
 
 def run_compute_per_instance_dpo_loss(
