@@ -69,7 +69,7 @@ class PackedSFTDataset(Dataset):
             document = format_alpaca_sft_example(
                 prompt=str(record["prompt"]),
                 response=str(record["response"]),
-            )
+            ).rstrip()
             token_ids.extend(tokenizer.encode(document, add_special_tokens=True))
             token_ids.append(eos_token_id)
 
