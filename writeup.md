@@ -1297,7 +1297,22 @@ usable, but not uniformly high-quality or perfectly safe.
 
 **Deliverable:** A description of your training setup, along with the final validation loss that was recorded and an associated learning curve. In addition, make sure to serialize the model and tokenizer after training for use in the next parts of the assignment.
 
-**Answer:** TODO.
+**Answer:** We fine-tuned the Llama 3.1 8B base model on the provided
+instruction-tuning data for one epoch using the same packed SFT dataset format
+implemented above. The run used sequence length 512, microbatch size 2,
+gradient accumulation over 16 microbatches, and therefore an effective batch
+size of 32 sequences per optimizer step. We used learning rate `2e-5` with 202
+warmup steps, evaluated validation loss every 500 optimizer steps plus the
+final step, and saved both the best and final model/tokenizer checkpoints under
+`/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft`.
+
+The run completed 6,727 optimizer steps. The best checkpoint was also the final
+checkpoint, with final validation loss `1.413120` and final validation
+perplexity `4.108753`.
+
+![SFT validation loss](artifacts/experiments/supplement/ch3/sft/sft_validation_loss.svg)
+
+![SFT training loss](artifacts/experiments/supplement/ch3/sft/sft_train_loss.svg)
 
 ---
 
