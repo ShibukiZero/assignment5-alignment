@@ -21,7 +21,6 @@ from cs336_alignment.dpo import per_instance_dpo_loss_with_metrics
 from cs336_alignment.dpo_data import load_hh_preference_data
 from cs336_alignment.experiment_logging import append_jsonl, write_json
 from cs336_alignment.experiment_metrics import cuda_memory_metrics
-from cs336_alignment.prompt_templates import format_alpaca_sft_prompt
 
 
 DEFAULT_MODEL = "/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft/final_model"
@@ -197,10 +196,7 @@ def evaluate_dpo(
                 lm_ref=ref_model,
                 tokenizer=tokenizer,
                 beta=beta,
-                prompt=format_alpaca_sft_prompt(
-                    instruction=str(record["instruction"]),
-                    response="",
-                ),
+                prompt=str(record["instruction"]),
                 response_chosen=str(record["chosen"]),
                 response_rejected=str(record["rejected"]),
             )
@@ -240,10 +236,7 @@ def train_one_step(
             lm_ref=ref_model,
             tokenizer=tokenizer,
             beta=beta,
-            prompt=format_alpaca_sft_prompt(
-                instruction=str(record["instruction"]),
-                response="",
-            ),
+            prompt=str(record["instruction"]),
             response_chosen=str(record["chosen"]),
             response_rejected=str(record["rejected"]),
         )
