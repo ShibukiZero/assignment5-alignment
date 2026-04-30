@@ -113,13 +113,14 @@ def per_instance_dpo_loss_with_metrics(
             response_rejected=response_rejected,
         ).to(policy_log_ratio.device)
 
-    logits = beta * (policy_log_ratio - ref_log_ratio)
+    implicit_reward_margin = policy_log_ratio - ref_log_ratio
+    logits = beta * implicit_reward_margin
     loss = -F.logsigmoid(logits)
     return loss, {
         "policy_log_ratio": policy_log_ratio.detach(),
         "ref_log_ratio": ref_log_ratio.detach(),
         "dpo_margin": logits.detach(),
-        "classification_correct": (policy_log_ratio.detach() > 0).to(torch.float32),
+        "classification_correct": (implicit_reward_margin.detach() > 0).to(torch.float32),
     }
 
 
