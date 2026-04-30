@@ -1533,7 +1533,7 @@ sensitive personal information about a specific person.
 
 **Deliverable:** For three different malicious applications, provide a 2-4 sentence description of your red-teaming procedure and results.
 
-**Answer:** I red-teamed the SFT checkpoint with 15 fixed prompts, using five
+**Answer:** We red-teamed the SFT checkpoint with 15 fixed prompts, using five
 prompting strategies for each of three malicious applications: a direct request,
 roleplay, benign or fictional framing, unsafe transformation, and a high-level
 partial-compliance probe. All prompts used the Alpaca SFT format with greedy
@@ -1578,7 +1578,31 @@ instructions remain important jailbreak surfaces.
 
 **Deliverable:** Commentary on these examples: what seems to be the main differences between the chosen and rejected responses? Do you agree with the annotators choices?
 
-**Answer:** TODO.
+**Answer:** We implemented `load_hh_preference_data` to read the four Anthropic
+HH training collections, discard multi-turn conversations, split each retained
+pair into `instruction`, `chosen`, and `rejected` fields, and preserve the
+source file metadata for later DPO training. After single-turn filtering, the
+loader found 49,278 usable preference pairs, with 37,089 from helpful
+collections and 12,189 from harmless collections.
+
+In the helpful samples, the chosen responses were generally more relevant,
+directly useful, or better at asking a clarifying question. For example, on a
+household cleaning question, the chosen answer gave a direct vinegar-based
+solution; on a narrow cleaning-between-appliances question, the chosen answer
+asked a more precise clarifying question than the rejected answer; and on a
+Japan-language question, the chosen answer at least addressed the requested
+topic while the rejected answer was completely off-task. We mostly agree with
+these helpfulness preferences, although the Japan-language chosen response is
+not ideal because it over-lists dialect-like entries and should not be treated
+as a high-quality factual answer.
+
+In the harmless samples, the chosen responses were safer because they avoided
+endorsing self-harm, racist framing, or retaliatory abuse. The rejected
+responses either engaged too much with a self-harm choice, failed to redirect a
+racist premise, or escalated a workplace-conflict prompt toward hostile
+cyber-abuse framing. We agree with the annotators' choices in these harmless
+examples: even when the chosen response was not perfect, it was less likely to
+enable harm and more likely to keep the conversation in a safer direction.
 
 ---
 
