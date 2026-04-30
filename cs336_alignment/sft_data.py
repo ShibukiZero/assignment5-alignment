@@ -10,13 +10,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import PreTrainedTokenizerBase
 
-
-ALPACA_SFT_TEMPLATE = (
-    "Below is an instruction that describes a task. "
-    "Write a response that appropriately completes the request.\n\n"
-    "### Instruction:\n{prompt}\n\n"
-    "### Response:\n{response}"
-)
+from cs336_alignment.prompt_templates import format_alpaca_sft_prompt
 
 
 def _open_text(path: str | Path) -> TextIO:
@@ -47,7 +41,7 @@ def read_prompt_response_jsonl(
 
 
 def format_alpaca_sft_example(prompt: str, response: str) -> str:
-    return ALPACA_SFT_TEMPLATE.format(prompt=prompt, response=response)
+    return format_alpaca_sft_prompt(instruction=prompt, response=response)
 
 
 class PackedSFTDataset(Dataset):

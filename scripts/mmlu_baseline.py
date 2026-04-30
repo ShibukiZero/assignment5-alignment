@@ -13,8 +13,8 @@ from statistics import mean
 from typing import Any
 
 from cs336_alignment.metrics import parse_mmlu_response
+from cs336_alignment.prompt_templates import PROMPT_FORMAT_CHOICES, format_generation_prompt
 from cs336_alignment.zero_shot import (
-    format_supplement_prompt,
     generate_texts,
     write_json,
     write_jsonl,
@@ -54,6 +54,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split", default="test", choices=["dev", "val", "test"])
     parser.add_argument("--output-path", default=DEFAULT_OUTPUT_PATH)
     parser.add_argument("--summary-path", default=DEFAULT_SUMMARY_PATH)
+    parser.add_argument("--prompt-format", choices=PROMPT_FORMAT_CHOICES, default="zero_shot")
     parser.add_argument("--max-examples", type=int, default=None)
     parser.add_argument("--max-tokens", type=int, default=64)
     parser.add_argument("--tensor-parallel-size", type=int, default=1)
@@ -126,6 +127,7 @@ def summarize(records: list[dict[str, Any]], timing: dict[str, Any], args: argpa
         "dataset": "mmlu",
         "split": args.split,
         "model": args.model,
+        "prompt_format": args.prompt_format,
         "num_examples": len(records),
         "accuracy": mean(record["correct"] for record in records),
         "parse_failures": sum(record["parsed_prediction"] is None for record in records),
@@ -145,7 +147,7 @@ def main() -> None:
     logger.info("running %s", " ".join(sys.argv))
     examples = load_mmlu_examples(args.mmlu_dir, args.split, args.max_examples)
     prompts = [
-        format_supplement_prompt(format_mmlu_instruction(example))
+        format_generation_prompt(format_mmlu_instruction(example), args.prompt_format)
         for example in examples
     ]
     outputs, timing = generate_texts(

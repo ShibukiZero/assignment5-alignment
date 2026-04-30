@@ -1,0 +1,25 @@
+{
+  "dataset": "gsm8k",
+  "input_path": "data/gsm8k/test.jsonl",
+  "model": "/root/autodl-tmp/a5-alignment/models/Llama-3.1-8B",
+  "prompt_format": "zero_shot",
+  "num_examples": 1319,
+  "accuracy": 0.1372251705837756,
+  "parse_failures": 10,
+  "generation": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 512,
+    "stop": [
+      "# Query:"
+    ],
+    "model_load_seconds": 27.43063452653587,
+    "generation_elapsed_seconds": 28.528257976286113,
+    "examples_per_second": 46.23485952406937,
+    "num_examples": 1319
+  },
+  "rescore": {
+    "parser": "cs336_alignment.metrics.parse_gsm8k_response",
+    "num_correct": 181
+  }
+}

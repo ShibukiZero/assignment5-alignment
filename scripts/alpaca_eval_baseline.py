@@ -10,8 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from cs336_alignment.prompt_templates import PROMPT_FORMAT_CHOICES, format_generation_prompt
 from cs336_alignment.zero_shot import (
-    format_supplement_prompt,
     generate_texts,
     write_json,
 )
@@ -36,6 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-path", default=DEFAULT_OUTPUT_PATH)
     parser.add_argument("--summary-path", default=DEFAULT_SUMMARY_PATH)
     parser.add_argument("--generator", default=DEFAULT_GENERATOR)
+    parser.add_argument("--prompt-format", choices=PROMPT_FORMAT_CHOICES, default="zero_shot")
     parser.add_argument("--max-examples", type=int, default=None)
     parser.add_argument("--max-tokens", type=int, default=1024)
     parser.add_argument("--tensor-parallel-size", type=int, default=1)
@@ -63,7 +64,10 @@ def main() -> None:
     args = parse_args()
     logger.info("running %s", " ".join(sys.argv))
     examples = load_alpaca_eval_examples(args.input_path, args.max_examples)
-    prompts = [format_supplement_prompt(example["instruction"]) for example in examples]
+    prompts = [
+        format_generation_prompt(example["instruction"], args.prompt_format)
+        for example in examples
+    ]
     outputs, timing = generate_texts(
         prompts=prompts,
         model=args.model,
@@ -90,6 +94,7 @@ def main() -> None:
         "output_path": args.output_path,
         "model": args.model,
         "generator": args.generator,
+        "prompt_format": args.prompt_format,
         "num_examples": len(records),
         "generation": {
             "temperature": 0.0,

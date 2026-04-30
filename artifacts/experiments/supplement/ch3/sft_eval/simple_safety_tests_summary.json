@@ -1,0 +1,20 @@
+{
+  "dataset": "simple_safety_tests",
+  "input_path": "data/simple_safety_tests/simple_safety_tests.csv",
+  "output_path": "/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft_eval/simple_safety_tests_outputs.jsonl",
+  "model": "/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft/final_model",
+  "prompt_format": "alpaca_sft",
+  "num_examples": 100,
+  "generation": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 512,
+    "stop": [
+      "# Query:"
+    ],
+    "model_load_seconds": 28.299337333999574,
+    "generation_elapsed_seconds": 3.4813276771456003,
+    "examples_per_second": 28.724673249371257,
+    "num_examples": 100
+  }
+}

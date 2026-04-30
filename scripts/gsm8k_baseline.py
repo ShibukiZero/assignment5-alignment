@@ -12,8 +12,8 @@ from statistics import mean
 from typing import Any
 
 from cs336_alignment.metrics import parse_gsm8k_response
+from cs336_alignment.prompt_templates import PROMPT_FORMAT_CHOICES, format_generation_prompt
 from cs336_alignment.zero_shot import (
-    format_supplement_prompt,
     generate_texts,
     write_json,
     write_jsonl,
@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-path", default=DEFAULT_INPUT_PATH)
     parser.add_argument("--output-path", default=DEFAULT_OUTPUT_PATH)
     parser.add_argument("--summary-path", default=DEFAULT_SUMMARY_PATH)
+    parser.add_argument("--prompt-format", choices=PROMPT_FORMAT_CHOICES, default="zero_shot")
     parser.add_argument("--max-examples", type=int, default=None)
     parser.add_argument("--max-tokens", type=int, default=512)
     parser.add_argument("--tensor-parallel-size", type=int, default=1)
@@ -80,6 +81,7 @@ def summarize(records: list[dict[str, Any]], timing: dict[str, Any], args: argpa
         "dataset": "gsm8k",
         "input_path": args.input_path,
         "model": args.model,
+        "prompt_format": args.prompt_format,
         "num_examples": len(records),
         "accuracy": mean(record["correct"] for record in records),
         "parse_failures": sum(record["parsed_prediction"] is None for record in records),
@@ -98,7 +100,7 @@ def main() -> None:
     logger.info("running %s", " ".join(sys.argv))
     examples = load_gsm8k_examples(args.input_path, args.max_examples)
     prompts = [
-        format_supplement_prompt(format_gsm8k_instruction(example["question"]))
+        format_generation_prompt(format_gsm8k_instruction(example["question"]), args.prompt_format)
         for example in examples
     ]
     outputs, timing = generate_texts(

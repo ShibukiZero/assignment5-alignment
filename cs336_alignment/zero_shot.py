@@ -7,25 +7,11 @@ from typing import Any
 
 from vllm import LLM, SamplingParams
 
-
-SUPPLEMENT_SYSTEM_PROMPT = """Below is a list of conversations between a human and an AI assistant (you).
-Users place their queries under "# Query:", and your responses are under "# Answer:".
-You are a helpful, respectful, and honest assistant.
-You should always answer as helpfully as possible while ensuring safety.
-Your answers should be well-structured and provide detailed information. They should also have an engaging tone.
-Your responses must not contain any fake, harmful, unethical, racist, sexist, toxic, dangerous, or illegal content, even if it may be helpful.
-Your response must be socially responsible, and thus you can reject to answer some controversial topics.
-
-# Query:
-
-```{instruction}```
-
-# Answer:
-"""
+from cs336_alignment.prompt_templates import format_zero_shot_prompt
 
 
 def format_supplement_prompt(instruction: str) -> str:
-    return SUPPLEMENT_SYSTEM_PROMPT.format(instruction=instruction)
+    return format_zero_shot_prompt(instruction)
 
 
 def greedy_sampling_params(max_tokens: int) -> SamplingParams:

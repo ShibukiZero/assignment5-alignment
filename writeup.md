@@ -1121,28 +1121,41 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** Number of model generations that failed parsing. If non-zero, a few examples of generations that your function wasn't able to parse.
 
-**Answer:** The MMLU parser failed on 202 of 14,042 generations. The failures are mostly generations that did not contain an explicit standalone answer letter in the accepted formats, often because the model produced free-form text, an incomplete response, or an explanation that never clearly selected one of A/B/C/D.
+**Answer:** The MMLU parser failed on 16 of 14,042 generations. The failures
+are rare and mostly correspond to outputs that do not contain a clear
+standalone A/B/C/D answer in one of the accepted forms.
 
 ### (d)
 **Question:** How long does it take the model to generate responses to each of the MMLU examples? Estimate the throughput in examples/second.
 
 **Deliverable:** Estimate of MMLU examples/second throughput.
 
-**Answer:** Excluding model-load time, generation took 195.39 seconds for 14,042 MMLU examples, for a throughput of 71.87 examples/second. The model-load time was 32.23 seconds.
+**Answer:** Excluding model-load time, generation took 193.23 seconds for
+14,042 MMLU examples, for a throughput of 72.67 examples/second. The
+model-load time was 33.76 seconds.
 
 ### (e)
 **Question:** How well does the Llama 3.1 8B zero-shot baseline perform on MMLU?
 
 **Deliverable:** 1-2 sentences with evaluation metrics.
 
-**Answer:** Llama 3.1 8B Base achieved 57.07% accuracy on the MMLU test split. Performance varied substantially by subject, with stronger results on areas such as marketing and US foreign policy and weaker results on subjects such as moral scenarios, college mathematics, and abstract algebra.
+**Answer:** Llama 3.1 8B Base achieved 58.55% accuracy on the MMLU test split.
+Performance varied substantially by subject, with stronger results on areas
+such as marketing, world religions, and US foreign policy and weaker results on
+subjects such as moral scenarios, college mathematics, and abstract algebra.
 
 ### (f)
 **Question:** Sample 10 random incorrectly-predicted examples from the evaluation dataset. Looking through the examples, what sort of errors does the language model make?
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** In the sampled incorrect MMLU examples, the model often produced a confident answer letter with little or no explanation, so many failures look like direct knowledge or discrimination errors rather than parsing problems. The sampled errors include moral-scenario judgments, technical STEM questions, and statistics/economics questions where the model selected a plausible but wrong option; for example, it answered `B` instead of `A` on several moral-scenario comparisons and answered `C` instead of `A` on an SVM/perceptron machine-learning question. Overall, the model's zero-shot behavior is fluent and usually well-formatted, but it is not reliably calibrated to the fine distinctions required by MMLU.
+**Answer:** In the sampled incorrect MMLU examples, the model often produced a
+confident answer letter with little or no explanation, so many failures look
+like direct knowledge or discrimination errors rather than parsing problems.
+The sampled errors include moral-scenario judgments, legal evidence questions,
+and technical STEM facts where the model selected a plausible but wrong option.
+Overall, the model's zero-shot behavior is fluent and usually well-formatted,
+but it is not reliably calibrated to the fine distinctions required by MMLU.
 
 ---
 
@@ -1163,28 +1176,42 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** Number of model generations that failed parsing. If non-zero, a few examples of generations that your function wasn't able to parse.
 
-**Answer:** The GSM8K parser failed on 85 of 1,319 generations. These failures generally contain no completed numeric answer; for instance, one sampled failure echoed the prompt inside a code block and stopped at `Answer:` without producing a number.
+**Answer:** The GSM8K parser failed on 10 of 1,319 generations. These failures
+generally contain no completed numeric answer, usually because the model echoes
+or repeats the prompt instead of producing a final numerical response.
 
 ### (d)
 **Question:** How long does it take the model to generate responses to each of the GSM8K examples? Estimate the throughput in examples/second.
 
 **Deliverable:** Estimate of GSM8K examples/second throughput.
 
-**Answer:** Excluding model-load time, generation took 32.63 seconds for 1,319 GSM8K examples, for a throughput of 40.42 examples/second. The model-load time was 36.61 seconds.
+**Answer:** Excluding model-load time, generation took 28.53 seconds for 1,319
+GSM8K examples, for a throughput of 46.23 examples/second. The model-load time
+was 27.43 seconds.
 
 ### (e)
 **Question:** How well does the Llama 3.1 8B zero-shot baseline perform on GSM8K?
 
 **Deliverable:** 1-2 sentences with evaluation metrics.
 
-**Answer:** Llama 3.1 8B Base achieved 9.78% exact-match accuracy on GSM8K under this zero-shot prompting setup. This is much lower than its MMLU performance, reflecting that the base model often fails to carry out multi-step arithmetic reliably without instruction tuning or stronger reasoning prompting.
+**Answer:** Llama 3.1 8B Base achieved 13.72% exact-match accuracy on GSM8K
+under this zero-shot prompting setup. This is much lower than its MMLU
+performance, reflecting that the base model often fails to carry out
+multi-step arithmetic reliably without instruction tuning or stronger
+reasoning prompting.
 
 ### (f)
 **Question:** Sample 10 random incorrectly-predicted examples from the evaluation dataset. Looking through the examples, what sort of errors does the language model make?
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** The sampled GSM8K errors show several recurring failure modes: the model often reverses ratio relationships, stops before computing an answer, repeats the prompt until the generation limit, or gives a short answer without doing the necessary arithmetic. For example, it interpreted "1/4 as much as $400" as an equation leading to a $1600 manicure, and on another problem it repeatedly copied the rabbits/dogs/cats prompt until the final parsed number was just `60`. These errors suggest the base model is weak at following the exact quantitative structure of word problems in this zero-shot format.
+**Answer:** The sampled GSM8K errors show several recurring failure modes: the
+model often repeats the prompt, stops before completing the arithmetic, or
+extracts the wrong relationship from the word problem. Some responses copy the
+question until the generation limit, while others set up the arithmetic but
+return an intermediate quantity rather than the requested final answer. These
+errors suggest the base model is weak at following the exact quantitative
+structure of word problems in this zero-shot format.
 
 ---
 
@@ -1200,21 +1227,32 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** Estimate of AlpacaEval examples/second throughput.
 
-**Answer:** Excluding model-load time, generation took 59.61 seconds for 805 AlpacaEval examples, for a throughput of 13.50 examples/second. The model-load time was 45.78 seconds.
+**Answer:** Excluding model-load time, generation took 51.06 seconds for 805
+AlpacaEval examples, for a throughput of 15.76 examples/second. The model-load
+time was 29.22 seconds.
 
 ### (c)
 **Question:** To measure our model's performance on AlpacaEval, we'll use Llama 3.3 70B Instruct as the annotator and compare our outputs against GPT-4 Turbo. What is the winrate and length-controlled winrate of our zero-shot baseline model when compared against GPT-4 Turbo and using Llama 3.3 70B Instruct as the annotator?
 
 **Deliverable:** 1-2 sentences with the winrate and length-controlled winrate.
 
-**Answer:** Against GPT-4 Turbo, using Llama 3.3 70B Instruct as the annotator, the Llama 3.1 8B Base zero-shot baseline achieved a 0.99% win rate and a 0.94% length-controlled win rate. The evaluator preferred the baseline over the reference on only 8 of 805 examples.
+**Answer:** Against GPT-4 Turbo, using Llama 3.3 70B Instruct as the annotator,
+the Llama 3.1 8B Base zero-shot baseline achieved a 3.11% win rate and a 2.80%
+length-controlled win rate. The evaluator preferred the baseline over the
+reference on 25 of 805 examples.
 
 ### (d)
 **Question:** Sample 10 random examples where the baseline model's response is dispreferred versus GPT-4 Turbo (you should be able to see the AlpacaEval annotations at `scripts/alpaca_eval_vllm_llama3_3_70b_fn/annotations_seed0_configs.json`). Looking through the examples, why do you think the baseline model is dispreferred? Are there any cases where you disagree with the automatic evaluator?
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** The sampled dispreferred AlpacaEval responses are usually much shorter, less complete, and less directly tailored to the instruction than the GPT-4 Turbo reference. In several cases the baseline mostly restates the prompt or gives a generic answer: for example, on a job-description task it copied the input instead of writing the job description, and on a product-recommendation task it described the given ice-cream scoop instead of suggesting related products. I generally agree with the automatic evaluator on these samples, although a few baseline answers are directionally correct and concise; they still lose because the reference answers are more detailed and useful.
+**Answer:** The sampled dispreferred AlpacaEval responses are usually less
+complete and less directly tailored to the instruction than the GPT-4 Turbo
+reference. In several cases the baseline either gives a generic answer, repeats
+parts of the prompt, or continues far longer than useful. I generally agree
+with the automatic evaluator on these samples, although a few baseline answers
+are directionally correct and concise; they still lose because the reference
+answers are more precise or more useful.
 
 ---
 
@@ -1230,21 +1268,35 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** Estimate of SimpleSafetyTests examples/second throughput.
 
-**Answer:** Excluding model-load time, generation took 8.16 seconds for 100 SimpleSafetyTests prompts, for a throughput of 12.26 examples/second. The model-load time was 34.60 seconds.
+**Answer:** Excluding model-load time, generation took 6.94 seconds for 100
+SimpleSafetyTests prompts, for a throughput of 14.41 examples/second. The
+model-load time was 29.55 seconds.
 
 ### (c)
 **Question:** To measure our model's performance on SimpleSafetyTests, we'll use Llama 3.3 70B Instruct to annotate responses as being safe or unsafe. What proportion of model outputs are judged as safe?
 
 **Deliverable:** 1-2 sentences with the proportion of safe model outputs (as judged by Llama 3.3 70B Instruct).
 
-**Answer:** Llama 3.3 70B Instruct judged 52 of 100 zero-shot SimpleSafetyTests responses as safe, for a safe proportion of 0.52. The remaining 48 responses were judged unsafe.
+**Answer:** Llama 3.3 70B Instruct judged 66 of 100 zero-shot
+SimpleSafetyTests responses as safe, for a safe proportion of 0.66. The
+remaining 34 responses were judged unsafe.
 
 ### (d)
 **Question:** Sample 10 random examples where the baseline model's response is judged to be unsafe (you should be able to see the annotations at the output path that you specified when running the evaluator). Looking through the examples, in what sorts of cases does the model produce unsafe outputs? Are there any cases where you disagree with the automatic evaluator?
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** The sampled unsafe SimpleSafetyTests responses often occur when the prompt asks for concrete harmful or illegal instructions and the base model partially complies instead of refusing. The unsafe set includes categories such as weapons, cyber abuse, fraud, and other high-risk advice; in these cases the baseline may provide actionable steps or procedural detail rather than redirecting to safe alternatives. I mostly agree with the automatic evaluator on the sampled unsafe outputs, since the failures are not just tone issues but concrete safety-policy failures.
+**Answer:** The sampled unsafe SimpleSafetyTests responses often occur when the
+prompt asks for concrete harmful or illegal instructions and the base model
+partially complies instead of refusing. The unsafe set includes categories such
+as weapons, cyber abuse, fraud, and high-risk manipulation; in these cases the
+baseline may provide actionable steps or procedural detail rather than
+redirecting to safe alternatives. I mostly agree with the automatic evaluator
+on the sampled unsafe outputs, since the failures are not just tone issues but
+concrete safety-policy failures.
+
+The final zero-shot benchmark summaries and AlpacaEval leaderboard are archived
+under `artifacts/experiments/supplement/ch2/zero_shot_baseline/`.
 
 ---
 
@@ -1333,7 +1385,22 @@ perplexity `4.108753`.
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** Excluding model-load time, the SFT model generated the 14,042 MMLU
+responses in 117.72 seconds, for a throughput of 119.28 examples/second; the
+zero-shot baseline took 193.23 seconds, or 72.67 examples/second. The SFT model
+achieved 60.96% MMLU accuracy, compared with 58.55% for the zero-shot
+baseline.
+
+The qualitative samples show that SFT mostly changes the response style rather
+than the task interface: the model usually answers with a clean sentence such
+as `The correct answer is C.` and no longer includes the zero-shot prompt's
+closing code fence. The remaining errors are mostly knowledge or discrimination
+errors on close multiple-choice distractors; sampled regressions include
+philosophy, law, college mathematics, and security-studies questions where the
+SFT model confidently selected a different wrong option. Across the paired
+sample population, SFT fixed 1,419 MMLU examples that the zero-shot baseline
+missed, but also changed 1,081 formerly correct zero-shot examples to incorrect
+answers, which matches the modest net accuracy gain.
 
 ---
 
@@ -1354,7 +1421,20 @@ perplexity `4.108753`.
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** Excluding model-load time, the SFT model generated the 1,319 GSM8K
+responses in 23.53 seconds, for a throughput of 56.07 examples/second; the
+zero-shot baseline took 28.53 seconds, or 46.23 examples/second. The SFT model
+achieved 31.69% exact-match accuracy on GSM8K, compared with 13.72% for the
+zero-shot baseline.
+
+The qualitative samples show a larger behavioral change on GSM8K than on
+MMLU. The zero-shot baseline often repeats the prompt or stops after a partial
+setup, while the SFT model more often writes a direct arithmetic solution and
+final answer. The SFT model still fails many examples by using the wrong
+relationship, returning an intermediate quantity, or mishandling multi-step
+proportions; for example, sampled regressions include treating weekly or
+per-dozen quantities incorrectly. Across the paired sample population, SFT
+fixed 312 zero-shot errors while regressing on 75 zero-shot-correct examples.
 
 ---
 
@@ -1375,7 +1455,23 @@ perplexity `4.108753`.
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** Excluding model-load time, the SFT model generated the 805
+AlpacaEval responses in 34.15 seconds, for a throughput of 23.57
+examples/second; the zero-shot baseline took 51.06 seconds, or 15.76
+examples/second. Against GPT-4 Turbo, using Llama 3.3 70B Instruct as the
+annotator, the SFT model achieved a 4.22% win rate and a 6.37%
+length-controlled win rate; the zero-shot baseline achieved 3.11% and 2.80%,
+respectively.
+
+The sampled dispreferred SFT responses are often shorter or less complete than
+the GPT-4 Turbo references, especially for open-ended explanation, rewriting,
+and specialized coding tasks. Some failures are clear capability issues, such
+as weak Lean 4 code generation or incorrect algebra, while others are
+instruction-following issues such as giving a generic answer when the prompt
+asks for a specific format. I generally agree with the automatic evaluator on
+the sampled losses, although a few SFT responses are concise and useful enough
+that the preference judgment feels closer than the binary win/loss label
+suggests.
 
 ---
 
@@ -1396,7 +1492,26 @@ perplexity `4.108753`.
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** Excluding model-load time, the SFT model generated the 100
+SimpleSafetyTests responses in 3.48 seconds, for a throughput of 28.72
+examples/second; the zero-shot baseline took 6.94 seconds, or 14.41
+examples/second. Llama 3.3 70B Instruct judged 74 of 100 SFT responses safe,
+for a safe proportion of 0.74, compared with 0.66 for the zero-shot baseline.
+
+The sampled unsafe SFT responses show that instruction tuning improves the
+aggregate safety rate but does not make refusals reliable. Some unsafe cases
+still occur on prompts asking for harmful sexual, self-harm, drug, or illegal
+advice, where the model gives partial compliance instead of a firm refusal and
+safe redirection. The paired samples are mixed: SFT turned 14 zero-shot-unsafe
+responses into safe responses, but also turned 6 zero-shot-safe responses into
+unsafe responses. I mostly agree with the automatic evaluator on the sampled
+unsafe outputs because the flagged failures contain substantive compliance,
+not just awkward phrasing.
+
+The final SFT benchmark summaries and AlpacaEval leaderboard are archived under
+`artifacts/experiments/supplement/ch3/sft_eval/`; the paired qualitative
+samples are archived under
+`artifacts/experiments/supplement/ch3/sft_eval_samples/`.
 
 ---
 
