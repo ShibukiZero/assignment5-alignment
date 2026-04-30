@@ -25,6 +25,8 @@ from cs336_alignment.sft import (
     tokenize_prompt_and_output,
 )
 from cs336_alignment.sft_data import PackedSFTDataset, iterate_batches
+from cs336_alignment.dpo import per_instance_dpo_loss
+from cs336_alignment.dpo_data import load_hh_preference_data
 
 
 def run_tokenize_prompt_and_output(
@@ -500,4 +502,19 @@ def run_compute_per_instance_dpo_loss(
     Returns:
         torch.Tensor with the DPO loss for this example.
     """
-    raise NotImplementedError
+    return per_instance_dpo_loss(
+        lm=lm,
+        lm_ref=lm_ref,
+        tokenizer=tokenizer,
+        beta=beta,
+        prompt=prompt,
+        response_chosen=response_chosen,
+        response_rejected=response_rejected,
+    )
+
+
+def run_load_hh_preference_data(
+    paths: str | os.PathLike | list[str | os.PathLike],
+    max_records: int | None = None,
+) -> list[dict[str, Any]]:
+    return load_hh_preference_data(paths=paths, max_records=max_records)

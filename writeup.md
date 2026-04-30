@@ -1522,7 +1522,11 @@ samples are archived under
 
 **Deliverable:** 1-3 sentences with three examples (beyond those presented above) about potential misuses of language models.
 
-**Answer:** TODO.
+**Answer:** Three additional misuse cases are personalized social engineering
+at scale, such as generating targeted phishing or impersonation messages;
+automated misinformation campaigns that adapt narratives to different
+audiences; and privacy abuse, such as helping infer, summarize, or weaponize
+sensitive personal information about a specific person.
 
 ### (b)
 **Question:** Try prompting your fine-tuned language model to assist you in completing three different potentially malicious applications. For each malicious application, provide a description of your methodology and the results, as well as any qualitative takeaways you drew from the experience. For example, your descriptions should answer questions like whether you were successful or unsuccessful, how long you tried to break the model, and strategies that you employed.
