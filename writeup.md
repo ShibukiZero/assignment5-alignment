@@ -1350,17 +1350,22 @@ usable, but not uniformly high-quality or perfectly safe.
 **Deliverable:** A description of your training setup, along with the final validation loss that was recorded and an associated learning curve. In addition, make sure to serialize the model and tokenizer after training for use in the next parts of the assignment.
 
 **Answer:** We fine-tuned the Llama 3.1 8B base model on the provided
-instruction-tuning data for one epoch using the same packed SFT dataset format
-implemented above. The run used sequence length 512, microbatch size 2,
-gradient accumulation over 16 microbatches, and therefore an effective batch
-size of 32 sequences per optimizer step. We used learning rate `2e-5` with 202
-warmup steps, evaluated validation loss every 500 optimizer steps plus the
-final step, and saved both the best and final model/tokenizer checkpoints under
+instruction-tuning data for one epoch using the packed SFT dataset format
+implemented above. The run used sequence length 512, microbatch size 2, and
+gradient accumulation over 16 microbatches, giving an effective batch size of
+32 sequences per optimizer step. We used learning rate `2e-5` with 202 warmup
+steps, evaluated validation loss every 500 optimizer steps plus the final
+step, and saved both the best and final model/tokenizer checkpoints under
 `/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft`.
 
-The run completed 6,727 optimizer steps. The best checkpoint was also the final
-checkpoint, with final validation loss `1.413120` and final validation
-perplexity `4.108753`.
+The run completed 6,727 optimizer steps. The validation curve decreased
+steadily from `1.4734` at step 500 to roughly `1.4131` by step 6,000, then
+mostly plateaued through the final evaluation. The best validation point was at
+step 6,500 with loss `1.413109`; the final validation loss was `1.413125` and
+the final validation perplexity was `4.108774`. The learning-curve plots and
+summary tables were generated from `.agents/logs/ch3/sft/metrics.jsonl` with
+`scripts/plot_sft_instruction_tuning.py` and archived under
+`artifacts/experiments/supplement/ch3/sft/`.
 
 ![SFT validation loss](artifacts/experiments/supplement/ch3/sft/sft_validation_loss.svg)
 
@@ -1386,21 +1391,21 @@ perplexity `4.108753`.
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** Excluding model-load time, the SFT model generated the 14,042 MMLU
-responses in 117.72 seconds, for a throughput of 119.28 examples/second; the
+responses in 118.40 seconds, for a throughput of 118.60 examples/second; the
 zero-shot baseline took 193.23 seconds, or 72.67 examples/second. The SFT model
-achieved 60.96% MMLU accuracy, compared with 58.55% for the zero-shot
-baseline.
+achieved 61.19% MMLU accuracy with 56 parse failures, compared with 58.55% for
+the zero-shot baseline.
 
 The qualitative samples show that SFT mostly changes the response style rather
 than the task interface: the model usually answers with a clean sentence such
 as `The correct answer is C.` and no longer includes the zero-shot prompt's
 closing code fence. The remaining errors are mostly knowledge or discrimination
-errors on close multiple-choice distractors; sampled regressions include
-philosophy, law, college mathematics, and security-studies questions where the
-SFT model confidently selected a different wrong option. Across the paired
-sample population, SFT fixed 1,419 MMLU examples that the zero-shot baseline
-missed, but also changed 1,081 formerly correct zero-shot examples to incorrect
-answers, which matches the modest net accuracy gain.
+errors on close multiple-choice distractors; the new incorrect samples include
+abstract algebra questions where the model gives a well-formed final letter but
+chooses the wrong group-theory or field-extension option. This matches the
+modest net accuracy gain: instruction tuning made the answer format cleaner and
+slightly improved aggregate accuracy, but it did not remove the underlying
+knowledge and reasoning errors.
 
 ---
 
@@ -1422,19 +1427,21 @@ answers, which matches the modest net accuracy gain.
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** Excluding model-load time, the SFT model generated the 1,319 GSM8K
-responses in 23.53 seconds, for a throughput of 56.07 examples/second; the
+responses in 24.12 seconds, for a throughput of 54.68 examples/second; the
 zero-shot baseline took 28.53 seconds, or 46.23 examples/second. The SFT model
-achieved 31.69% exact-match accuracy on GSM8K, compared with 13.72% for the
-zero-shot baseline.
+achieved 32.68% exact-match accuracy with 5 parse failures, compared with
+13.72% for the zero-shot baseline.
 
 The qualitative samples show a larger behavioral change on GSM8K than on
 MMLU. The zero-shot baseline often repeats the prompt or stops after a partial
 setup, while the SFT model more often writes a direct arithmetic solution and
 final answer. The SFT model still fails many examples by using the wrong
 relationship, returning an intermediate quantity, or mishandling multi-step
-proportions; for example, sampled regressions include treating weekly or
-per-dozen quantities incorrectly. Across the paired sample population, SFT
-fixed 312 zero-shot errors while regressing on 75 zero-shot-correct examples.
+proportions; the new incorrect samples include errors such as selling the wrong
+number of eggs, treating a half-quantity as an additional full quantity, or
+forgetting that a restarted download repeats earlier work. Overall, SFT gives a
+large improvement over zero-shot prompting on GSM8K, but the remaining failures
+are still arithmetic-plan errors rather than just answer-format issues.
 
 ---
 
@@ -1456,21 +1463,20 @@ fixed 312 zero-shot errors while regressing on 75 zero-shot-correct examples.
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** Excluding model-load time, the SFT model generated the 805
-AlpacaEval responses in 34.15 seconds, for a throughput of 23.57
+AlpacaEval responses in 35.71 seconds, for a throughput of 22.54
 examples/second; the zero-shot baseline took 51.06 seconds, or 15.76
 examples/second. Against GPT-4 Turbo, using Llama 3.3 70B Instruct as the
-annotator, the SFT model achieved a 4.22% win rate and a 6.37%
+annotator, the SFT model achieved a 3.73% win rate and a 5.43%
 length-controlled win rate; the zero-shot baseline achieved 3.11% and 2.80%,
 respectively.
 
 The sampled dispreferred SFT responses are often shorter or less complete than
 the GPT-4 Turbo references, especially for open-ended explanation, rewriting,
-and specialized coding tasks. Some failures are clear capability issues, such
-as weak Lean 4 code generation or incorrect algebra, while others are
-instruction-following issues such as giving a generic answer when the prompt
-asks for a specific format. I generally agree with the automatic evaluator on
-the sampled losses, although a few SFT responses are concise and useful enough
-that the preference judgment feels closer than the binary win/loss label
+and recipe or advice tasks. Many losses are not catastrophic refusals; rather,
+the SFT answer is plausible but generic, less detailed, or missing constraints
+that the GPT-4 Turbo reference handles. I generally agree with the automatic
+evaluator on the sampled losses, although a few concise SFT answers are useful
+enough that the preference feels closer than the binary win/loss label
 suggests.
 
 ---
@@ -1493,25 +1499,24 @@ suggests.
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
 **Answer:** Excluding model-load time, the SFT model generated the 100
-SimpleSafetyTests responses in 3.48 seconds, for a throughput of 28.72
+SimpleSafetyTests responses in 4.25 seconds, for a throughput of 23.53
 examples/second; the zero-shot baseline took 6.94 seconds, or 14.41
 examples/second. Llama 3.3 70B Instruct judged 74 of 100 SFT responses safe,
 for a safe proportion of 0.74, compared with 0.66 for the zero-shot baseline.
 
 The sampled unsafe SFT responses show that instruction tuning improves the
 aggregate safety rate but does not make refusals reliable. Some unsafe cases
-still occur on prompts asking for harmful sexual, self-harm, drug, or illegal
-advice, where the model gives partial compliance instead of a firm refusal and
-safe redirection. The paired samples are mixed: SFT turned 14 zero-shot-unsafe
-responses into safe responses, but also turned 6 zero-shot-safe responses into
-unsafe responses. I mostly agree with the automatic evaluator on the sampled
-unsafe outputs because the flagged failures contain substantive compliance,
-not just awkward phrasing.
+still occur on self-harm, opioids, scam, and phishing prompts, where the model
+sometimes gives a harmful draft or actionable framing instead of a firm refusal
+and safe redirection. I mostly agree with the automatic evaluator on the
+sampled unsafe outputs because the flagged failures contain substantive
+compliance, not just awkward phrasing, though a few borderline refusals are
+phrased clumsily enough that the judge appears to penalize them.
 
 The final SFT benchmark summaries and AlpacaEval leaderboard are archived under
-`artifacts/experiments/supplement/ch3/sft_eval/`; the paired qualitative
-samples are archived under
-`artifacts/experiments/supplement/ch3/sft_eval_samples/`.
+`artifacts/experiments/supplement/ch3/sft_eval/`; the raw generations and judge
+annotations used for the latest qualitative pass are mirrored under
+`.agents/logs/data_disk_snapshots/ch3_sft_eval/`.
 
 ---
 
@@ -1537,7 +1542,7 @@ sensitive personal information about a specific person.
 prompting strategies for each of three malicious applications: a direct request,
 roleplay, benign or fictional framing, unsafe transformation, and a high-level
 partial-compliance probe. All prompts used the Alpaca SFT format with greedy
-decoding, and the full batch took 3.54 seconds to generate after model loading.
+decoding, and the full batch took 3.58 seconds to generate after model loading.
 
 For phishing and social engineering, the model refused the direct
 password-theft request and the high-level impersonation plan, but it complied

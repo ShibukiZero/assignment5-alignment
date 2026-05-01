@@ -12,9 +12,9 @@
     "stop": [
       "# Query:"
     ],
-    "model_load_seconds": 28.299337333999574,
-    "generation_elapsed_seconds": 3.4813276771456003,
-    "examples_per_second": 28.724673249371257,
+    "model_load_seconds": 29.26174759864807,
+    "generation_elapsed_seconds": 4.249982412904501,
+    "examples_per_second": 23.52950913311157,
     "num_examples": 100
   }
 }

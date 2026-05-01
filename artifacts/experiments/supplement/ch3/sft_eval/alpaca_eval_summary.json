@@ -3,7 +3,7 @@
   "input_path": "data/alpaca_eval/alpaca_eval.jsonl",
   "output_path": "/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft_eval/alpaca_eval_outputs.json",
   "model": "/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft/final_model",
-  "generator": "llama-3.1-8b-sft",
+  "generator": "llama-3.1-8b-sft-rerun",
   "prompt_format": "alpaca_sft",
   "num_examples": 805,
   "generation": {
@@ -13,9 +13,9 @@
     "stop": [
       "# Query:"
     ],
-    "model_load_seconds": 28.6596472337842,
-    "generation_elapsed_seconds": 34.14714005496353,
-    "examples_per_second": 23.57444865673275,
+    "model_load_seconds": 30.376329534687102,
+    "generation_elapsed_seconds": 35.71095441933721,
+    "examples_per_second": 22.54210264299457,
     "num_examples": 805
   }
 }

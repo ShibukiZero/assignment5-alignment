@@ -25,7 +25,7 @@
 <text x="72" y="52.0" text-anchor="end" font-family="Arial, sans-serif" font-size="12">1.478</text>
 <text x="475.0" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-size="14">Optimizer step</text>
 <text transform="translate(22,249.0) rotate(-90)" text-anchor="middle" font-family="Arial, sans-serif" font-size="14">Validation loss</text>
-<polyline points="82.0,75.7 145.1,130.9 208.2,183.8 271.3,237.5 334.4,289.8 397.6,332.6 460.7,366.8 523.8,393.2 586.9,409.6 650.0,418.0 713.1,421.5 776.2,422.3 839.3,422.2 868.0,422.3" fill="none" stroke="#1f77b4" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="82.0,75.7 145.1,130.8 208.2,182.8 271.3,237.0 334.4,289.3 397.6,332.1 460.7,366.7 523.8,393.0 586.9,409.5 650.0,417.8 713.1,421.4 776.2,422.1 839.3,422.3 868.0,422.2" fill="none" stroke="#1f77b4" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
 <line x1="100" y1="66" x2="124" y2="66" stroke="#1f77b4" stroke-width="2.4"/>
 <text x="132" y="70" font-family="Arial, sans-serif" font-size="13">validation loss</text>
 </svg>
