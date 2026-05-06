@@ -45,6 +45,12 @@ def test_parse_gsm8k_response():
     assert parsed_response == "72"
 
 
+def test_parse_gsm8k_response_sentence_final_number():
+    model_output = "The total number of unoccupied beds after 2 weeks is 100."
+    parsed_response = run_parse_gsm8k_response(model_output=model_output)
+    assert parsed_response == "100"
+
+
 def test_parse_gsm8k_response_unknown():
     model_output = (
         "Natalia sold twenty-four clips in May. "

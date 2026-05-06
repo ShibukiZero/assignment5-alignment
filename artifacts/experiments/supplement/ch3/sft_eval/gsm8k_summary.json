@@ -1,0 +1,21 @@
+{
+  "dataset": "gsm8k",
+  "input_path": "data/gsm8k/test.jsonl",
+  "model": "/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft/final_model",
+  "prompt_format": "alpaca_sft",
+  "num_examples": 1319,
+  "accuracy": 0.32676269901440486,
+  "parse_failures": 5,
+  "generation": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 512,
+    "stop": [
+      "# Query:"
+    ],
+    "model_load_seconds": 27.694276745431125,
+    "generation_elapsed_seconds": 24.121734294109046,
+    "examples_per_second": 54.68097707726277,
+    "num_examples": 1319
+  }
+}

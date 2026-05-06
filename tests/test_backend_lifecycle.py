@@ -267,12 +267,16 @@ def test_initialize_rl_runtime_initializes_sleeping_inference_before_training(mo
     init_policy = Mock()
     policy = Mock()
     tokenizer = object()
-    llm = Mock()
+    warmup_llm = Mock()
+    runtime_llm = Mock()
     call_order: list[str] = []
 
     def record_init_vllm(*args, **kwargs):
-        call_order.append("init_vllm")
-        return llm
+        if kwargs["enable_sleep_mode"]:
+            call_order.append("runtime_init_vllm")
+            return runtime_llm
+        call_order.append("warmup_init_vllm")
+        return warmup_llm
 
     def record_init_policy(*args, **kwargs):
         call_order.append("init_policy")
@@ -281,16 +285,22 @@ def test_initialize_rl_runtime_initializes_sleeping_inference_before_training(mo
     init_policy.side_effect = record_init_policy
     monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_policy", init_policy)
     monkeypatch.setattr("cs336_alignment.backend_lifecycle.init_vllm", record_init_vllm)
+    monkeypatch.setattr("cs336_alignment.backend_lifecycle.gc.collect", Mock())
+    monkeypatch.setattr(
+        "cs336_alignment.backend_lifecycle.torch.cuda.is_available",
+        Mock(return_value=False),
+    )
 
     manager = make_manager(enable_sleep_mode=True, sleep_level=2)
 
     returned_policy, returned_tokenizer, optimizer = manager.initialize_rl_runtime()
 
-    assert call_order == ["init_vllm", "init_policy"]
+    assert call_order == ["warmup_init_vllm", "runtime_init_vllm", "init_policy"]
     assert returned_policy is policy
     assert returned_tokenizer is tokenizer
     assert optimizer is None
-    llm.sleep.assert_called_once_with(level=2)
+    warmup_llm.generate.assert_called_once()
+    runtime_llm.sleep.assert_called_once_with(level=2)
     state = manager.debug_state()
     assert state["current_phase"] is None
     assert state["inference_backend_awake"] is False

@@ -1,0 +1,20 @@
+{
+  "dataset": "simple_safety_tests",
+  "input_path": "data/simple_safety_tests/simple_safety_tests.csv",
+  "output_path": "/root/autodl-tmp/a5-alignment/runs/supplement/ch2/zero_shot_official_prompt/simple_safety_tests_outputs.jsonl",
+  "model": "/root/autodl-tmp/a5-alignment/models/Llama-3.1-8B",
+  "prompt_format": "zero_shot",
+  "num_examples": 100,
+  "generation": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 512,
+    "stop": [
+      "# Query:"
+    ],
+    "model_load_seconds": 31.760718417353928,
+    "generation_elapsed_seconds": 7.020092464983463,
+    "examples_per_second": 14.244826617142794,
+    "num_examples": 100
+  }
+}

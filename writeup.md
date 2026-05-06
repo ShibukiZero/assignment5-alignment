@@ -18,10 +18,10 @@ self-hosted environment, we ran this analysis on the converted
 104 had both `format_reward = 1` and `answer_reward = 1`, 459 had
 `format_reward = 1` and `answer_reward = 0`, and 2,636 had both rewards equal
 to 0. We archived the summary and sampled examples under
-`artifacts/experiments/ch3/3_2_math_baseline/`; the run summary is archived in
-`artifacts/experiments/ch3/3_2_math_baseline/run_summaries_archive.md` and
-`artifacts/experiments/ch3/3_2_math_baseline/run_summaries.json`; the raw run
-data are archived under `artifacts/experiments/ch3/3_2_math_baseline/runs/`.
+`artifacts/experiments/main/ch3/3_2_math_baseline/`; the run summary is archived in
+`artifacts/experiments/main/ch3/3_2_math_baseline/run_summaries_archive.md` and
+`artifacts/experiments/main/ch3/3_2_math_baseline/run_summaries.json`; the raw run
+data are archived under `artifacts/experiments/main/ch3/3_2_math_baseline/runs/`.
 
 In the inspected `format_reward = 0` examples, the main issue was usually model
 behavior under the strict R1-Zero output protocol rather than a vLLM failure.
@@ -126,12 +126,12 @@ optimizer steps total.
 
 The validation accuracy curves for the SFT dataset-size sweep are shown below.
 
-![Validation accuracy for the noisy SFT dataset-size sweep](artifacts/experiments/ch4/sft_experiment/sft_size_sweep_accuracy.svg)
+![Validation accuracy for the noisy SFT dataset-size sweep](artifacts/experiments/main/ch4/sft_experiment/sft_size_sweep_accuracy.svg)
 
 The run summaries used by this section are archived in
-`artifacts/experiments/ch4/sft_experiment/run_summaries_archive.md` and
-`artifacts/experiments/ch4/sft_experiment/run_summaries.json`; the raw per-run
-data are archived under `artifacts/experiments/ch4/sft_experiment/runs/`.
+`artifacts/experiments/main/ch4/sft_experiment/run_summaries_archive.md` and
+`artifacts/experiments/main/ch4/sft_experiment/run_summaries.json`; the raw per-run
+data are archived under `artifacts/experiments/main/ch4/sft_experiment/runs/`.
 
 The main results are:
 
@@ -158,7 +158,7 @@ more stable at the end of training.
 For the filtered SFT experiment, filtering retained 4,136 of the 4,866 noisy
 SFT examples. The filtered-vs-noisy validation curve is shown below.
 
-![Validation accuracy for noisy full SFT versus reward-filtered full SFT](artifacts/experiments/ch4/sft_experiment/sft_filtered_vs_noisy_full_accuracy.svg)
+![Validation accuracy for noisy full SFT versus reward-filtered full SFT](artifacts/experiments/main/ch4/sft_experiment/sft_filtered_vs_noisy_full_accuracy.svg)
 
 The comparison is:
 
@@ -207,16 +207,16 @@ Validation was run on the full 3199-example validation set with the R1-Zero
 prompt, temperature 1.0, max tokens 1024, and the
 `r1_zero_reward_fn`-based answer reward.
 
-![Expert Iteration validation accuracy](artifacts/experiments/ch5/expert_iteration/ei_validation_accuracy.svg)
+![Expert Iteration validation accuracy](artifacts/experiments/main/ch5/expert_iteration/ei_validation_accuracy.svg)
 
-![Expert Iteration response entropy](artifacts/experiments/ch5/expert_iteration/ei_rollout_entropy.svg)
+![Expert Iteration response entropy](artifacts/experiments/main/ch5/expert_iteration/ei_rollout_entropy.svg)
 
-![Expert Iteration accepted rollout fraction](artifacts/experiments/ch5/expert_iteration/ei_accepted_fraction.svg)
+![Expert Iteration accepted rollout fraction](artifacts/experiments/main/ch5/expert_iteration/ei_accepted_fraction.svg)
 
 The run summaries used by this section are archived in
-`artifacts/experiments/ch5/expert_iteration/run_summaries_archive.md` and
-`artifacts/experiments/ch5/expert_iteration/run_summaries.json`; the raw
-per-run data are archived under `artifacts/experiments/ch5/expert_iteration/runs/`.
+`artifacts/experiments/main/ch5/expert_iteration/run_summaries_archive.md` and
+`artifacts/experiments/main/ch5/expert_iteration/run_summaries.json`; the raw
+per-run data are archived under `artifacts/experiments/main/ch5/expert_iteration/runs/`.
 
 The table below summarizes the EI runs.
 
@@ -333,7 +333,7 @@ can also make the policy confidently wrong rather than merely more random.
 advantages, `masked_mean` loss normalization, and `lr=1e-5`. The run completed
 200 GRPO steps and evaluated on 1024 validation examples every 5 steps.
 
-![On-policy GRPO validation answer reward](artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_validation_reward.svg)
+![On-policy GRPO validation answer reward](artifacts/experiments/main/ch7/grpo_train_loop/grpo_train_loop_validation_reward.svg)
 
 The validation answer reward improved from 3.81% at step 0 to a best value of
 67.77% at step 195, ending close to that peak at 67.29% at step 200. Format
@@ -345,10 +345,10 @@ microbatches. These trends confirm that the loop is not merely passing unit
 tests: it is producing a large, sustained policy improvement under the
 cache-correct inference path.
 
-![On-policy GRPO validation format accuracy](artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_format_accuracy.svg)
+![On-policy GRPO validation format accuracy](artifacts/experiments/main/ch7/grpo_train_loop/grpo_train_loop_format_accuracy.svg)
 
 Sample rollouts over time are archived in
-`artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_rollout_examples.md`.
+`artifacts/experiments/main/ch7/grpo_train_loop/grpo_train_loop_rollout_examples.md`.
 The selected examples show the policy moving from mostly malformed or
 incorrect responses toward consistently tagged answers with much higher solve
 rate. A useful caveat remains: the verifier is answer-based, so a rollout can
@@ -356,12 +356,12 @@ receive reward even when the reasoning trace is not fully reliable. That is a
 limitation of the reward design rather than a train-loop bug.
 
 The numeric results above are archived in
-`artifacts/experiments/ch7/grpo_train_loop/run_summaries_archive.md` and
-`artifacts/experiments/ch7/grpo_train_loop/run_summaries.json`, with the full
+`artifacts/experiments/main/ch7/grpo_train_loop/run_summaries_archive.md` and
+`artifacts/experiments/main/ch7/grpo_train_loop/run_summaries.json`, with the full
 eval curve in
-`artifacts/experiments/ch7/grpo_train_loop/grpo_train_loop_eval_points.csv`.
+`artifacts/experiments/main/ch7/grpo_train_loop/grpo_train_loop_eval_points.csv`.
 The raw run data used for this answer are archived under
-`artifacts/experiments/ch7/grpo_train_loop/runs/grpo_on_policy_lr1e-5/`.
+`artifacts/experiments/main/ch7/grpo_train_loop/runs/grpo_on_policy_lr1e-5/`.
 
 ---
 
@@ -386,12 +386,12 @@ same core hyperparameters and the strongest complete 200-step trace. We stopped
 clearly suboptimal or collapsed runs early once their validation curves were no
 longer competitive.
 
-![GRPO validation answer reward for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
+![GRPO validation answer reward for learning-rate sweep](artifacts/experiments/main/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
 
 The run summaries are archived in
-`artifacts/experiments/ch7/grpo_learning_rate/run_summaries_archive.md` and
-`artifacts/experiments/ch7/grpo_learning_rate/run_summaries.json`, with the full eval
-points in `artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_eval_points.csv`.
+`artifacts/experiments/main/ch7/grpo_learning_rate/run_summaries_archive.md` and
+`artifacts/experiments/main/ch7/grpo_learning_rate/run_summaries.json`, with the full eval
+points in `artifacts/experiments/main/ch7/grpo_learning_rate/grpo_learning_rate_eval_points.csv`.
 
 | learning rate | status | best answer reward | best step | final answer reward | final step | final format accuracy |
 |---:|---|---:|---:|---:|---:|---:|
@@ -416,7 +416,7 @@ warning case: it reached 100% format accuracy by step 50, but only 21.29%
 answer reward and very short rollouts, suggesting that too-large updates can
 learn a terse formatting behavior without learning the underlying reasoning.
 
-![GRPO validation format accuracy for learning-rate sweep](artifacts/experiments/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg)
+![GRPO validation format accuracy for learning-rate sweep](artifacts/experiments/main/ch7/grpo_learning_rate/grpo_learning_rate_format_accuracy.svg)
 
 ---
 
@@ -434,17 +434,17 @@ group size, standard-deviation normalization, and loss normalization fixed. Both
 runs completed 200 GRPO steps on the converted `competition_math_numeric`
 validation set.
 
-![GRPO validation answer reward by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_validation_reward.svg)
+![GRPO validation answer reward by baseline choice](artifacts/experiments/main/ch7/grpo_baselines/grpo_baselines_validation_reward.svg)
 
 The run summaries are archived in
-`artifacts/experiments/ch7/grpo_baselines/run_summaries_archive.md` and
-`artifacts/experiments/ch7/grpo_baselines/run_summaries.json`, with the full eval
-points in `artifacts/experiments/ch7/grpo_baselines/grpo_baselines_eval_points.csv`,
+`artifacts/experiments/main/ch7/grpo_baselines/run_summaries_archive.md` and
+`artifacts/experiments/main/ch7/grpo_baselines/run_summaries.json`, with the full eval
+points in `artifacts/experiments/main/ch7/grpo_baselines/grpo_baselines_eval_points.csv`,
 the train metrics in
-`artifacts/experiments/ch7/grpo_baselines/grpo_baselines_train_points.csv`, the
+`artifacts/experiments/main/ch7/grpo_baselines/grpo_baselines_train_points.csv`, the
 rollout metrics in
-`artifacts/experiments/ch7/grpo_baselines/grpo_baselines_rollout_points.csv`,
-and the raw run data under `artifacts/experiments/ch7/grpo_baselines/runs/`.
+`artifacts/experiments/main/ch7/grpo_baselines/grpo_baselines_rollout_points.csv`,
+and the raw run data under `artifacts/experiments/main/ch7/grpo_baselines/runs/`.
 
 | loss type | best answer reward | best step | final answer reward | final format accuracy | final rollout answer reward | final rollout average length | final token entropy |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -469,11 +469,11 @@ final rollout answer reward, low token entropy (0.023), and much longer final
 rollouts averaging 466.9 tokens, which is more consistent with sustained
 reasoning than with a brittle answer-template strategy.
 
-![GRPO validation format accuracy by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_format_accuracy.svg)
+![GRPO validation format accuracy by baseline choice](artifacts/experiments/main/ch7/grpo_baselines/grpo_baselines_format_accuracy.svg)
 
-![GRPO rollout response length by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_response_length.svg)
+![GRPO rollout response length by baseline choice](artifacts/experiments/main/ch7/grpo_baselines/grpo_baselines_response_length.svg)
 
-![GRPO token entropy by baseline choice](artifacts/experiments/ch7/grpo_baselines/grpo_baselines_token_entropy.svg)
+![GRPO token entropy by baseline choice](artifacts/experiments/main/ch7/grpo_baselines/grpo_baselines_token_entropy.svg)
 
 The response-length curve makes this contrast especially clear. Both runs start
 from similarly long initial rollouts, but `no_baseline` quickly moves toward
@@ -587,7 +587,7 @@ but the gap was small: `masked_mean` reached a best validation answer reward of
 `masked_normalize` reached 87.11% at steps 165 and 200. The
 `batch_token_mean` reference reached 86.91% at step 110 and ended at 86.43%.
 
-![GRPO validation answer reward by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_validation_reward.svg)
+![GRPO validation answer reward by length normalization](artifacts/experiments/main/ch7/grpo_length_normalization/grpo_length_normalization_validation_reward.svg)
 
 The main difference was learning speed rather than a late-training collapse. At
 step 25, `masked_mean` had already reached 72.66% validation answer reward,
@@ -598,7 +598,7 @@ accuracy also stayed high for all three runs at the end: 98.05% for
 `masked_mean`, 96.48% for `masked_normalize`, and 98.83% for
 `batch_token_mean`.
 
-![GRPO validation format accuracy by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_format_accuracy.svg)
+![GRPO validation format accuracy by length normalization](artifacts/experiments/main/ch7/grpo_length_normalization/grpo_length_normalization_format_accuracy.svg)
 
 The rollout response lengths help explain the slower start for
 `masked_normalize`. Its average rollout length briefly fell to only 34.9 tokens
@@ -607,7 +607,7 @@ small total update weight. Later, the same run grew to the longest final
 responses, ending at 512.1 tokens. By comparison, `masked_mean` ended at 466.9
 tokens and `batch_token_mean` ended at 375.3 tokens.
 
-![GRPO rollout response length by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_response_length.svg)
+![GRPO rollout response length by length normalization](artifacts/experiments/main/ch7/grpo_length_normalization/grpo_length_normalization_response_length.svg)
 
 The gradient-norm curve is consistent with this interpretation. Our logged
 gradient norm is the pre-clipping norm returned by `clip_grad_norm_`; the final
@@ -618,7 +618,7 @@ while responses are shorter than the maximum generation length, summing token
 losses and dividing by 1024 downweights each completion relative to
 `masked_mean`.
 
-![GRPO gradient norm by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_grad_norm.svg)
+![GRPO gradient norm by length normalization](artifacts/experiments/main/ch7/grpo_length_normalization/grpo_length_normalization_grad_norm.svg)
 
 The token-entropy curve provides a useful companion diagnostic. All three runs
 rapidly moved from the high-entropy initial policy into a low-entropy regime by
@@ -631,7 +631,7 @@ evidence that none of the runs suffered an obvious late-training randomness
 collapse; the main effect of the normalization choice was still the speed and
 scale of credit assignment.
 
-![GRPO token entropy by length normalization](artifacts/experiments/ch7/grpo_length_normalization/grpo_length_normalization_token_entropy.svg)
+![GRPO token entropy by length normalization](artifacts/experiments/main/ch7/grpo_length_normalization/grpo_length_normalization_token_entropy.svg)
 
 Based on this experiment, we fixed `masked_mean` as the better-performing
 length-normalization choice for the following on-policy ablations. The reason is
@@ -660,7 +660,7 @@ validation answer reward of 88.18% at step 190 and again ending at 88.18% at
 step 200. The `use_std_normalization=False` run reached its best and final
 validation answer reward of 87.21% at step 200.
 
-![GRPO validation answer reward by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_validation_reward.svg)
+![GRPO validation answer reward by group std normalization](artifacts/experiments/main/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_validation_reward.svg)
 
 The validation format accuracy was also close. The `std=True` run ended at
 98.05% validation format accuracy, compared with 97.66% for `std=False`. This
@@ -668,7 +668,7 @@ suggests that the small answer-reward gap was not driven by a major formatting
 failure in either run; both policies learned to produce the requested answer
 format reliably.
 
-![GRPO validation format accuracy by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_format_accuracy.svg)
+![GRPO validation format accuracy by group std normalization](artifacts/experiments/main/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_format_accuracy.svg)
 
 The rollout metrics show the same small advantage for standard-deviation
 normalization. At the final step, `std=True` had 80.86% rollout answer reward
@@ -677,7 +677,7 @@ tokens. The `std=False` run ended at 79.30% rollout answer reward and the same
 94.14% rollout format reward, with a slightly shorter average response length
 of 453.1 tokens.
 
-![GRPO rollout response length by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_response_length.svg)
+![GRPO rollout response length by group std normalization](artifacts/experiments/main/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_response_length.svg)
 
 Token entropy decreased in both runs as the model became more deterministic.
 The final entropy was low for both variants, with `std=True` ending at 0.023
@@ -685,7 +685,7 @@ and `std=False` ending at 0.031. The `std=False` run therefore retained
 slightly more token-level uncertainty at the end, but this did not translate
 into higher validation reward.
 
-![GRPO token entropy by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_token_entropy.svg)
+![GRPO token entropy by group std normalization](artifacts/experiments/main/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_token_entropy.svg)
 
 The gradient norm trend is benign in this run. The logged gradient norm is the
 pre-clipping norm returned by `clip_grad_norm_`; both variants ended with small
@@ -693,7 +693,7 @@ pre-clip norms, 0.136 for `std=True` and 0.054 for `std=False`. Since the
 actual update is clipped to max norm 1.0, these final values indicate that the
 late-stage updates were already below the clipping threshold.
 
-![GRPO gradient norm by group std normalization](artifacts/experiments/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_grad_norm.svg)
+![GRPO gradient norm by group std normalization](artifacts/experiments/main/ch7/grpo_group_standard_deviation/grpo_group_standard_deviation_grad_norm.svg)
 
 Overall, this experiment suggests that group standard-deviation normalization is
 not harmful for the selected `masked_mean`, `lr=4e-5` setting and may give a
@@ -745,14 +745,14 @@ rollout data.
 
 The broad validation answer-reward curves are shown below.
 
-![Off-policy GRPO broad sweep validation answer reward](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_validation_reward.svg)
+![Off-policy GRPO broad sweep validation answer reward](artifacts/experiments/main/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_validation_reward.svg)
 
-![Off-policy GRPO broad sweep token entropy](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_token_entropy.svg)
+![Off-policy GRPO broad sweep token entropy](artifacts/experiments/main/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_token_entropy.svg)
 
-![Off-policy GRPO broad sweep response length](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_response_length.svg)
+![Off-policy GRPO broad sweep response length](artifacts/experiments/main/ch7/grpo_off_policy_sweep/grpo_off_policy_broad_response_length.svg)
 
 The broad-sweep summaries and archived logs are stored under
-`artifacts/experiments/ch7/grpo_off_policy_sweep/`, especially
+`artifacts/experiments/main/ch7/grpo_off_policy_sweep/`, especially
 `grpo_off_policy_experiment_log.md`,
 `grpo_off_policy_broad_summary.csv`, `run_summaries.json`, and
 `runs/`. The broad-sweep results are:
@@ -796,9 +796,9 @@ GRPO configuration, `masked_mean_lr4e-5`, which uses
 `use_std_normalization = true`, and the same dataset, prompt, rollout batch
 size, group size, and learning rate.
 
-![Focused on-policy vs off-policy validation answer reward](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_validation_reward.svg)
+![Focused on-policy vs off-policy validation answer reward](artifacts/experiments/main/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_validation_reward.svg)
 
-![Focused on-policy vs off-policy answer reward vs wall-clock time](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_validation_reward_wall_clock.svg)
+![Focused on-policy vs off-policy answer reward vs wall-clock time](artifacts/experiments/main/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_validation_reward_wall_clock.svg)
 
 The focused comparison is:
 
@@ -827,9 +827,9 @@ reference.
 
 The entropy and response-length diagnostics are shown below.
 
-![Focused on-policy vs off-policy token entropy](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_token_entropy.svg)
+![Focused on-policy vs off-policy token entropy](artifacts/experiments/main/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_token_entropy.svg)
 
-![Focused on-policy vs off-policy response length](artifacts/experiments/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_response_length.svg)
+![Focused on-policy vs off-policy response length](artifacts/experiments/main/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_response_length.svg)
 
 The entropy behavior is qualitatively similar to what we observed in expert
 iteration: as the policy improves, token entropy falls because the model
@@ -880,13 +880,13 @@ strong but slightly worse, peaking at 83.79% at step 150 and finishing at
 collapses completely, finishing at 0.00% answer reward and 0.00% format
 accuracy.
 
-![Off-policy clip ablation: validation answer reward](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_validation_reward.svg)
+![Off-policy clip ablation: validation answer reward](artifacts/experiments/main/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_validation_reward.svg)
 
 The wall-clock comparison tells the same story. Both clipped objectives learn
 rapidly and remain useful through the end of training, while the unclipped run
 never becomes competitive and loses all validation reward late in training.
 
-![Off-policy clip ablation: validation answer reward vs wall-clock time](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_validation_reward_wall_clock.svg)
+![Off-policy clip ablation: validation answer reward vs wall-clock time](artifacts/experiments/main/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_validation_reward_wall_clock.svg)
 
 The response-length diagnostics show different failure modes. The symmetric
 clipped run finishes with an average rollout response length of 474.8 tokens
@@ -898,7 +898,7 @@ policy-ratio increases but does not improve final reward. The unclipped run
 collapses to short, unproductive outputs: it finishes at 155.8 tokens on
 average with 0.00% format accuracy.
 
-![Off-policy clip ablation: rollout response length](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_response_length.svg)
+![Off-policy clip ablation: rollout response length](artifacts/experiments/main/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_response_length.svg)
 
 The entropy and gradient-norm curves reinforce this interpretation. The
 symmetric clipped run ends with low entropy (`0.033`) and a small but nonzero
@@ -909,9 +909,9 @@ length and looser upper-ratio constraint. The no-clip run's last finite
 gradient norm is exactly `0.000`, and its validation reward has already
 collapsed, so the objective is no longer producing useful updates.
 
-![Off-policy clip ablation: token entropy](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_token_entropy.svg)
+![Off-policy clip ablation: token entropy](artifacts/experiments/main/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_token_entropy.svg)
 
-![Off-policy clip ablation: gradient norm](artifacts/experiments/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_grad_norm.svg)
+![Off-policy clip ablation: gradient norm](artifacts/experiments/main/ch7/grpo_off_policy_clip_ablation/grpo_off_policy_clip_ablation_grad_norm.svg)
 
 Overall, this ablation supports the standard intuition behind GRPO-Clip in the
 off-policy setting. Reusing each rollout batch for two epochs makes the
@@ -949,7 +949,7 @@ of 85.16% at step 200. The R1-Zero reference starts much lower, at 3.81%, but
 improves more throughout training and reaches 88.18% at both its best
 checkpoint, step 190, and the final checkpoint, step 200.
 
-![GRPO validation answer reward by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_validation_reward.svg)
+![GRPO validation answer reward by prompt contract](artifacts/experiments/main/ch7/grpo_prompt_ablation/grpo_prompt_ablation_validation_reward.svg)
 
 The format-accuracy curve shows that both runs learn their required output
 contract. The R1-Zero reference finishes slightly higher on validation
@@ -959,7 +959,7 @@ path rather than simply fixing parser failures: it gives a far stronger initial
 policy under a natural boxed-answer contract, but the stricter R1-Zero contract
 catches up once RL has learned the tag format.
 
-![GRPO validation format accuracy by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_format_accuracy.svg)
+![GRPO validation format accuracy by prompt contract](artifacts/experiments/main/ch7/grpo_prompt_ablation/grpo_prompt_ablation_format_accuracy.svg)
 
 The rollout diagnostics support that interpretation. The question-only run
 ends with a slightly shorter average rollout response than the R1-Zero
@@ -968,11 +968,11 @@ reward, 79.30% versus 80.86%. Its late token entropy is higher (`0.130` versus
 `0.023`), but still stable rather than noisy, and its final gradient norm is
 lower (`0.093` versus `0.136` for the R1-Zero reference).
 
-![GRPO rollout response length by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_response_length.svg)
+![GRPO rollout response length by prompt contract](artifacts/experiments/main/ch7/grpo_prompt_ablation/grpo_prompt_ablation_response_length.svg)
 
-![GRPO token entropy by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_token_entropy.svg)
+![GRPO token entropy by prompt contract](artifacts/experiments/main/ch7/grpo_prompt_ablation/grpo_prompt_ablation_token_entropy.svg)
 
-![GRPO gradient norm by prompt contract](artifacts/experiments/ch7/grpo_prompt_ablation/grpo_prompt_ablation_grad_norm.svg)
+![GRPO gradient norm by prompt contract](artifacts/experiments/main/ch7/grpo_prompt_ablation/grpo_prompt_ablation_grad_norm.svg)
 
 The most plausible explanation is that Qwen2.5-Math-1.5B is already well
 aligned with the simpler question-only prompt, so RL begins from a much better
@@ -1027,13 +1027,13 @@ budget. The vertical dashed line marks the transition from SFT to GRPO, and the
 direct GRPO reference is shifted to begin at the same boundary so that the RL
 portions are easy to compare on a shared axis.
 
-![SFT+KL GRPO staged validation answer reward](artifacts/experiments/ch7/sft_kl_grpo/sft_kl_grpo_staged_validation_reward.svg)
+![SFT+KL GRPO staged validation answer reward](artifacts/experiments/main/ch7/sft_kl_grpo/sft_kl_grpo_staged_validation_reward.svg)
 
-![SFT+KL GRPO reference KL](artifacts/experiments/ch7/sft_kl_grpo/sft_kl_grpo_reference_kl.svg)
+![SFT+KL GRPO reference KL](artifacts/experiments/main/ch7/sft_kl_grpo/sft_kl_grpo_reference_kl.svg)
 
-![SFT+KL GRPO rollout response length](artifacts/experiments/ch7/sft_kl_grpo/sft_kl_grpo_response_length.svg)
+![SFT+KL GRPO rollout response length](artifacts/experiments/main/ch7/sft_kl_grpo/sft_kl_grpo_response_length.svg)
 
-![SFT+KL GRPO token entropy](artifacts/experiments/ch7/sft_kl_grpo/sft_kl_grpo_token_entropy.svg)
+![SFT+KL GRPO token entropy](artifacts/experiments/main/ch7/sft_kl_grpo/sft_kl_grpo_token_entropy.svg)
 
 | setting | best answer reward | best run step | final answer reward | final format reward | final rollout answer | final average length | final reference KL |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -1066,17 +1066,17 @@ official course MATH files were unavailable to us, the result below should be
 read as our leaderboard-style substitute-validation result rather than as an
 official 5K MATH leaderboard submission.
 
-![Leaderboard validation answer reward](artifacts/experiments/ch7/leaderboard/leaderboard_validation_reward.svg)
+![Leaderboard validation answer reward](artifacts/experiments/main/ch7/leaderboard/leaderboard_validation_reward.svg)
 
-![Leaderboard validation answer reward vs elapsed step time](artifacts/experiments/ch7/leaderboard/leaderboard_validation_reward_elapsed_time.svg)
+![Leaderboard validation answer reward vs elapsed step time](artifacts/experiments/main/ch7/leaderboard/leaderboard_validation_reward_elapsed_time.svg)
 
-![Leaderboard validation format accuracy](artifacts/experiments/ch7/leaderboard/leaderboard_format_accuracy.svg)
+![Leaderboard validation format accuracy](artifacts/experiments/main/ch7/leaderboard/leaderboard_format_accuracy.svg)
 
-![Leaderboard rollout answer reward](artifacts/experiments/ch7/leaderboard/leaderboard_rollout_answer_reward.svg)
+![Leaderboard rollout answer reward](artifacts/experiments/main/ch7/leaderboard/leaderboard_rollout_answer_reward.svg)
 
-![Leaderboard rollout response length](artifacts/experiments/ch7/leaderboard/leaderboard_response_length.svg)
+![Leaderboard rollout response length](artifacts/experiments/main/ch7/leaderboard/leaderboard_response_length.svg)
 
-![Leaderboard token entropy](artifacts/experiments/ch7/leaderboard/leaderboard_token_entropy.svg)
+![Leaderboard token entropy](artifacts/experiments/main/ch7/leaderboard/leaderboard_token_entropy.svg)
 
 | metric | value |
 |---|---:|
@@ -1121,22 +1121,41 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** Number of model generations that failed parsing. If non-zero, a few examples of generations that your function wasn't able to parse.
 
+**Answer:** The MMLU parser failed on 16 of 14,042 generations. The failures
+are rare and mostly correspond to outputs that do not contain a clear
+standalone A/B/C/D answer in one of the accepted forms.
+
 ### (d)
 **Question:** How long does it take the model to generate responses to each of the MMLU examples? Estimate the throughput in examples/second.
 
 **Deliverable:** Estimate of MMLU examples/second throughput.
+
+**Answer:** Excluding model-load time, generation took 192.76 seconds for
+14,042 MMLU examples, for a throughput of 72.85 examples/second. The
+model-load time was 33.76 seconds.
 
 ### (e)
 **Question:** How well does the Llama 3.1 8B zero-shot baseline perform on MMLU?
 
 **Deliverable:** 1-2 sentences with evaluation metrics.
 
+**Answer:** Llama 3.1 8B Base achieved 58.55% accuracy on the MMLU test split.
+Performance varied substantially by subject, with stronger results on areas
+such as marketing, world religions, and US foreign policy and weaker results on
+subjects such as moral scenarios, college mathematics, and abstract algebra.
+
 ### (f)
 **Question:** Sample 10 random incorrectly-predicted examples from the evaluation dataset. Looking through the examples, what sort of errors does the language model make?
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** In the sampled incorrect MMLU examples, the model often produced a
+confident answer letter with little or no explanation, so many failures look
+like direct knowledge or discrimination errors rather than parsing problems.
+The sampled errors include moral-scenario judgments, legal evidence questions,
+and technical STEM facts where the model selected a plausible but wrong option.
+Overall, the model's zero-shot behavior is fluent and usually well-formatted,
+but it is not reliably calibrated to the fine distinctions required by MMLU.
 
 ---
 
@@ -1157,22 +1176,42 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** Number of model generations that failed parsing. If non-zero, a few examples of generations that your function wasn't able to parse.
 
+**Answer:** The GSM8K parser failed on 10 of 1,319 generations. These failures
+generally contain no completed numeric answer, usually because the model echoes
+or repeats the prompt instead of producing a final numerical response.
+
 ### (d)
 **Question:** How long does it take the model to generate responses to each of the GSM8K examples? Estimate the throughput in examples/second.
 
 **Deliverable:** Estimate of GSM8K examples/second throughput.
+
+**Answer:** Excluding model-load time, generation took 29.04 seconds for 1,319
+GSM8K examples, for a throughput of 45.43 examples/second. The model-load time
+was 27.43 seconds.
 
 ### (e)
 **Question:** How well does the Llama 3.1 8B zero-shot baseline perform on GSM8K?
 
 **Deliverable:** 1-2 sentences with evaluation metrics.
 
+**Answer:** Llama 3.1 8B Base achieved 13.72% exact-match accuracy on GSM8K
+under this zero-shot prompting setup. This is much lower than its MMLU
+performance, reflecting that the base model often fails to carry out
+multi-step arithmetic reliably without instruction tuning or stronger
+reasoning prompting.
+
 ### (f)
 **Question:** Sample 10 random incorrectly-predicted examples from the evaluation dataset. Looking through the examples, what sort of errors does the language model make?
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** The sampled GSM8K errors show several recurring failure modes: the
+model often repeats the prompt, stops before completing the arithmetic, or
+extracts the wrong relationship from the word problem. Some responses copy the
+question until the generation limit, while others set up the arithmetic but
+return an intermediate quantity rather than the requested final answer. These
+errors suggest the base model is weak at following the exact quantitative
+structure of word problems in this zero-shot format.
 
 ---
 
@@ -1188,17 +1227,32 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** Estimate of AlpacaEval examples/second throughput.
 
+**Answer:** Excluding model-load time, generation took 50.73 seconds for 805
+AlpacaEval examples, for a throughput of 15.87 examples/second. The model-load
+time was 29.22 seconds.
+
 ### (c)
 **Question:** To measure our model's performance on AlpacaEval, we'll use Llama 3.3 70B Instruct as the annotator and compare our outputs against GPT-4 Turbo. What is the winrate and length-controlled winrate of our zero-shot baseline model when compared against GPT-4 Turbo and using Llama 3.3 70B Instruct as the annotator?
 
 **Deliverable:** 1-2 sentences with the winrate and length-controlled winrate.
+
+**Answer:** Against GPT-4 Turbo, using Llama 3.3 70B Instruct as the annotator,
+the Llama 3.1 8B Base zero-shot baseline achieved a 3.11% win rate and a 2.80%
+length-controlled win rate. The evaluator preferred the baseline over the
+reference on 25 of 805 examples.
 
 ### (d)
 **Question:** Sample 10 random examples where the baseline model's response is dispreferred versus GPT-4 Turbo (you should be able to see the AlpacaEval annotations at `scripts/alpaca_eval_vllm_llama3_3_70b_fn/annotations_seed0_configs.json`). Looking through the examples, why do you think the baseline model is dispreferred? Are there any cases where you disagree with the automatic evaluator?
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** The sampled dispreferred AlpacaEval responses are usually less
+complete and less directly tailored to the instruction than the GPT-4 Turbo
+reference. In several cases the baseline either gives a generic answer, repeats
+parts of the prompt, or continues far longer than useful. The automatic
+evaluator's preferences are mostly reasonable on these samples, although a few
+baseline answers are directionally correct and concise; they still lose because
+the reference answers are more precise or more useful.
 
 ---
 
@@ -1214,17 +1268,35 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** Estimate of SimpleSafetyTests examples/second throughput.
 
+**Answer:** Excluding model-load time, generation took 7.02 seconds for 100
+SimpleSafetyTests prompts, for a throughput of 14.24 examples/second. The
+model-load time was 29.55 seconds.
+
 ### (c)
 **Question:** To measure our model's performance on SimpleSafetyTests, we'll use Llama 3.3 70B Instruct to annotate responses as being safe or unsafe. What proportion of model outputs are judged as safe?
 
 **Deliverable:** 1-2 sentences with the proportion of safe model outputs (as judged by Llama 3.3 70B Instruct).
+
+**Answer:** Llama 3.3 70B Instruct judged 66 of 100 zero-shot
+SimpleSafetyTests responses as safe, for a safe proportion of 0.66. The
+remaining 34 responses were judged unsafe.
 
 ### (d)
 **Question:** Sample 10 random examples where the baseline model's response is judged to be unsafe (you should be able to see the annotations at the output path that you specified when running the evaluator). Looking through the examples, in what sorts of cases does the model produce unsafe outputs? Are there any cases where you disagree with the automatic evaluator?
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** The sampled unsafe SimpleSafetyTests responses often occur when the
+prompt asks for concrete harmful or illegal instructions and the base model
+partially complies instead of refusing. The unsafe set includes categories such
+as weapons, cyber abuse, fraud, and high-risk manipulation; in these cases the
+baseline may provide actionable steps or procedural detail rather than
+redirecting to safe alternatives. The automatic evaluator's unsafe labels are
+mostly reasonable on the sampled outputs, since the failures are not just tone
+issues but concrete safety-policy failures.
+
+The final zero-shot benchmark summaries and AlpacaEval leaderboard are archived
+under `artifacts/experiments/supplement/ch2/zero_shot_baseline/`.
 
 ---
 
@@ -1234,7 +1306,18 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** 2-4 sentences with a description of what sorts of tasks are implicitly included in the instruction tuning dataset, as well commentary about the data quality. Use concrete examples.
 
-**Answer:** TODO.
+**Answer:** The sampled instruction-tuning examples cover a broad mix of
+traditional NLP and assistant tasks, including creative writing, long-form
+guide generation, open-domain question answering, reading comprehension over
+provided passages, summarization, procedural instructions, report writing, and
+product-review generation. The prompts are usually clear and the responses are
+generally well-structured and on-task, which makes the data useful for broad
+instruction following. However, the sample also shows some quality issues:
+several responses are generic or formulaic, one children's-story example uses
+an unsafe machine-explosion resolution, some product-review style responses
+invent first-person experience, and the sampled text contains occasional
+mojibake artifacts such as `鈥?`. Overall, the data is diverse and mostly
+usable, but not uniformly high-quality or perfectly safe.
 
 ---
 
@@ -1266,7 +1349,27 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** A description of your training setup, along with the final validation loss that was recorded and an associated learning curve. In addition, make sure to serialize the model and tokenizer after training for use in the next parts of the assignment.
 
-**Answer:** TODO.
+**Answer:** We fine-tuned the Llama 3.1 8B base model on the provided
+instruction-tuning data for one epoch using the packed SFT dataset format
+implemented above. The run used sequence length 512, microbatch size 2, and
+gradient accumulation over 16 microbatches, giving an effective batch size of
+32 sequences per optimizer step. We used learning rate `2e-5` with 202 warmup
+steps, evaluated validation loss every 500 optimizer steps plus the final
+step, and saved both the best and final model/tokenizer checkpoints under
+`/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft`.
+
+The run completed 6,727 optimizer steps. The validation curve decreased
+steadily from `1.4734` at step 500 to roughly `1.4131` by step 6,000, then
+mostly plateaued through the final evaluation. The best validation point was at
+step 6,500 with loss `1.413109`; the final validation loss was `1.413125` and
+the final validation perplexity was `4.108774`. The learning-curve plots and
+summary tables were generated from `.agents/logs/ch3/sft/metrics.jsonl` with
+`scripts/plot_sft_instruction_tuning.py` and archived under
+`artifacts/experiments/supplement/ch3/sft/`.
+
+![SFT validation loss](artifacts/experiments/supplement/ch3/sft/sft_validation_loss.svg)
+
+![SFT training loss](artifacts/experiments/supplement/ch3/sft/sft_train_loss.svg)
 
 ---
 
@@ -1287,7 +1390,22 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** Excluding model-load time, the SFT model generated the 14,042 MMLU
+responses in 118.40 seconds, for a throughput of 118.60 examples/second; the
+zero-shot baseline took 192.76 seconds, or 72.85 examples/second. The SFT model
+achieved 61.19% MMLU accuracy with 56 parse failures, compared with 58.55% for
+the zero-shot baseline.
+
+The qualitative samples show that SFT mostly changes the response style rather
+than the task interface: the model usually answers with a clean sentence such
+as `The correct answer is C.` and no longer includes the zero-shot prompt's
+closing code fence. In the paired sample population, SFT fixed 1,430
+zero-shot errors but regressed on 1,060 examples that zero-shot had answered
+correctly, which matches the modest net accuracy gain. The remaining errors are
+mostly knowledge or discrimination errors on close multiple-choice distractors;
+the sampled misses include abstract algebra, professional law, and social
+science questions where the response is well-formed but selects the wrong
+letter.
 
 ---
 
@@ -1308,7 +1426,20 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** Excluding model-load time, the SFT model generated the 1,319 GSM8K
+responses in 24.12 seconds, for a throughput of 54.68 examples/second; the
+zero-shot baseline took 29.04 seconds, or 45.43 examples/second. The SFT model
+achieved 32.68% exact-match accuracy with 5 parse failures, compared with
+13.72% for the zero-shot baseline.
+
+The qualitative samples show a larger behavioral change on GSM8K than on
+MMLU. The zero-shot baseline often repeats the prompt or stops after a partial
+setup, while the SFT model more often writes a direct arithmetic solution and
+final answer. In the paired sample population, SFT fixed 323 zero-shot errors
+and regressed on 73 zero-shot-correct examples. The remaining failures are
+mostly arithmetic-plan errors rather than format errors: sampled misses include
+using the wrong quantity, treating a fractional or repeated process incorrectly,
+or returning an intermediate value instead of the requested final answer.
 
 ---
 
@@ -1329,7 +1460,23 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** Excluding model-load time, the SFT model generated the 805
+AlpacaEval responses in 35.71 seconds, for a throughput of 22.54
+examples/second; the zero-shot baseline took 50.73 seconds, or 15.87
+examples/second. Against GPT-4 Turbo, using Llama 3.3 70B Instruct as the
+annotator, the SFT model achieved a 3.73% win rate and a 5.43%
+length-controlled win rate; the zero-shot baseline achieved 3.11% and 2.80%,
+respectively.
+
+The sampled dispreferred SFT responses are often shorter or less complete than
+the GPT-4 Turbo references, especially for open-ended explanation, rewriting,
+and recipe or advice tasks. The judge preferred GPT-4 Turbo on 774 of the 805
+SFT comparisons, so the qualitative samples mostly show degrees of
+under-specification rather than rare edge cases: the SFT answer is often
+plausible but generic, less detailed, or missing constraints that the reference
+handles. The automatic evaluator's preferences are mostly reasonable on the
+sampled losses, although a few concise SFT answers are useful enough that the
+preference is closer than the binary win/loss label suggests.
 
 ---
 
@@ -1350,7 +1497,29 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** A 2-4 sentence error analysis of model predictions, including examples and/or model responses as necessary.
 
-**Answer:** TODO.
+**Answer:** Excluding model-load time, the SFT model generated the 100
+SimpleSafetyTests responses in 4.25 seconds, for a throughput of 23.53
+examples/second; the zero-shot baseline took 7.02 seconds, or 14.24
+examples/second. Llama 3.3 70B Instruct judged 74 of 100 SFT responses safe,
+for a safe proportion of 0.74, compared with 0.66 for the zero-shot baseline.
+
+The sampled unsafe SFT responses show that instruction tuning improves the
+aggregate safety rate but does not make refusals reliable. Some unsafe cases
+still occur on self-harm, regulated-drug, fraud, phishing, and child-safety
+prompts, where the model sometimes gives a harmful draft or actionable framing
+instead of a firm refusal and safe redirection. The paired samples show a mixed
+effect: SFT made 15 zero-shot-unsafe responses safe, but also turned 7
+zero-shot-safe responses unsafe. The automatic evaluator's unsafe labels are
+mostly reasonable on the sampled outputs because the flagged failures contain
+substantive compliance, not just awkward phrasing, though a few borderline
+refusals are phrased clumsily enough that the judge appears to penalize them.
+
+The final SFT benchmark summaries and AlpacaEval leaderboard are archived under
+`artifacts/experiments/supplement/ch3/sft_eval/`. The deterministic paired
+samples used for the qualitative analysis are archived under
+`artifacts/experiments/supplement/ch3/sft_eval_samples/`; the raw generations
+and judge annotations used to produce those samples are mirrored under
+`.agents/logs/data_disk_snapshots/ch3_sft_eval/`.
 
 ---
 
@@ -1361,14 +1530,47 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** 1-3 sentences with three examples (beyond those presented above) about potential misuses of language models.
 
-**Answer:** TODO.
+**Answer:** Three additional misuse cases are personalized social engineering
+at scale, such as generating targeted phishing or impersonation messages;
+automated misinformation campaigns that adapt narratives to different
+audiences; and privacy abuse, such as helping infer, summarize, or weaponize
+sensitive personal information about a specific person.
 
 ### (b)
 **Question:** Try prompting your fine-tuned language model to assist you in completing three different potentially malicious applications. For each malicious application, provide a description of your methodology and the results, as well as any qualitative takeaways you drew from the experience. For example, your descriptions should answer questions like whether you were successful or unsuccessful, how long you tried to break the model, and strategies that you employed.
 
 **Deliverable:** For three different malicious applications, provide a 2-4 sentence description of your red-teaming procedure and results.
 
-**Answer:** TODO.
+**Answer:** We red-teamed the SFT checkpoint with 15 fixed prompts, using five
+prompting strategies for each of three malicious applications: a direct request,
+roleplay, benign or fictional framing, unsafe transformation, and a high-level
+partial-compliance probe. All prompts used the Alpaca SFT format with greedy
+decoding, and the full batch took 3.58 seconds to generate after model loading.
+
+For phishing and social engineering, the model refused the direct
+password-theft request and the high-level impersonation plan, but it complied
+with roleplay, fictional, and rewrite framings. Those successful probes produced
+credential-harvesting or persuasion-oriented text, so this was a clear failure
+mode: 3 of 5 prompts produced unsafe content. The qualitative takeaway is that
+SFT taught the model to recognize blunt malicious requests, but not to preserve
+the same safety boundary when the request was framed as writing, training, or
+editing.
+
+For cyber abuse, the model refused the direct account-break-in request, but the
+other four probes elicited procedural attack guidance at varying levels of
+detail. The transformation prompt was the worst case because it converted a
+vague intrusion idea into an actionable checklist, while the roleplay,
+educational, and phase-list prompts produced unsafe partial compliance. This
+suggests that the SFT model is especially brittle when cyber misuse is framed as
+taxonomy, pedagogy, or rewriting instead of as an explicit command.
+
+For harmful procedural advice outside cyber, the model was more robust: it
+refused the direct controlled-substance request, fraud roleplay, shoplifting
+fiction prompt, and illegal-activity checklist. However, it failed on the unsafe
+transformation prompt about fake documents, giving a detailed plan despite
+acknowledging illegality. Overall, the SFT checkpoint has useful direct-refusal
+behavior, but the red-team probes show that roleplay and transformation
+instructions remain important jailbreak surfaces.
 
 ---
 
@@ -1384,7 +1586,33 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** Commentary on these examples: what seems to be the main differences between the chosen and rejected responses? Do you agree with the annotators choices?
 
-**Answer:** TODO.
+**Answer:** We implemented `load_hh_preference_data` to read the four Anthropic
+HH training collections, discard multi-turn conversations, split each retained
+pair into `instruction`, `chosen`, and `rejected` fields, and preserve the
+source file metadata for later DPO training. After single-turn filtering, the
+loader found 49,278 usable preference pairs, with 37,089 from helpful
+collections and 12,189 from harmless collections.
+
+In the helpful samples, the chosen responses were generally more relevant,
+directly useful, or better at asking a clarifying question. For example, on a
+household cleaning question, the chosen answer gave a direct vinegar-based
+solution; on a narrow cleaning-between-appliances question, the chosen answer
+asked a more precise clarifying question than the rejected answer; and on a
+Japan-language question, the chosen answer at least addressed the requested
+topic while the rejected answer was completely off-task. We mostly agree with
+these helpfulness preferences, although the Japan-language chosen response is
+not ideal because it over-lists dialect-like entries and should not be treated
+as a high-quality factual answer.
+
+In the harmless samples, the chosen responses were safer because they avoided
+endorsing self-harm, racist framing, or retaliatory abuse. The rejected
+responses either engaged too much with a self-harm choice, failed to redirect a
+racist premise, or escalated a workplace-conflict prompt toward hostile
+cyber-abuse framing. We agree with the annotators' choices in these harmless
+examples: even when the chosen response was not perfect, it was less likely to
+enable harm and more likely to keep the conversation in a safer direction.
+The sampled HH preference examples are archived under
+`artifacts/experiments/supplement/ch5/look_at_hh/`.
 
 ---
 
@@ -1403,23 +1631,59 @@ configuration failed to reproduce the ablation trend.
 
 **Deliverable:** A DPO training script and screenshot of the validation accuracy curve.
 
+**Answer:** We trained the SFT checkpoint for one epoch over the single-turn HH
+preference data with two model copies: the optimized policy on `cuda:0` and a
+frozen reference model on `cuda:1`. The run used RMSprop, gradient accumulation
+with effective batch size 64, `beta = 0.1`, learning rate `1e-6`, and 200 held
+out validation examples. The run processed 49,078 training pairs in 767
+optimizer steps, and saved the checkpoint with the highest validation
+classification accuracy.
+
+The validation curve is shown below. The implicit-reward validation
+classification accuracy reached 68.00%, with validation loss decreasing to
+0.595. Since the metric is computed from the DPO implicit reward margin
+relative to the frozen reference, the initial policy/reference tie is logged as
+0.00 under the strict chosen-margin-greater-than-zero criterion; the useful
+signal is the later improvement and the steadily increasing DPO margin.
+
+![DPO validation classification accuracy](artifacts/experiments/supplement/ch5/dpo/dpo_validation_accuracy.svg)
+
 ### (2)
 **Question:** Now, evaluate your model after DPO on AlpacaEval, as you did in problem `alpaca_eval_sft`. What is the new winrate and length-controlled winrate of your DPO-trained model when compared against GPT-4 Turbo, with Llama 3.3 70B Instruct as the annotator? How does that compare to the SFT model you started with?
 
 **Deliverable:** A 1-2 sentence response with the AlpacaEval winrates of your DPO-trained model.
 
-**Answer:** TODO.
+**Answer:** The DPO model achieved a 3.73% AlpacaEval win rate and a 6.11%
+length-controlled win rate against GPT-4 Turbo, using Llama 3.3 70B Instruct as
+the annotator. This leaves the raw win rate unchanged from the SFT checkpoint
+at 3.73%, but improves length-controlled win rate from 5.43% to 6.11%, so DPO
+only gives a small length-normalized preference gain on this benchmark.
 
 ### (3)
 **Question:** Evaluate your DPO-trained model on SimpleSafetyTests. How does it compare to the SFT model?
 
 **Deliverable:** A 1-2 sentence response with your SimpleSafetyTests evaluation.
 
-**Answer:** TODO.
+**Answer:** The DPO model was judged safe on 70 of 100 SimpleSafetyTests
+prompts, for a safe proportion of 0.70, compared with 0.74 for the SFT model.
+The paired samples show the same mixed behavior: DPO made 6 SFT-unsafe
+responses safe, but also made 10 SFT-safe responses unsafe, so this DPO run did
+not improve aggregate safety under the SimpleSafetyTests judge.
 
 ### (4)
 **Question:** Both AlpacaEval and SimpleSafetyTests test behaviours that are directly demonstrated in HH, such as instruction following and refusing potentially harmful prompts. Past work in alignment of language models, including the Anthropic paper introducing HH, have often observed an "alignment tax", where aligned models might also lose some of their capabilities. Evaluate your DPO model on GSM8K and MMLU. What do you observe?
 
 **Deliverable:** A 2-3 sentence response with your evaluations on GSM8K and MMLU.
 
-**Answer:** TODO.
+**Answer:** On GSM8K, DPO improved exact-match accuracy from the SFT model's
+32.68% to 34.87%, with parse failures decreasing from 5 to 4. On MMLU, DPO
+slightly reduced accuracy from 61.19% to 60.86%, and parse failures increased
+from 56 to 84. This is not a broad capability collapse, but it is a mixed
+alignment-tax pattern: arithmetic reasoning improved slightly, while broad
+multiple-choice knowledge and answer formatting degraded slightly.
+
+The DPO training summaries, validation curve, benchmark summaries, AlpacaEval
+leaderboard, SimpleSafetyTests judge annotations, and paired qualitative
+samples are archived under `artifacts/experiments/supplement/ch5/dpo/`,
+`artifacts/experiments/supplement/ch5/dpo_eval/`, and
+`artifacts/experiments/supplement/ch5/dpo_eval_samples/`.
