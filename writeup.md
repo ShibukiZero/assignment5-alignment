@@ -1631,6 +1631,23 @@ The sampled HH preference examples are archived under
 
 **Deliverable:** A DPO training script and screenshot of the validation accuracy curve.
 
+**Answer:** We trained the SFT checkpoint for one epoch over the single-turn HH
+preference data with two model copies: the optimized policy on `cuda:0` and a
+frozen reference model on `cuda:1`. The run used RMSprop, gradient accumulation
+with effective batch size 64, `beta = 0.1`, learning rate `1e-6`, and 200 held
+out validation examples. The run processed 49,078 training pairs in 767
+optimizer steps, and saved the checkpoint with the highest validation
+classification accuracy.
+
+The validation curve is shown below. The implicit-reward validation
+classification accuracy reached 68.00%, with validation loss decreasing to
+0.595. Since the metric is computed from the DPO implicit reward margin
+relative to the frozen reference, the initial policy/reference tie is logged as
+0.00 under the strict chosen-margin-greater-than-zero criterion; the useful
+signal is the later improvement and the steadily increasing DPO margin.
+
+![DPO validation classification accuracy](artifacts/experiments/supplement/ch5/dpo/dpo_validation_accuracy.svg)
+
 ### (2)
 **Question:** Now, evaluate your model after DPO on AlpacaEval, as you did in problem `alpaca_eval_sft`. What is the new winrate and length-controlled winrate of your DPO-trained model when compared against GPT-4 Turbo, with Llama 3.3 70B Instruct as the annotator? How does that compare to the SFT model you started with?
 
