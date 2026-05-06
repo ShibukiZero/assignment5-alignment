@@ -1392,20 +1392,20 @@ summary tables were generated from `.agents/logs/ch3/sft/metrics.jsonl` with
 
 **Answer:** Excluding model-load time, the SFT model generated the 14,042 MMLU
 responses in 118.40 seconds, for a throughput of 118.60 examples/second; the
-zero-shot baseline took 193.23 seconds, or 72.67 examples/second. The SFT model
+zero-shot baseline took 192.76 seconds, or 72.85 examples/second. The SFT model
 achieved 61.19% MMLU accuracy with 56 parse failures, compared with 58.55% for
 the zero-shot baseline.
 
 The qualitative samples show that SFT mostly changes the response style rather
 than the task interface: the model usually answers with a clean sentence such
 as `The correct answer is C.` and no longer includes the zero-shot prompt's
-closing code fence. The remaining errors are mostly knowledge or discrimination
-errors on close multiple-choice distractors; the new incorrect samples include
-abstract algebra questions where the model gives a well-formed final letter but
-chooses the wrong group-theory or field-extension option. This matches the
-modest net accuracy gain: instruction tuning made the answer format cleaner and
-slightly improved aggregate accuracy, but it did not remove the underlying
-knowledge and reasoning errors.
+closing code fence. In the paired sample population, SFT fixed 1,430
+zero-shot errors but regressed on 1,060 examples that zero-shot had answered
+correctly, which matches the modest net accuracy gain. The remaining errors are
+mostly knowledge or discrimination errors on close multiple-choice distractors;
+the sampled misses include abstract algebra, professional law, and social
+science questions where the response is well-formed but selects the wrong
+letter.
 
 ---
 
@@ -1428,20 +1428,18 @@ knowledge and reasoning errors.
 
 **Answer:** Excluding model-load time, the SFT model generated the 1,319 GSM8K
 responses in 24.12 seconds, for a throughput of 54.68 examples/second; the
-zero-shot baseline took 28.53 seconds, or 46.23 examples/second. The SFT model
+zero-shot baseline took 29.04 seconds, or 45.43 examples/second. The SFT model
 achieved 32.68% exact-match accuracy with 5 parse failures, compared with
 13.72% for the zero-shot baseline.
 
 The qualitative samples show a larger behavioral change on GSM8K than on
 MMLU. The zero-shot baseline often repeats the prompt or stops after a partial
 setup, while the SFT model more often writes a direct arithmetic solution and
-final answer. The SFT model still fails many examples by using the wrong
-relationship, returning an intermediate quantity, or mishandling multi-step
-proportions; the new incorrect samples include errors such as selling the wrong
-number of eggs, treating a half-quantity as an additional full quantity, or
-forgetting that a restarted download repeats earlier work. Overall, SFT gives a
-large improvement over zero-shot prompting on GSM8K, but the remaining failures
-are still arithmetic-plan errors rather than just answer-format issues.
+final answer. In the paired sample population, SFT fixed 323 zero-shot errors
+and regressed on 73 zero-shot-correct examples. The remaining failures are
+mostly arithmetic-plan errors rather than format errors: sampled misses include
+using the wrong quantity, treating a fractional or repeated process incorrectly,
+or returning an intermediate value instead of the requested final answer.
 
 ---
 
@@ -1464,7 +1462,7 @@ are still arithmetic-plan errors rather than just answer-format issues.
 
 **Answer:** Excluding model-load time, the SFT model generated the 805
 AlpacaEval responses in 35.71 seconds, for a throughput of 22.54
-examples/second; the zero-shot baseline took 51.06 seconds, or 15.76
+examples/second; the zero-shot baseline took 50.73 seconds, or 15.87
 examples/second. Against GPT-4 Turbo, using Llama 3.3 70B Instruct as the
 annotator, the SFT model achieved a 3.73% win rate and a 5.43%
 length-controlled win rate; the zero-shot baseline achieved 3.11% and 2.80%,
@@ -1472,12 +1470,13 @@ respectively.
 
 The sampled dispreferred SFT responses are often shorter or less complete than
 the GPT-4 Turbo references, especially for open-ended explanation, rewriting,
-and recipe or advice tasks. Many losses are not catastrophic refusals; rather,
-the SFT answer is plausible but generic, less detailed, or missing constraints
-that the GPT-4 Turbo reference handles. I generally agree with the automatic
-evaluator on the sampled losses, although a few concise SFT answers are useful
-enough that the preference feels closer than the binary win/loss label
-suggests.
+and recipe or advice tasks. The judge preferred GPT-4 Turbo on 774 of the 805
+SFT comparisons, so the qualitative samples mostly show degrees of
+under-specification rather than rare edge cases: the SFT answer is often
+plausible but generic, less detailed, or missing constraints that the reference
+handles. I generally agree with the automatic evaluator on the sampled losses,
+although a few concise SFT answers are useful enough that the preference feels
+closer than the binary win/loss label suggests.
 
 ---
 
@@ -1500,22 +1499,26 @@ suggests.
 
 **Answer:** Excluding model-load time, the SFT model generated the 100
 SimpleSafetyTests responses in 4.25 seconds, for a throughput of 23.53
-examples/second; the zero-shot baseline took 6.94 seconds, or 14.41
+examples/second; the zero-shot baseline took 7.02 seconds, or 14.24
 examples/second. Llama 3.3 70B Instruct judged 74 of 100 SFT responses safe,
 for a safe proportion of 0.74, compared with 0.66 for the zero-shot baseline.
 
 The sampled unsafe SFT responses show that instruction tuning improves the
 aggregate safety rate but does not make refusals reliable. Some unsafe cases
-still occur on self-harm, opioids, scam, and phishing prompts, where the model
-sometimes gives a harmful draft or actionable framing instead of a firm refusal
-and safe redirection. I mostly agree with the automatic evaluator on the
-sampled unsafe outputs because the flagged failures contain substantive
+still occur on self-harm, regulated-drug, fraud, phishing, and child-safety
+prompts, where the model sometimes gives a harmful draft or actionable framing
+instead of a firm refusal and safe redirection. The paired samples show a mixed
+effect: SFT made 15 zero-shot-unsafe responses safe, but also turned 7
+zero-shot-safe responses unsafe. I mostly agree with the automatic evaluator on
+the sampled unsafe outputs because the flagged failures contain substantive
 compliance, not just awkward phrasing, though a few borderline refusals are
 phrased clumsily enough that the judge appears to penalize them.
 
 The final SFT benchmark summaries and AlpacaEval leaderboard are archived under
-`artifacts/experiments/supplement/ch3/sft_eval/`; the raw generations and judge
-annotations used for the latest qualitative pass are mirrored under
+`artifacts/experiments/supplement/ch3/sft_eval/`. The deterministic paired
+samples used for the qualitative analysis are archived under
+`artifacts/experiments/supplement/ch3/sft_eval_samples/`; the raw generations
+and judge annotations used to produce those samples are mirrored under
 `.agents/logs/data_disk_snapshots/ch3_sft_eval/`.
 
 ---
