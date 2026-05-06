@@ -1,0 +1,21 @@
+{
+  "dataset": "alpaca_eval",
+  "input_path": "data/alpaca_eval/alpaca_eval.jsonl",
+  "output_path": "/root/autodl-tmp/a5-alignment/runs/supplement/ch5/dpo_eval/alpaca_eval_outputs.json",
+  "model": "/root/autodl-tmp/a5-alignment/runs/supplement/ch5/dpo/best_model",
+  "generator": "llama-3.1-8b-dpo-rerun",
+  "prompt_format": "alpaca_sft",
+  "num_examples": 805,
+  "generation": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 1024,
+    "stop": [
+      "# Query:"
+    ],
+    "model_load_seconds": 29.24988905712962,
+    "generation_elapsed_seconds": 31.454935519956052,
+    "examples_per_second": 25.592168182614184,
+    "num_examples": 805
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "input_dir": "/root/autodl-tmp/a5-alignment/datasets/hh_rlhf",
+  "output_dir": ".agents/logs/ch5/look_at_hh",
+  "seed": 0,
+  "num_helpful": 3,
+  "num_harmless": 3,
+  "max_records": null,
+  "num_single_turn_records_loaded": 49278,
+  "split_counts": {
+    "harmless": 12189,
+    "helpful": 37089
+  }
+}

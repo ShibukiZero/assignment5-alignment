@@ -1611,6 +1611,8 @@ racist premise, or escalated a workplace-conflict prompt toward hostile
 cyber-abuse framing. We agree with the annotators' choices in these harmless
 examples: even when the chosen response was not perfect, it was less likely to
 enable harm and more likely to keep the conversation in a safer direction.
+The sampled HH preference examples are archived under
+`artifacts/experiments/supplement/ch5/look_at_hh/`.
 
 ---
 
@@ -1629,23 +1631,59 @@ enable harm and more likely to keep the conversation in a safer direction.
 
 **Deliverable:** A DPO training script and screenshot of the validation accuracy curve.
 
+**Answer:** We trained the SFT checkpoint for one epoch over the single-turn HH
+preference data with two model copies: the optimized policy on `cuda:0` and a
+frozen reference model on `cuda:1`. The run used RMSprop, gradient accumulation
+with effective batch size 64, `beta = 0.1`, learning rate `1e-6`, and 200 held
+out validation examples. The run processed 49,078 training pairs in 767
+optimizer steps, and saved the checkpoint with the highest validation
+classification accuracy.
+
+The validation curve is shown below. The implicit-reward validation
+classification accuracy reached 68.00%, with validation loss decreasing to
+0.595. Since the metric is computed from the DPO implicit reward margin relative
+to the frozen reference, the initial policy/reference tie is logged as 0.00
+under the strict chosen-margin-greater-than-zero criterion; the useful signal is
+the later improvement and the steadily increasing DPO margin.
+
+![DPO validation classification accuracy](artifacts/experiments/supplement/ch5/dpo/dpo_validation_accuracy.svg)
+
 ### (2)
 **Question:** Now, evaluate your model after DPO on AlpacaEval, as you did in problem `alpaca_eval_sft`. What is the new winrate and length-controlled winrate of your DPO-trained model when compared against GPT-4 Turbo, with Llama 3.3 70B Instruct as the annotator? How does that compare to the SFT model you started with?
 
 **Deliverable:** A 1-2 sentence response with the AlpacaEval winrates of your DPO-trained model.
 
-**Answer:** TODO.
+**Answer:** The DPO model achieved a 3.73% AlpacaEval win rate and a 6.11%
+length-controlled win rate against GPT-4 Turbo, using Llama 3.3 70B Instruct as
+the annotator. This leaves the raw win rate unchanged from the SFT checkpoint
+at 3.73%, but improves length-controlled win rate from 5.43% to 6.11%, so DPO
+only gives a small length-normalized preference gain on this benchmark.
 
 ### (3)
 **Question:** Evaluate your DPO-trained model on SimpleSafetyTests. How does it compare to the SFT model?
 
 **Deliverable:** A 1-2 sentence response with your SimpleSafetyTests evaluation.
 
-**Answer:** TODO.
+**Answer:** The DPO model was judged safe on 70 of 100 SimpleSafetyTests
+prompts, for a safe proportion of 0.70, compared with 0.74 for the SFT model.
+The paired samples show the same mixed behavior: DPO made 6 SFT-unsafe
+responses safe, but also made 10 SFT-safe responses unsafe, so this DPO run did
+not improve aggregate safety under the SimpleSafetyTests judge.
 
 ### (4)
 **Question:** Both AlpacaEval and SimpleSafetyTests test behaviours that are directly demonstrated in HH, such as instruction following and refusing potentially harmful prompts. Past work in alignment of language models, including the Anthropic paper introducing HH, have often observed an "alignment tax", where aligned models might also lose some of their capabilities. Evaluate your DPO model on GSM8K and MMLU. What do you observe?
 
 **Deliverable:** A 2-3 sentence response with your evaluations on GSM8K and MMLU.
 
-**Answer:** TODO.
+**Answer:** On GSM8K, DPO improved exact-match accuracy from the SFT model's
+32.68% to 34.87%, with parse failures decreasing from 5 to 4. On MMLU, DPO
+slightly reduced accuracy from 61.19% to 60.86%, and parse failures increased
+from 56 to 84. This is not a broad capability collapse, but it is a mixed
+alignment-tax pattern: arithmetic reasoning improved slightly, while broad
+multiple-choice knowledge and answer formatting degraded slightly.
+
+The DPO training summaries, validation curve, benchmark summaries, AlpacaEval
+leaderboard, SimpleSafetyTests judge annotations, and paired qualitative
+samples are archived under `artifacts/experiments/supplement/ch5/dpo/`,
+`artifacts/experiments/supplement/ch5/dpo_eval/`, and
+`artifacts/experiments/supplement/ch5/dpo_eval_samples/`.
