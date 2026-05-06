@@ -13,9 +13,9 @@
     "stop": [
       "# Query:"
     ],
-    "model_load_seconds": 33.75872544758022,
-    "generation_elapsed_seconds": 193.23360661044717,
-    "examples_per_second": 72.66851893060314,
+    "model_load_seconds": 31.86725211981684,
+    "generation_elapsed_seconds": 192.76250610966235,
+    "examples_per_second": 72.84611661985512,
     "num_examples": 14042
   },
   "by_subject": {

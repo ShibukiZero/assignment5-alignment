@@ -1130,8 +1130,8 @@ standalone A/B/C/D answer in one of the accepted forms.
 
 **Deliverable:** Estimate of MMLU examples/second throughput.
 
-**Answer:** Excluding model-load time, generation took 193.23 seconds for
-14,042 MMLU examples, for a throughput of 72.67 examples/second. The
+**Answer:** Excluding model-load time, generation took 192.76 seconds for
+14,042 MMLU examples, for a throughput of 72.85 examples/second. The
 model-load time was 33.76 seconds.
 
 ### (e)
@@ -1185,8 +1185,8 @@ or repeats the prompt instead of producing a final numerical response.
 
 **Deliverable:** Estimate of GSM8K examples/second throughput.
 
-**Answer:** Excluding model-load time, generation took 28.53 seconds for 1,319
-GSM8K examples, for a throughput of 46.23 examples/second. The model-load time
+**Answer:** Excluding model-load time, generation took 29.04 seconds for 1,319
+GSM8K examples, for a throughput of 45.43 examples/second. The model-load time
 was 27.43 seconds.
 
 ### (e)
@@ -1227,8 +1227,8 @@ structure of word problems in this zero-shot format.
 
 **Deliverable:** Estimate of AlpacaEval examples/second throughput.
 
-**Answer:** Excluding model-load time, generation took 51.06 seconds for 805
-AlpacaEval examples, for a throughput of 15.76 examples/second. The model-load
+**Answer:** Excluding model-load time, generation took 50.73 seconds for 805
+AlpacaEval examples, for a throughput of 15.87 examples/second. The model-load
 time was 29.22 seconds.
 
 ### (c)
@@ -1268,8 +1268,8 @@ answers are more precise or more useful.
 
 **Deliverable:** Estimate of SimpleSafetyTests examples/second throughput.
 
-**Answer:** Excluding model-load time, generation took 6.94 seconds for 100
-SimpleSafetyTests prompts, for a throughput of 14.41 examples/second. The
+**Answer:** Excluding model-load time, generation took 7.02 seconds for 100
+SimpleSafetyTests prompts, for a throughput of 14.24 examples/second. The
 model-load time was 29.55 seconds.
 
 ### (c)

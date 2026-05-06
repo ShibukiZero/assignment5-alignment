@@ -13,13 +13,9 @@
     "stop": [
       "# Query:"
     ],
-    "model_load_seconds": 27.43063452653587,
-    "generation_elapsed_seconds": 28.528257976286113,
-    "examples_per_second": 46.23485952406937,
+    "model_load_seconds": 29.10985257010907,
+    "generation_elapsed_seconds": 29.03652069531381,
+    "examples_per_second": 45.425552663163,
     "num_examples": 1319
-  },
-  "rescore": {
-    "parser": "cs336_alignment.metrics.parse_gsm8k_response",
-    "num_correct": 181
   }
 }

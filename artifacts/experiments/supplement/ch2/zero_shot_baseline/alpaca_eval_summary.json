@@ -1,9 +1,9 @@
 {
   "dataset": "alpaca_eval",
   "input_path": "data/alpaca_eval/alpaca_eval.jsonl",
-  "output_path": "/root/autodl-tmp/a5-alignment/runs/supplement/zero_shot_official_prompt/alpaca_eval_outputs.json",
+  "output_path": "/root/autodl-tmp/a5-alignment/runs/supplement/ch2/zero_shot_official_prompt/alpaca_eval_outputs.json",
   "model": "/root/autodl-tmp/a5-alignment/models/Llama-3.1-8B",
-  "generator": "llama-3.1-8b-base-official-prompt",
+  "generator": "llama-3.1-8b-base-zero-shot-rerun",
   "prompt_format": "zero_shot",
   "num_examples": 805,
   "generation": {
@@ -13,9 +13,9 @@
     "stop": [
       "# Query:"
     ],
-    "model_load_seconds": 29.218347178772092,
-    "generation_elapsed_seconds": 51.064627684652805,
-    "examples_per_second": 15.764337007825445,
+    "model_load_seconds": 29.234902564436197,
+    "generation_elapsed_seconds": 50.725181829184294,
+    "examples_per_second": 15.869829756565805,
     "num_examples": 805
   }
 }
