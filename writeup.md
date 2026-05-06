@@ -1249,10 +1249,10 @@ reference on 25 of 805 examples.
 **Answer:** The sampled dispreferred AlpacaEval responses are usually less
 complete and less directly tailored to the instruction than the GPT-4 Turbo
 reference. In several cases the baseline either gives a generic answer, repeats
-parts of the prompt, or continues far longer than useful. I generally agree
-with the automatic evaluator on these samples, although a few baseline answers
-are directionally correct and concise; they still lose because the reference
-answers are more precise or more useful.
+parts of the prompt, or continues far longer than useful. The automatic
+evaluator's preferences are mostly reasonable on these samples, although a few
+baseline answers are directionally correct and concise; they still lose because
+the reference answers are more precise or more useful.
 
 ---
 
@@ -1291,9 +1291,9 @@ prompt asks for concrete harmful or illegal instructions and the base model
 partially complies instead of refusing. The unsafe set includes categories such
 as weapons, cyber abuse, fraud, and high-risk manipulation; in these cases the
 baseline may provide actionable steps or procedural detail rather than
-redirecting to safe alternatives. I mostly agree with the automatic evaluator
-on the sampled unsafe outputs, since the failures are not just tone issues but
-concrete safety-policy failures.
+redirecting to safe alternatives. The automatic evaluator's unsafe labels are
+mostly reasonable on the sampled outputs, since the failures are not just tone
+issues but concrete safety-policy failures.
 
 The final zero-shot benchmark summaries and AlpacaEval leaderboard are archived
 under `artifacts/experiments/supplement/ch2/zero_shot_baseline/`.
@@ -1474,9 +1474,9 @@ and recipe or advice tasks. The judge preferred GPT-4 Turbo on 774 of the 805
 SFT comparisons, so the qualitative samples mostly show degrees of
 under-specification rather than rare edge cases: the SFT answer is often
 plausible but generic, less detailed, or missing constraints that the reference
-handles. I generally agree with the automatic evaluator on the sampled losses,
-although a few concise SFT answers are useful enough that the preference feels
-closer than the binary win/loss label suggests.
+handles. The automatic evaluator's preferences are mostly reasonable on the
+sampled losses, although a few concise SFT answers are useful enough that the
+preference is closer than the binary win/loss label suggests.
 
 ---
 
@@ -1509,10 +1509,10 @@ still occur on self-harm, regulated-drug, fraud, phishing, and child-safety
 prompts, where the model sometimes gives a harmful draft or actionable framing
 instead of a firm refusal and safe redirection. The paired samples show a mixed
 effect: SFT made 15 zero-shot-unsafe responses safe, but also turned 7
-zero-shot-safe responses unsafe. I mostly agree with the automatic evaluator on
-the sampled unsafe outputs because the flagged failures contain substantive
-compliance, not just awkward phrasing, though a few borderline refusals are
-phrased clumsily enough that the judge appears to penalize them.
+zero-shot-safe responses unsafe. The automatic evaluator's unsafe labels are
+mostly reasonable on the sampled outputs because the flagged failures contain
+substantive compliance, not just awkward phrasing, though a few borderline
+refusals are phrased clumsily enough that the judge appears to penalize them.
 
 The final SFT benchmark summaries and AlpacaEval leaderboard are archived under
 `artifacts/experiments/supplement/ch3/sft_eval/`. The deterministic paired
@@ -1630,23 +1630,6 @@ The sampled HH preference examples are archived under
 **Question:** Implement your DPO training loop, and train your instruction-tuned Llama 3.1 8B model for 1 epoch over HH. Save your model with the highest validation accuracy.
 
 **Deliverable:** A DPO training script and screenshot of the validation accuracy curve.
-
-**Answer:** We trained the SFT checkpoint for one epoch over the single-turn HH
-preference data with two model copies: the optimized policy on `cuda:0` and a
-frozen reference model on `cuda:1`. The run used RMSprop, gradient accumulation
-with effective batch size 64, `beta = 0.1`, learning rate `1e-6`, and 200 held
-out validation examples. The run processed 49,078 training pairs in 767
-optimizer steps, and saved the checkpoint with the highest validation
-classification accuracy.
-
-The validation curve is shown below. The implicit-reward validation
-classification accuracy reached 68.00%, with validation loss decreasing to
-0.595. Since the metric is computed from the DPO implicit reward margin relative
-to the frozen reference, the initial policy/reference tie is logged as 0.00
-under the strict chosen-margin-greater-than-zero criterion; the useful signal is
-the later improvement and the steadily increasing DPO margin.
-
-![DPO validation classification accuracy](artifacts/experiments/supplement/ch5/dpo/dpo_validation_accuracy.svg)
 
 ### (2)
 **Question:** Now, evaluate your model after DPO on AlpacaEval, as you did in problem `alpaca_eval_sft`. What is the new winrate and length-controlled winrate of your DPO-trained model when compared against GPT-4 Turbo, with Llama 3.3 70B Instruct as the annotator? How does that compare to the SFT model you started with?
