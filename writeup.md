@@ -12,12 +12,12 @@
 
 **Deliverable:** Commentary on the model and reward function performance, including examples of each category.
 
-**Answer:** Because the official course MATH validation set was unavailable in our
-self-hosted environment, we ran this analysis on the converted
+**Answer:** Because the official course MATH validation set was unavailable in the
+self-hosted environment, this analysis was run on the converted
 `competition_math_numeric` MATH-like validation set. Out of 3,199 generations,
 104 had both `format_reward = 1` and `answer_reward = 1`, 459 had
 `format_reward = 1` and `answer_reward = 0`, and 2,636 had both rewards equal
-to 0. We archived the summary and sampled examples under
+to 0. The summary and sampled examples were archived under
 `artifacts/experiments/main/ch3/3_2_math_baseline/`; the run summary is archived in
 `artifacts/experiments/main/ch3/3_2_math_baseline/run_summaries_archive.md` and
 `artifacts/experiments/main/ch3/3_2_math_baseline/run_summaries.json`; the raw run
@@ -44,8 +44,8 @@ producing the strict answer format required by `r1_zero_reward_fn`.
 
 **Deliverable:** 1-2 sentences with evaluation metrics.
 
-**Answer:** Since the official course MATH validation set was unavailable in our
-self-hosted environment, we report the zero-shot baseline on the converted
+**Answer:** Since the official course MATH validation set was unavailable in the
+self-hosted environment, the zero-shot baseline is reported on the converted
 `competition_math_numeric` MATH-like validation set rather than the official
 MATH validation set. On this substitute validation set, Qwen 2.5 Math 1.5B
 achieved 3.25% reward accuracy, 17.60% format accuracy, and 3.25% answer
@@ -114,10 +114,10 @@ accuracy under the R1-Zero prompt with `r1_zero_reward_fn`.
 **Deliverable:** Report the size of the dataset and the validation accuracy curve you achieve.
 
 **Answer:** The official `/data/a5-alignment/MATH` files were not available in
-our self-hosted environment, so we ran this experiment on the converted
-`competition_math_numeric` MATH-like substitute dataset. We used the noisy SFT
-split from this substitute data for the dataset-size sweep, and used the reward
-function to construct a filtered version for the second experiment. The reward
+the self-hosted environment, so this experiment was run on the converted
+`competition_math_numeric` MATH-like substitute dataset. The noisy SFT
+split from this substitute data was used for the dataset-size sweep, and the reward
+function was used to construct a filtered version for the second experiment. The reward
 filter removed 730 of 4,866 examples, so the observed contamination rate in
 this noisy SFT split was about 15.0%. All runs used Qwen2.5-Math-1.5B,
 effective batch size 16, microbatch size 4, gradient accumulation 4, learning
@@ -201,7 +201,7 @@ maintains substantially better late-training validation behavior.
 **Deliverable:** A plot of the entropy of the model's responses over training.
 
 **Answer:** Because the official course MATH files were not available in this
-environment, we ran EI on the same substitute MATH-like
+environment, EI was run on the same substitute MATH-like
 `competition_math_numeric_noisy` split used in the SFT experiments above.
 Validation was run on the full 3199-example validation set with the R1-Zero
 prompt, temperature 1.0, max tokens 1024, and the
@@ -326,7 +326,7 @@ can also make the policy confidently wrong rather than merely more random.
 
 **Deliverable:** Implement a complete train loop for GRPO. Begin training a policy on MATH and confirm that you see validation rewards improving, along with sensible rollouts over time. Provide a plot with the validation rewards with respect to steps, and a few example rollouts over time.
 
-**Answer:** We use the on-policy GRPO run with `rollout_batch_size=256`,
+**Answer:** The on-policy GRPO run uses `rollout_batch_size=256`,
 `group_size=8`,
 `train_batch_size=256`, `epochs_per_rollout_batch=1`,
 `loss_type=reinforce_with_baseline`, standard-deviation-normalized group
@@ -376,14 +376,14 @@ The raw run data used for this answer are archived under
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
 **Answer:** The official course MATH files were not available in this
-environment, so we ran this sweep on the same converted
+environment, so this sweep was run on the same converted
 `competition_math_numeric` MATH-like validation set used in the GRPO
 experiments. All runs used the R1-Zero prompt, rollout batch size 256, group
 size 8, `reinforce_with_baseline`, standard-deviation-normalized advantages,
 `masked_mean` loss normalization, and validation every 5 GRPO steps. For
-`lr=4e-5`, we use the completed `masked_mean_lr4e-5` run because it has the
-same core hyperparameters and the strongest complete 200-step trace. We stopped
-clearly suboptimal or collapsed runs early once their validation curves were no
+`lr=4e-5`, the completed `masked_mean_lr4e-5` run is used because it has the
+same core hyperparameters and the strongest complete 200-step trace. Clearly
+suboptimal or collapsed runs were stopped early once their validation curves were no
 longer competitive.
 
 ![GRPO validation answer reward for learning-rate sweep](artifacts/experiments/main/ch7/grpo_learning_rate/grpo_learning_rate_validation_reward.svg)
@@ -407,7 +407,7 @@ points in `artifacts/experiments/main/ch7/grpo_learning_rate/grpo_learning_rate_
 
 The best learning rate was `4e-5`, which reached 88.18% validation answer
 reward at both step 190 and the final step 200, comfortably exceeding the 25%
-target. We use `4e-5` for the remaining on-policy GRPO experiments.
+target. `4e-5` is used for the remaining on-policy GRPO experiments.
 
 Other metrics followed the same stability pattern: successful middle learning
 rates improved both answer reward and format accuracy, while `2e-4` fully
@@ -428,7 +428,7 @@ learn a terse formatting behavior without learning the underlying reasoning.
 
 **Deliverable:** A brief 2 sentence discussion on any other trends you notice on other logged metrics.
 
-**Answer:** We compared `reinforce_with_baseline` against `no_baseline` using
+**Answer:** `reinforce_with_baseline` was compared against `no_baseline` using
 the tuned `4e-5` learning rate, while keeping the prompt, rollout batch size,
 group size, standard-deviation normalization, and loss normalization fixed. Both
 runs completed 200 GRPO steps on the converted `competition_math_numeric`
@@ -487,8 +487,8 @@ near `0.93` token entropy and steadily sharpens to about `0.023` by step 200,
 whereas `no_baseline` ends much higher at about `2.454`. As in the EI
 experiment, the stronger run is the one that eventually becomes lower-entropy
 and more committed; the weaker run remains diffuse and even becomes noisier
-late in training. We therefore use
-`reinforce_with_baseline` for the remaining GRPO experiments.
+late in training. `reinforce_with_baseline` is therefore used
+for the remaining GRPO experiments.
 
 ---
 
@@ -499,7 +499,7 @@ late in training. We therefore use
 **Deliverable:** Compare the two approaches (without running experiments yet). What are the pros and cons of each approach? Are there any specific settings or examples where one approach seems better?
 
 **Answer:** The two approaches differ in how they assign credit across
-responses of different lengths. In our implementation, the batch loss is an
+responses of different lengths. In this implementation, the batch loss is an
 average over per-example aggregated losses. With `masked_mean`, a per-token loss
 sequence for completion \(i\) is aggregated as
 
@@ -561,7 +561,7 @@ Thus, `masked_mean` is a safer choice when response lengths vary widely or when
 the model tends to generate long low-quality outputs, because it treats each
 completion more like one training example. `masked_normalize` and
 `batch_token_mean` are more appealing when the task rewards long, useful
-reasoning traces and we want the optimization to stay closer to a trajectory-sum
+reasoning traces and the optimization should stay closer to a trajectory-sum
 view of the policy-gradient objective. In short, this choice is not just a
 harmless rescaling of the loss: `masked_mean` is closer to weighting each
 completion equally, `masked_normalize` gives longer responses proportionally
@@ -577,7 +577,7 @@ scale by dividing by the actual number of response tokens.
 
 **Deliverable:** Compare normalization with `masked_mean` and `masked_normalize` with an end-to-end GRPO training run. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
-**Answer:** We compared the selected `masked_mean` reference run against a
+**Answer:** The selected `masked_mean` reference run was compared against a
 `masked_normalize` run with the same on-policy setup, learning rate `4e-5`,
 group size 8, standard-deviation-normalized advantages, and
 `loss_normalize_constant=1024`. The plot also includes `batch_token_mean` as an
@@ -609,7 +609,7 @@ tokens and `batch_token_mean` ended at 375.3 tokens.
 
 ![GRPO rollout response length by length normalization](artifacts/experiments/main/ch7/grpo_length_normalization/grpo_length_normalization_response_length.svg)
 
-The gradient-norm curve is consistent with this interpretation. Our logged
+The gradient-norm curve is consistent with this interpretation. The logged
 gradient norm is the pre-clipping norm returned by `clip_grad_norm_`; the final
 value was 0.1357 for `masked_mean`, 0.0649 for `masked_normalize`, and 0.1934
 for `batch_token_mean`. `masked_normalize` therefore had the smallest final
@@ -626,14 +626,14 @@ the end of training. The final mean token entropy was 0.0233 for `masked_mean`,
 0.0282 for `masked_normalize`, and 0.0196 for `batch_token_mean`. Thus,
 `masked_normalize` retained slightly higher entropy at the end, but the entropy
 differences were small compared with the differences in validation reward,
-response length, and gradient scale. We interpret entropy here as supporting
+response length, and gradient scale. Entropy here is interpreted as supporting
 evidence that none of the runs suffered an obvious late-training randomness
 collapse; the main effect of the normalization choice was still the speed and
 scale of credit assignment.
 
 ![GRPO token entropy by length normalization](artifacts/experiments/main/ch7/grpo_length_normalization/grpo_length_normalization_token_entropy.svg)
 
-Based on this experiment, we fixed `masked_mean` as the better-performing
+Based on this experiment, `masked_mean` was fixed as the better-performing
 length-normalization choice for the following on-policy ablations. The reason is
 not that `masked_normalize` failed outright, but that `masked_mean` learned much
 faster and still finished with the highest validation answer reward. Mechanically,
@@ -651,7 +651,7 @@ made early learning slower without improving the final score.
 
 **Deliverable:** Compare the performance of `use_std_normalization == True` and `use_std_normalization == False`. Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend.
 
-**Answer:** We compared the selected `masked_mean` on-policy configuration with
+**Answer:** The selected `masked_mean` on-policy configuration was compared with
 and without group standard-deviation normalization, keeping the learning rate at
 `4e-5` and all other settings fixed. Both variants trained successfully and
 ended with very similar validation answer reward. The
@@ -708,11 +708,11 @@ roughly the same validation answer reward and formatting accuracy.
 
 **Deliverable:** Implement off-policy GRPO training.
 
-**Answer:** We extended the GRPO training script to support true off-policy
+**Answer:** The GRPO training script was extended to support true off-policy
 updates by (1) allowing multiple epochs of gradient steps over the same rollout
 batch, (2) computing and caching `old_log_probs` immediately after each rollout
 generation phase and before the inner optimization loop, and (3) enabling the
-`grpo_clip` loss for these reused rollouts. In our implementation, the total
+`grpo_clip` loss for these reused rollouts. In this implementation, the total
 number of optimizer updates per rollout batch is controlled by
 `epochs_per_rollout_batch * rollout_batch_size / train_batch_size`, so the
 off-policy sweep below directly changes the reuse strength through these two
@@ -730,11 +730,11 @@ hyperparameters.
 
 **Deliverable:** Report the validation answer reward curves. Comment on the findings, including any other metrics that have a noticeable trend such as entropy and response length. Compare the entropy of the model's responses over training to what you observed in the EI experiment.
 
-**Answer:** Because the official course MATH files were not available in our
-self-hosted environment, we ran this sweep on the same
+**Answer:** Because the official course MATH files were not available in the
+self-hosted environment, this sweep was run on the same
 `competition_math_numeric` MATH-like substitute dataset used in the on-policy
 GRPO experiments. All runs used a single GPU with `policy_device = cuda:0` and
-`vllm_device = cuda:0`. We fixed `rollout_batch_size = 256`, `group_size = 8`,
+`vllm_device = cuda:0`. The run fixed `rollout_batch_size = 256`, `group_size = 8`,
 `learning_rate = 4e-5`, `loss_type = grpo_clip`,
 `loss_normalization = masked_mean`, and `use_std_normalization = true`, then
 varied `epochs_per_rollout_batch` and `train_batch_size`. The number of
@@ -788,9 +788,9 @@ peaking at 48.44% on step 15, and then drops to 0%, while `e16_tb256` is
 effectively collapsed after the initial evaluation. These failures coincide
 with degenerate formatting/reward behavior rather than a smooth plateau.
 
-For the focused 200-step comparison, we extended the strongest and most
-informative off-policy settings: `e2_tb256`, `e2_tb128`, and `e4_tb256`. We
-compare them to the matched on-policy reference from the selected on-policy
+For the focused 200-step comparison, the strongest and most
+informative off-policy settings were extended: `e2_tb256`, `e2_tb128`, and `e4_tb256`. They
+are compared to the matched on-policy reference from the selected on-policy
 GRPO configuration, `masked_mean_lr4e-5`, which uses
 `epochs_per_rollout_batch = 1`, `train_batch_size = 256`,
 `use_std_normalization = true`, and the same dataset, prompt, rollout batch
@@ -815,7 +815,7 @@ reach at least 86.13% validation answer accuracy, and none collapses over 200
 steps. However, the matched on-policy reference remains the best overall run,
 peaking and finishing at 88.18%. Among the off-policy settings, `e4_tb256` has
 the highest peak, 86.43% at step 145, but `e2_tb128` is the best final
-off-policy run, ending at 85.64%. We would therefore select `e2_tb128` if the
+off-policy run, ending at 85.64%. `e2_tb128` would therefore be selected if the
 objective is a stable off-policy configuration, while keeping the on-policy
 `e1_tb256` run as the stronger final baseline.
 
@@ -831,7 +831,7 @@ The entropy and response-length diagnostics are shown below.
 
 ![Focused on-policy vs off-policy response length](artifacts/experiments/main/ch7/grpo_off_policy_sweep/grpo_off_policy_focused_response_length.svg)
 
-The entropy behavior is qualitatively similar to what we observed in expert
+The entropy behavior is qualitatively similar to what was observed in expert
 iteration: as the policy improves, token entropy falls because the model
 becomes more confident about its response distribution. The GRPO runs end in an
 even lower-entropy regime than the EI sweep. The final focused off-policy
@@ -863,13 +863,13 @@ unstable.
 
 **Deliverable:** Implement the unclipped per-token loss as a new loss type `"GRPO-No-Clip"`. Take your best performing off-policy hyperparameters from the previous problem and run the unclipped version of the loss. Report the validation answer reward curves. Comment on the findings compared to your GRPO-Clip run, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm.
 
-**Answer:** We implemented the unclipped off-policy surrogate as a new loss type
-`GRPO-No-Clip` and compared it against the selected true off-policy
+**Answer:** The unclipped off-policy surrogate was implemented as a new loss type
+`GRPO-No-Clip` and compared against the selected true off-policy
 configuration from the sweep above: `epochs_per_rollout_batch=2`,
 `train_batch_size=256`, `rollout_batch_size=256`, `learning_rate=4e-5`,
 `loss_normalization=masked_mean`, and `use_std_normalization=True`. In addition
 to the standard symmetric clipped objective with `cliprange_low=0.2` and
-`cliprange_high=0.2`, we also ran an asymmetric clipped variant with
+`cliprange_high=0.2`, an asymmetric clipped variant was also run with
 `cliprange_low=0.2` and `cliprange_high=0.28`.
 
 In this setting, clipping is important for stability. The symmetric clipped
@@ -930,7 +930,7 @@ extra freedom does not appear beneficial for this `e2/tb256` configuration.
 
 **Deliverable:** Report the validation answer reward curves for both the R1-Zero prompt and the question-only prompt. How do metrics compare, including any other metrics that have a noticeable trend such as entropy, response length, and gradient norm? Try to explain your findings.
 
-**Answer:** We compare the R1-Zero reference run with the question-only run.
+**Answer:** The R1-Zero reference run is compared with the question-only run.
 The reference uses `r1_zero.prompt` with `r1_zero_reward_fn` and `</answer>`
 stopping. The question-only run uses `question_only.prompt` with
 `question_only_reward_fn` and no `</answer>` stop string. Both runs use
@@ -992,35 +992,35 @@ enough RL updates.
 
 **Deliverable:** Report a validation accuracy obtained within 4 hours of training on 2 H100 GPUs and a screenshot of your validation accuracy with respect to wall-clock time, where the x-axis ends at `<= 4` hours. As a reminder, we place the following constraints on your evaluation: (1) your validation accuracy should be the average accuracy over the entire MATH validation set (all 5K examples), (2) you must use the R1-Zero prompt at validation time, (3) you must use temperature 1.0 and max tokens 1024 with vLLM for evaluation, and (4) you must calculate validation accuracy by averaging the answer rewards produced by the `r1_zero_reward_fn` reward function provided in the starter code.
 
-**Answer:** Before spending our remaining budget on the final leaderboard
-training sweep, we first improved the RL systems stack so that longer GRPO runs
-were both faster and more stable. In particular, we consolidated SFT, EI, and
-GRPO onto a unified backend lifecycle manager that explicitly separates
+**Answer:** Before spending the remaining budget on the final leaderboard
+training sweep, the RL systems stack was first improved so that longer GRPO runs
+were both faster and more stable. In particular, SFT, EI, and
+GRPO were consolidated onto a unified backend lifecycle manager that explicitly separates
 training and rollout phases, keeps the policy resident by default, offloads
 optimizer state while inactive, uses vLLM sleep/wake instead of repeatedly
 recreating the inference engine, and performs explicit HF-to-vLLM weight sync
 with prefix-cache reset at phase boundaries. These phase-managed rollout and
 training transitions were inspired by the general systems structure used in
-`veRL`, although our implementation is much smaller and specialized to this
+`veRL`, although this implementation is much smaller and specialized to this
 assignment.
 
-We also found and fixed an infrastructure bug that only appeared on the cold
+An infrastructure bug was also found and fixed that only appeared on the cold
 single-GPU lifecycle path: the first evaluation after initialization could
 produce degenerate outputs unless a fresh vLLM instance had already been warmed
-up in the process. We therefore added an explicit fresh-vLLM warmup path before
+up in the process. An explicit fresh-vLLM warmup path was therefore added before
 the sleep-enabled lifecycle path. Together, these changes made the mainline
 SFT, EI, and GRPO smoke runs reproducible again after reload boundaries and
-gave us a more reliable platform for the final leaderboard experiment. We treat
-these infrastructure changes as enabling improvements rather than as a separate
+provided a more reliable platform for the final leaderboard experiment. These
+infrastructure changes are treated as enabling improvements rather than as a separate
 algorithmic contribution.
 
-As a final case study before choosing the long-run configuration, we tested a
-simple budget-allocation idea: spend the first part of the training budget on a
+As a final case study before choosing the long-run configuration, a
+simple budget-allocation idea was tested: spend the first part of the training budget on a
 small SFT warm start, then continue with GRPO while adding a small KL penalty to
-keep the policy near the SFT initialization. Since we did not have access to the
-official course MATH validation files, this comparison uses our same converted
+keep the policy near the SFT initialization. Since the
+official course MATH validation files were not available, this comparison uses the same converted
 substitute validation split and the same R1-Zero prompt, vLLM sampling settings,
-and `r1_zero_reward_fn`-based answer reward used throughout our leaderboard-style
+and `r1_zero_reward_fn`-based answer reward used throughout the leaderboard-style
 experiments. In the staged plot below, the 100-step SFT warm start is
 compressed to the width of 10 GRPO steps to reflect its much smaller compute
 budget. The vertical dashed line marks the transition from SFT to GRPO, and the
@@ -1053,17 +1053,17 @@ the same pattern: the SFT+KL run remains more constrained than the direct GRPO
 reference late in training. This suggests that the SFT warm start improves the
 initial policy, but the small KL penalty and the SFT initialization together
 make the later GRPO phase less able to explore the longer reasoning traces that
-our best direct GRPO runs discover.
+the best direct GRPO runs discover.
 
-For the final leaderboard-style long run, we therefore used the strongest
-direct on-policy GRPO configuration from our ablations rather than the SFT+KL
+For the final leaderboard-style long run, the strongest
+direct on-policy GRPO configuration from the ablations was therefore used rather than the SFT+KL
 variant: Qwen2.5-Math-1.5B with the R1-Zero prompt, learning rate `4e-5`,
 `reinforce_with_baseline`, `masked_mean` length normalization, per-group reward
-standardization, and no reference KL penalty. We trained for 400 GRPO steps and
+standardization, and no reference KL penalty. Training ran for 400 GRPO steps and
 evaluated every 20 steps on the full substitute validation split. This final
 run used 3199 validation examples from `competition_math_numeric`; because the
-official course MATH files were unavailable to us, the result below should be
-read as our leaderboard-style substitute-validation result rather than as an
+official course MATH files were unavailable, the result below should be
+read as a leaderboard-style substitute-validation result rather than as an
 official 5K MATH leaderboard submission.
 
 ![Leaderboard validation answer reward](artifacts/experiments/main/ch7/leaderboard/leaderboard_validation_reward.svg)
@@ -1349,11 +1349,11 @@ usable, but not uniformly high-quality or perfectly safe.
 
 **Deliverable:** A description of your training setup, along with the final validation loss that was recorded and an associated learning curve. In addition, make sure to serialize the model and tokenizer after training for use in the next parts of the assignment.
 
-**Answer:** We fine-tuned the Llama 3.1 8B base model on the provided
+**Answer:** The Llama 3.1 8B base model was fine-tuned on the provided
 instruction-tuning data for one epoch using the packed SFT dataset format
 implemented above. The run used sequence length 512, microbatch size 2, and
 gradient accumulation over 16 microbatches, giving an effective batch size of
-32 sequences per optimizer step. We used learning rate `2e-5` with 202 warmup
+32 sequences per optimizer step. Learning rate `2e-5` was used with 202 warmup
 steps, evaluated validation loss every 500 optimizer steps plus the final
 step, and saved both the best and final model/tokenizer checkpoints under
 `runs/supplement/ch3/sft`.
@@ -1541,7 +1541,7 @@ sensitive personal information about a specific person.
 
 **Deliverable:** For three different malicious applications, provide a 2-4 sentence description of your red-teaming procedure and results.
 
-**Answer:** We red-teamed the SFT checkpoint with 15 fixed prompts, using five
+**Answer:** The SFT checkpoint was red-teamed with 15 fixed prompts, using five
 prompting strategies for each of three malicious applications: a direct request,
 roleplay, benign or fictional framing, unsafe transformation, and a high-level
 partial-compliance probe. All prompts used the Alpaca SFT format with greedy
@@ -1586,7 +1586,7 @@ instructions remain important jailbreak surfaces.
 
 **Deliverable:** Commentary on these examples: what seems to be the main differences between the chosen and rejected responses? Do you agree with the annotators choices?
 
-**Answer:** We implemented `load_hh_preference_data` to read the four Anthropic
+**Answer:** `load_hh_preference_data` was implemented to read the four Anthropic
 HH training collections, discard multi-turn conversations, split each retained
 pair into `instruction`, `chosen`, and `rejected` fields, and preserve the
 source file metadata for later DPO training. After single-turn filtering, the
@@ -1599,8 +1599,8 @@ household cleaning question, the chosen answer gave a direct vinegar-based
 solution; on a narrow cleaning-between-appliances question, the chosen answer
 asked a more precise clarifying question than the rejected answer; and on a
 Japan-language question, the chosen answer at least addressed the requested
-topic while the rejected answer was completely off-task. We mostly agree with
-these helpfulness preferences, although the Japan-language chosen response is
+topic while the rejected answer was completely off-task. These helpfulness
+preferences are mostly agreeable, although the Japan-language chosen response is
 not ideal because it over-lists dialect-like entries and should not be treated
 as a high-quality factual answer.
 
@@ -1608,8 +1608,8 @@ In the harmless samples, the chosen responses were safer because they avoided
 endorsing self-harm, racist framing, or retaliatory abuse. The rejected
 responses either engaged too much with a self-harm choice, failed to redirect a
 racist premise, or escalated a workplace-conflict prompt toward hostile
-cyber-abuse framing. We agree with the annotators' choices in these harmless
-examples: even when the chosen response was not perfect, it was less likely to
+cyber-abuse framing. The annotators' choices in these harmless
+examples are reasonable: even when the chosen response was not perfect, it was less likely to
 enable harm and more likely to keep the conversation in a safer direction.
 The sampled HH preference examples are archived under
 `artifacts/experiments/supplement/ch5/look_at_hh/`.
@@ -1631,7 +1631,7 @@ The sampled HH preference examples are archived under
 
 **Deliverable:** A DPO training script and screenshot of the validation accuracy curve.
 
-**Answer:** We trained the SFT checkpoint for one epoch over the single-turn HH
+**Answer:** The SFT checkpoint was trained for one epoch over the single-turn HH
 preference data with two model copies: the optimized policy on `cuda:0` and a
 frozen reference model on `cuda:1`. The run used RMSprop, gradient accumulation
 with effective batch size 64, `beta = 0.1`, learning rate `1e-6`, and 200 held
