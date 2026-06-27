@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_INPUT_PATH = "/root/autodl-tmp/a5-alignment/datasets/ch3/train.jsonl.gz"
-DEFAULT_OUTPUT_DIR = ".agents/logs/ch3/look_at_sft"
+DEFAULT_INPUT_PATH = "data/datasets/ch3/train.jsonl.gz"
+DEFAULT_OUTPUT_DIR = "runs/logs/ch3/look_at_sft"
 
 
 def parse_args() -> argparse.Namespace:

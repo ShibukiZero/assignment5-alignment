@@ -10,11 +10,11 @@ from typing import Any, Iterable
 
 
 DEFAULT_MMLU_PATH = (
-    "/root/autodl-tmp/a5-alignment/runs/supplement/ch2/"
+    "runs/supplement/ch2/"
     "mmlu_baseline/generations.jsonl"
 )
 DEFAULT_GSM8K_PATH = (
-    "/root/autodl-tmp/a5-alignment/runs/supplement/ch2/"
+    "runs/supplement/ch2/"
     "gsm8k_baseline/generations.jsonl"
 )
 DEFAULT_ALPACA_PATH = (

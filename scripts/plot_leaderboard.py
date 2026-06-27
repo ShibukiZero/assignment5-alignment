@@ -15,7 +15,7 @@ from typing import Any
 from plot_grpo_train_loop import render_svg_line_plot
 
 
-DEFAULT_RUN_DIR = ".agents/logs/leaderboard/final_on_policy_lr4e-5_400_full_eval"
+DEFAULT_RUN_DIR = "runs/logs/leaderboard/final_on_policy_lr4e-5_400_full_eval"
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/leaderboard"
 DEFAULT_RUN_NAME = "final_on_policy_lr4e-5_400_full_eval"
 LARGE_FILE_PATTERNS = (

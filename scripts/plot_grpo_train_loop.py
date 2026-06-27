@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_RUN_DIR = ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr1e-5"
+DEFAULT_RUN_DIR = "runs/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr1e-5"
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_train_loop"
 DEFAULT_RUN_NAME = "grpo_on_policy_lr1e-5"
 SELECTED_ROLLOUT_STEPS = (1, 50, 100, 150, 200)

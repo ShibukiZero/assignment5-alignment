@@ -17,13 +17,13 @@ from cs336_alignment.zero_shot import (
 )
 
 
-DEFAULT_MODEL = "/data/a5-alignment/models/Llama-3.1-8B"
+DEFAULT_MODEL = "models/Llama-3.1-8B"
 DEFAULT_INPUT_PATH = "data/alpaca_eval/alpaca_eval.jsonl"
 DEFAULT_OUTPUT_PATH = (
-    "/root/autodl-tmp/a5-alignment/runs/supplement/zero_shot/"
+    "runs/supplement/zero_shot/"
     "alpaca_eval_baseline_outputs.json"
 )
-DEFAULT_SUMMARY_PATH = ".agents/logs/ch2/alpaca_eval_baseline/summary.json"
+DEFAULT_SUMMARY_PATH = "runs/logs/ch2/alpaca_eval_baseline/summary.json"
 DEFAULT_GENERATOR = "llama-3.1-8b-base"
 
 logger = logging.getLogger(__name__)

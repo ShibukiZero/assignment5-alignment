@@ -23,11 +23,11 @@ DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_prompt_ablation"
 DEFAULT_RUNS = [
     (
         "r1_zero_reference",
-        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
+        "runs/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
     ),
     (
         "question_only",
-        ".agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/question_only_e1_tb256_std_norm",
+        "runs/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/question_only_e1_tb256_std_norm",
     ),
 ]
 
@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Optional label=log_dir entry. "
-            "Example: --include-run alt_question_only=.agents/logs/..."
+            "Example: --include-run alt_question_only=runs/logs/..."
         ),
     )
     parser.add_argument(

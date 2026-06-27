@@ -23,10 +23,10 @@ from vllm import LLM, SamplingParams
 from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
 
 
-DEFAULT_MODEL_PATH = "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B"
-DEFAULT_INPUT_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
+DEFAULT_MODEL_PATH = "models/Qwen2.5-Math-1.5B"
+DEFAULT_INPUT_PATH = "data/MATH_like/competition_math_numeric/validation.jsonl"
 DEFAULT_PROMPT_TEMPLATE = "cs336_alignment/prompts/r1_zero.prompt"
-DEFAULT_LOG_DIR = ".agents/logs/ch3/3_2_math_baseline"
+DEFAULT_LOG_DIR = "runs/logs/ch3/3_2_math_baseline"
 
 logger = logging.getLogger(__name__)
 

@@ -37,11 +37,11 @@ from cs336_alignment.sft import (
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_MODEL = "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B"
-DEFAULT_TRAIN_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/sft.jsonl"
-DEFAULT_VAL_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
+DEFAULT_MODEL = "models/Qwen2.5-Math-1.5B"
+DEFAULT_TRAIN_PATH = "data/MATH_like/competition_math_numeric/sft.jsonl"
+DEFAULT_VAL_PATH = "data/MATH_like/competition_math_numeric/validation.jsonl"
 DEFAULT_PROMPT_TEMPLATE = "cs336_alignment/prompts/r1_zero.prompt"
-DEFAULT_LOG_DIR = ".agents/logs/ch4/sft_experiment"
+DEFAULT_LOG_DIR = "runs/logs/ch4/sft_experiment"
 
 
 def parse_args() -> argparse.Namespace:

@@ -1356,14 +1356,14 @@ gradient accumulation over 16 microbatches, giving an effective batch size of
 32 sequences per optimizer step. We used learning rate `2e-5` with 202 warmup
 steps, evaluated validation loss every 500 optimizer steps plus the final
 step, and saved both the best and final model/tokenizer checkpoints under
-`/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft`.
+`runs/supplement/ch3/sft`.
 
 The run completed 6,727 optimizer steps. The validation curve decreased
 steadily from `1.4734` at step 500 to roughly `1.4131` by step 6,000, then
 mostly plateaued through the final evaluation. The best validation point was at
 step 6,500 with loss `1.413109`; the final validation loss was `1.413125` and
 the final validation perplexity was `4.108774`. The learning-curve plots and
-summary tables were generated from `.agents/logs/ch3/sft/metrics.jsonl` with
+summary tables were generated from `runs/logs/ch3/sft/metrics.jsonl` with
 `scripts/plot_sft_instruction_tuning.py` and archived under
 `artifacts/experiments/supplement/ch3/sft/`.
 
@@ -1519,7 +1519,7 @@ The final SFT benchmark summaries and AlpacaEval leaderboard are archived under
 samples used for the qualitative analysis are archived under
 `artifacts/experiments/supplement/ch3/sft_eval_samples/`; the raw generations
 and judge annotations used to produce those samples are mirrored under
-`.agents/logs/data_disk_snapshots/ch3_sft_eval/`.
+`runs/logs/data_disk_snapshots/ch3_sft_eval/`.
 
 ---
 

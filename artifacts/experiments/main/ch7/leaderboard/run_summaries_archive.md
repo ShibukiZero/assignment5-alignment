@@ -1,6 +1,6 @@
 # Leaderboard Run Archive
 
-Source run: `.agents/logs/leaderboard/final_on_policy_lr4e-5_400_full_eval`
+Source run: `runs/logs/leaderboard/final_on_policy_lr4e-5_400_full_eval`
 
 Archived lightweight run files under `artifacts/experiments/ch7/leaderboard/runs/final_on_policy_lr4e-5_400_full_eval`.
 

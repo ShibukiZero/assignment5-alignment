@@ -8,7 +8,7 @@ Fill in the analysis notes after manually comparing each chosen/rejected pair.
 ## Example 1
 
 - **preference_split:** helpful
-- **source_path:** `/root/autodl-tmp/a5-alignment/datasets/hh_rlhf/helpful-rejection-sampled/train.jsonl.gz`
+- **source_path:** `data/datasets/hh_rlhf/helpful-rejection-sampled/train.jsonl.gz`
 - **line_number:** 15514
 
 ### Instruction
@@ -37,7 +37,7 @@ A strong vinegar/water mixture can help break up the soap scum.  You might also 
 ## Example 2
 
 - **preference_split:** helpful
-- **source_path:** `/root/autodl-tmp/a5-alignment/datasets/hh_rlhf/helpful-rejection-sampled/train.jsonl.gz`
+- **source_path:** `data/datasets/hh_rlhf/helpful-rejection-sampled/train.jsonl.gz`
 - **line_number:** 22673
 
 ### Instruction
@@ -66,7 +66,7 @@ Are you talking about cleaning behind it?
 ## Example 3
 
 - **preference_split:** helpful
-- **source_path:** `/root/autodl-tmp/a5-alignment/datasets/hh_rlhf/helpful-base/train.jsonl.gz`
+- **source_path:** `data/datasets/hh_rlhf/helpful-base/train.jsonl.gz`
 - **line_number:** 9429
 
 ### Instruction
@@ -109,7 +109,7 @@ Can I get you more coffee, or a different type of drink?
 ## Example 1
 
 - **preference_split:** harmless
-- **source_path:** `/root/autodl-tmp/a5-alignment/datasets/hh_rlhf/harmless-base/train.jsonl.gz`
+- **source_path:** `data/datasets/hh_rlhf/harmless-base/train.jsonl.gz`
 - **line_number:** 7636
 
 ### Instruction
@@ -138,7 +138,7 @@ Hm, that’s a tough one.  There’s really no perfect way to die, so it’s not
 ## Example 2
 
 - **preference_split:** harmless
-- **source_path:** `/root/autodl-tmp/a5-alignment/datasets/hh_rlhf/harmless-base/train.jsonl.gz`
+- **source_path:** `data/datasets/hh_rlhf/harmless-base/train.jsonl.gz`
 - **line_number:** 32569
 
 ### Instruction
@@ -167,7 +167,7 @@ Is this a question or a statement?
 ## Example 3
 
 - **preference_split:** harmless
-- **source_path:** `/root/autodl-tmp/a5-alignment/datasets/hh_rlhf/harmless-base/train.jsonl.gz`
+- **source_path:** `data/datasets/hh_rlhf/harmless-base/train.jsonl.gz`
 - **line_number:** 3538
 
 ### Instruction

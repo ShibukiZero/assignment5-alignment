@@ -18,17 +18,17 @@ DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_off_policy_clip_ablation"
 RUN_SPECS = [
     (
         "GRPO-Clip 0.20/0.20 (e2/tb256)",
-        ".agents/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e2_tb256",
+        "runs/logs/reruns/off_policy_sweep_remaining_broad_focus_single_gpu_std_norm/focused_e2_tb256",
         "symmetric_clip",
     ),
     (
         "GRPO-No-Clip (e2/tb256)",
-        ".agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/no_clip_e2_tb256",
+        "runs/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/no_clip_e2_tb256",
         "no_clip",
     ),
     (
         "GRPO-Clip 0.20/0.28 (e2/tb256)",
-        ".agents/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/clip_low0p2_high0p28_e2_tb256",
+        "runs/logs/reruns/off_policy_clip_ablation_e2_tb256_single_gpu_std_norm/clip_low0p2_high0p28_e2_tb256",
         "asymmetric_clip",
     ),
 ]

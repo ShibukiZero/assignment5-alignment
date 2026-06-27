@@ -32,47 +32,47 @@ DEFAULT_RUNS = [
     (
         "lr=3e-6",
         3e-6,
-        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr3e-6",
+        "runs/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr3e-6",
     ),
     (
         "lr=5e-6",
         5e-6,
-        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr5e-6",
+        "runs/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr5e-6",
     ),
     (
         "lr=1e-5",
         1e-5,
-        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr1e-5",
+        "runs/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr1e-5",
     ),
     (
         "lr=2e-5",
         2e-5,
-        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr2e-5",
+        "runs/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr2e-5",
     ),
     (
         "lr=3e-5",
         3e-5,
-        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr3e-5",
+        "runs/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr3e-5",
     ),
     (
         "lr=4e-5",
         4e-5,
-        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
+        "runs/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
     ),
     (
         "lr=5e-5",
         5e-5,
-        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr5e-5",
+        "runs/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr5e-5",
     ),
     (
         "lr=7e-5",
         7e-5,
-        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr7e-5",
+        "runs/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr7e-5",
     ),
     (
         "lr=2e-4",
         2e-4,
-        ".agents/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr2e-4",
+        "runs/logs/reruns/prefix_cache_repair_single_gpu/grpo/lr2e-4",
     ),
 ]
 
@@ -125,7 +125,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Optional label=learning_rate=log_dir entry. "
-            "Example: --include-run extra-lr=4e-5=.agents/logs/..."
+            "Example: --include-run extra-lr=4e-5=runs/logs/..."
         ),
     )
     return parser.parse_args()

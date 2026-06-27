@@ -7,7 +7,7 @@ These summaries are rebuilt from the prefix-cache-repaired rerun logs only.
 ## D_b=512, G=2, epochs=1
 
 - Run name: `db512_g2_epoch1`
-- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch1`
+- Source log dir: `runs/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch1`
 - Best validation answer accuracy: 0.2216 at EI step 5
 - Final validation answer accuracy: 0.2216 at EI step 5
 - Final validation format accuracy: 0.9572
@@ -18,7 +18,7 @@ These summaries are rebuilt from the prefix-cache-repaired rerun logs only.
 ## D_b=512, G=2, epochs=2
 
 - Run name: `db512_g2_epoch2`
-- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch2`
+- Source log dir: `runs/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g2_epoch2`
 - Best validation answer accuracy: 0.3570 at EI step 4
 - Final validation answer accuracy: 0.3392 at EI step 5
 - Final validation format accuracy: 0.8909
@@ -29,7 +29,7 @@ These summaries are rebuilt from the prefix-cache-repaired rerun logs only.
 ## D_b=512, G=4, epochs=1
 
 - Run name: `db512_g4_epoch1`
-- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g4_epoch1`
+- Source log dir: `runs/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g4_epoch1`
 - Best validation answer accuracy: 0.2607 at EI step 2
 - Final validation answer accuracy: 0.2123 at EI step 5
 - Final validation format accuracy: 0.8465
@@ -40,7 +40,7 @@ These summaries are rebuilt from the prefix-cache-repaired rerun logs only.
 ## D_b=512, G=4, epochs=2
 
 - Run name: `db512_g4_epoch2`
-- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g4_epoch2`
+- Source log dir: `runs/logs/reruns/prefix_cache_repair_single_gpu/ei/db512_g4_epoch2`
 - Best validation answer accuracy: 0.3407 at EI step 3
 - Final validation answer accuracy: 0.2466 at EI step 5
 - Final validation format accuracy: 0.9015
@@ -51,7 +51,7 @@ These summaries are rebuilt from the prefix-cache-repaired rerun logs only.
 ## D_b=1024, G=4, epochs=2
 
 - Run name: `db1024_g4_epoch2`
-- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db1024_g4_epoch2`
+- Source log dir: `runs/logs/reruns/prefix_cache_repair_single_gpu/ei/db1024_g4_epoch2`
 - Best validation answer accuracy: 0.3092 at EI step 3
 - Final validation answer accuracy: 0.2073 at EI step 5
 - Final validation format accuracy: 0.8512
@@ -62,7 +62,7 @@ These summaries are rebuilt from the prefix-cache-repaired rerun logs only.
 ## D_b=1024, G=8, epochs=2
 
 - Run name: `db1024_g8_epoch2`
-- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db1024_g8_epoch2`
+- Source log dir: `runs/logs/reruns/prefix_cache_repair_single_gpu/ei/db1024_g8_epoch2`
 - Best validation answer accuracy: 0.3514 at EI step 2
 - Final validation answer accuracy: 0.2082 at EI step 5
 - Final validation format accuracy: 0.8224
@@ -73,7 +73,7 @@ These summaries are rebuilt from the prefix-cache-repaired rerun logs only.
 ## D_b=2048, G=4, epochs=2
 
 - Run name: `db2048_g4_epoch2`
-- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db2048_g4_epoch2`
+- Source log dir: `runs/logs/reruns/prefix_cache_repair_single_gpu/ei/db2048_g4_epoch2`
 - Best validation answer accuracy: 0.3467 at EI step 2
 - Final validation answer accuracy: 0.2269 at EI step 5
 - Final validation format accuracy: 0.8249
@@ -84,7 +84,7 @@ These summaries are rebuilt from the prefix-cache-repaired rerun logs only.
 ## D_b=2048, G=4, epochs=3
 
 - Run name: `db2048_g4_epoch3`
-- Source log dir: `.agents/logs/reruns/prefix_cache_repair_single_gpu/ei/db2048_g4_epoch3`
+- Source log dir: `runs/logs/reruns/prefix_cache_repair_single_gpu/ei/db2048_g4_epoch3`
 - Best validation answer accuracy: 0.4189 at EI step 2
 - Final validation answer accuracy: 0.2304 at EI step 5
 - Final validation format accuracy: 0.8409

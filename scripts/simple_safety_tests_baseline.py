@@ -18,13 +18,13 @@ from cs336_alignment.zero_shot import (
 )
 
 
-DEFAULT_MODEL = "/data/a5-alignment/models/Llama-3.1-8B"
+DEFAULT_MODEL = "models/Llama-3.1-8B"
 DEFAULT_INPUT_PATH = "data/simple_safety_tests/simple_safety_tests.csv"
 DEFAULT_OUTPUT_PATH = (
-    "/root/autodl-tmp/a5-alignment/runs/supplement/zero_shot/"
+    "runs/supplement/zero_shot/"
     "simple_safety_tests_baseline_outputs.jsonl"
 )
-DEFAULT_SUMMARY_PATH = ".agents/logs/ch2/simple_safety_tests_baseline/summary.json"
+DEFAULT_SUMMARY_PATH = "runs/logs/ch2/simple_safety_tests_baseline/summary.json"
 
 logger = logging.getLogger(__name__)
 

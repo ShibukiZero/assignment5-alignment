@@ -7,7 +7,7 @@ The raw run data needed to reproduce the writeup counts are archived under
 
 | run | status | examples | answer accuracy | format accuracy | correct format + correct answer | correct format + wrong answer | wrong format + wrong answer | source summary |
 |---|---|---:|---:|---:|---:|---:|---:|---|
-| `math_baseline_competition_math_numeric` | completed | 3199 | 0.0325101594 | 0.1759924977 | 104 | 459 | 2636 | `.agents/logs/ch3/3_2_math_baseline/math_baseline_competition_math_numeric.summary.json` |
+| `math_baseline_competition_math_numeric` | completed | 3199 | 0.0325101594 | 0.1759924977 | 104 | 459 | 2636 | `runs/logs/ch3/3_2_math_baseline/math_baseline_competition_math_numeric.summary.json` |
 
 Additional archived artifacts:
 

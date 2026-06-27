@@ -22,8 +22,8 @@ from typing import Any
 from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
 
 
-DEFAULT_OUTPUT_DIR = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric"
-DEFAULT_CACHE_DIR = "/root/autodl-tmp/hf-cache"
+DEFAULT_OUTPUT_DIR = "data/MATH_like/competition_math_numeric"
+DEFAULT_CACHE_DIR = "data/hf-cache"
 DEFAULT_PROMPT_PATH = "cs336_alignment/prompts/r1_zero.prompt"
 DATA_FILE_SUFFIXES = {".parquet", ".jsonl", ".json"}
 ANSWER_BLOCK_RE = re.compile(r"(?s)(<answer>)(.*?)(</answer>)")

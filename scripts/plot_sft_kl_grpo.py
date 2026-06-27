@@ -23,9 +23,9 @@ from plot_grpo_train_loop import (
 
 
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/sft_kl_grpo"
-DEFAULT_SFT_RUN_DIR = ".agents/logs/reruns/sft_kl_grpo/sft_256_step100"
+DEFAULT_SFT_RUN_DIR = "runs/logs/reruns/sft_kl_grpo/sft_256_step100"
 DEFAULT_GRPO_RUN_DIR = (
-    ".agents/logs/reruns/sft_kl_grpo/grpo_sft256_step100_kl0p01_190"
+    "runs/logs/reruns/sft_kl_grpo/grpo_sft256_step100_kl0p01_190"
 )
 DEFAULT_REFERENCE_RUN_DIR = "artifacts/experiments/ch7/grpo_length_normalization/runs/masked_mean"
 DEFAULT_REFERENCE_LABEL = "direct_grpo_lr4e-5"

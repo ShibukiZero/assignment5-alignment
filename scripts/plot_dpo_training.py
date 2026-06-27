@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_LOG_DIR = ".agents/logs/ch5/dpo"
+DEFAULT_LOG_DIR = "runs/logs/ch5/dpo"
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/supplement/ch5/dpo"
 
 

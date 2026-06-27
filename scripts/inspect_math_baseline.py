@@ -3,7 +3,7 @@
 
 The full generation JSONL should stay on the data disk. This script reads that
 large file, selects a small number of examples from each reward category, and
-writes compact inspection artifacts under `.agents/logs/` by default.
+writes compact inspection artifacts under `runs/logs/` by default.
 """
 
 from __future__ import annotations
@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_INPUT_PATH = "/root/autodl-tmp/a5-alignment/runs/math_baseline_competition_math_numeric.jsonl"
-DEFAULT_LOG_DIR = ".agents/logs/ch3/3_2_math_baseline"
+DEFAULT_INPUT_PATH = "runs/math_baseline_competition_math_numeric.jsonl"
+DEFAULT_LOG_DIR = "runs/logs/ch3/3_2_math_baseline"
 BUCKETS = (
     "correct_format_correct_answer",
     "correct_format_wrong_answer",

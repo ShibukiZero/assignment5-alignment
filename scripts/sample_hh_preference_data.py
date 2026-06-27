@@ -12,8 +12,8 @@ from typing import Any
 from cs336_alignment.dpo_data import load_hh_preference_data
 
 
-DEFAULT_INPUT_DIR = "/root/autodl-tmp/a5-alignment/datasets/hh_rlhf"
-DEFAULT_OUTPUT_DIR = ".agents/logs/ch5/look_at_hh"
+DEFAULT_INPUT_DIR = "data/datasets/hh_rlhf"
+DEFAULT_OUTPUT_DIR = "runs/logs/ch5/look_at_hh"
 
 
 def parse_args() -> argparse.Namespace:

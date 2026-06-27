@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_SIZE_SWEEP_LOG_ROOT = ".agents/logs/ch4/sft_noisy_size_sweep_bs16_lr5e-5"
-DEFAULT_FILTERED_LOG_ROOT = ".agents/logs/ch4/sft_noisy_filtered_bs16_lr5e-5"
+DEFAULT_SIZE_SWEEP_LOG_ROOT = "runs/logs/ch4/sft_noisy_size_sweep_bs16_lr5e-5"
+DEFAULT_FILTERED_LOG_ROOT = "runs/logs/ch4/sft_noisy_filtered_bs16_lr5e-5"
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch4/sft_experiment"
 
 COLORS = [

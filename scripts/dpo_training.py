@@ -23,10 +23,10 @@ from cs336_alignment.experiment_logging import append_jsonl, write_json
 from cs336_alignment.experiment_metrics import cuda_memory_metrics
 
 
-DEFAULT_MODEL = "/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft/final_model"
-DEFAULT_HH_PATH = "/root/autodl-tmp/a5-alignment/datasets/hh_rlhf"
-DEFAULT_OUTPUT_DIR = "/root/autodl-tmp/a5-alignment/runs/supplement/ch5/dpo"
-DEFAULT_LOG_DIR = ".agents/logs/ch5/dpo"
+DEFAULT_MODEL = "runs/supplement/ch3/sft/final_model"
+DEFAULT_HH_PATH = "data/datasets/hh_rlhf"
+DEFAULT_OUTPUT_DIR = "runs/supplement/ch5/dpo"
+DEFAULT_LOG_DIR = "runs/logs/ch5/dpo"
 
 logger = logging.getLogger(__name__)
 

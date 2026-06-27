@@ -4,9 +4,9 @@ This archive summarizes the repaired single-GPU length-normalization rerun used 
 
 | run | normalization | status | best answer | best step | final answer | final format | final rollout answer | final avg length | source log |
 |---|---|---|---:|---:|---:|---:|---:|---:|---|
-| `masked_mean` | `masked_mean` | completed | 88.18% | 190 | 88.18% | 98.05% | 80.86% | 466.9 | `.agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5` |
-| `masked_normalize` | `masked_normalize` | completed | 87.11% | 165 | 87.11% | 96.48% | 79.69% | 512.1 | `.agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/runs/masked_normalize_lr4e-5/log` |
-| `batch_token_mean` | `batch_token_mean` | completed | 86.91% | 110 | 86.43% | 98.83% | 78.12% | 375.3 | `.agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/runs/batch_token_mean_lr4e-5/log` |
+| `masked_mean` | `masked_mean` | completed | 88.18% | 190 | 88.18% | 98.05% | 80.86% | 466.9 | `runs/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5` |
+| `masked_normalize` | `masked_normalize` | completed | 87.11% | 165 | 87.11% | 96.48% | 79.69% | 512.1 | `runs/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/runs/masked_normalize_lr4e-5/log` |
+| `batch_token_mean` | `batch_token_mean` | completed | 86.91% | 110 | 86.43% | 98.83% | 78.12% | 375.3 | `runs/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/runs/batch_token_mean_lr4e-5/log` |
 
 Generated artifacts:
 

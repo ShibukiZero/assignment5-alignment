@@ -6,7 +6,7 @@ from __future__ import annotations
 from vllm import LLM, SamplingParams
 
 
-MODEL_PATH = "/root/autodl-tmp/a5-alignment/models/Qwen2.5-Math-1.5B"
+MODEL_PATH = "models/Qwen2.5-Math-1.5B"
 
 
 def main() -> None:

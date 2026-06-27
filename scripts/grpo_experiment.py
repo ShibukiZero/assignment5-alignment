@@ -45,9 +45,9 @@ from sft_experiment import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_TRAIN_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/train.jsonl"
-DEFAULT_VAL_PATH = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric/validation.jsonl"
-DEFAULT_LOG_DIR = ".agents/logs/ch7/grpo_on_policy"
+DEFAULT_TRAIN_PATH = "data/MATH_like/competition_math_numeric/train.jsonl"
+DEFAULT_VAL_PATH = "data/MATH_like/competition_math_numeric/validation.jsonl"
+DEFAULT_LOG_DIR = "runs/logs/ch7/grpo_on_policy"
 
 
 def resolve_sampling_stop(reward_fn_name: str) -> tuple[list[str] | None, bool]:

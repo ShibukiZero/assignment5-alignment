@@ -21,7 +21,7 @@ from typing import Any
 
 
 DEFAULT_LOG_ROOTS = [
-    ".agents/logs/reruns/prefix_cache_repair_single_gpu/ei",
+    "runs/logs/reruns/prefix_cache_repair_single_gpu/ei",
 ]
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch5/expert_iteration"
 DEFAULT_SOURCE_NOTE = (

@@ -23,11 +23,11 @@ DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_group_standard_deviation"
 DEFAULT_RUNS = [
     (
         "std_normalization",
-        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
+        "runs/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
     ),
     (
         "no_std_normalization",
-        ".agents/logs/reruns/grpo_group_standard_deviation_retry_single_gpu/grpo_group_standard_deviation/no_std_normalization",
+        "runs/logs/reruns/grpo_group_standard_deviation_retry_single_gpu/grpo_group_standard_deviation/no_std_normalization",
     ),
 ]
 
@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Optional label=log_dir entry. "
-            "Example: --include-run no_std_lr8e-5=.agents/logs/..."
+            "Example: --include-run no_std_lr8e-5=runs/logs/..."
         ),
     )
     parser.add_argument(

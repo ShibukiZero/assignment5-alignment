@@ -16,9 +16,9 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 
 
-DEFAULT_BASELINE_DIR = ".agents/logs/data_disk_snapshots/zero_shot_official_prompt"
-DEFAULT_CANDIDATE_DIR = ".agents/logs/data_disk_snapshots/ch3_sft_eval"
-DEFAULT_OUTPUT_DIR = ".agents/logs/benchmark_samples/sft_vs_zero_shot"
+DEFAULT_BASELINE_DIR = "runs/logs/data_disk_snapshots/zero_shot_official_prompt"
+DEFAULT_CANDIDATE_DIR = "runs/logs/data_disk_snapshots/ch3_sft_eval"
+DEFAULT_OUTPUT_DIR = "runs/logs/benchmark_samples/sft_vs_zero_shot"
 
 
 JsonRecord = dict[str, Any]

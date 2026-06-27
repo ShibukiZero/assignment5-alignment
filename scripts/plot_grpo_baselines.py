@@ -20,11 +20,11 @@ TARGET_STEPS = 200
 DEFAULT_RUN_SPECS = [
     (
         "reinforce_with_baseline",
-        ".agents/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
+        "runs/logs/ch7/grpo_on_policy_ablations/length_normalization_rerun_staging_single_gpu/masked_mean_lr4e-5",
     ),
     (
         "no_baseline",
-        ".agents/logs/reruns/grpo_ablation_repairs_single_gpu/grpo_baselines/no_baseline",
+        "runs/logs/reruns/grpo_ablation_repairs_single_gpu/grpo_baselines/no_baseline",
     ),
 ]
 
@@ -119,7 +119,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Optional label=log_dir entry. "
-            "Example: --include-run no_baseline=.agents/logs/..."
+            "Example: --include-run no_baseline=runs/logs/..."
         ),
     )
     parser.add_argument(

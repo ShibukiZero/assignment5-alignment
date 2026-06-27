@@ -17,7 +17,7 @@ from typing import Any
 DEFAULT_OUTPUT_DIR = "artifacts/experiments/ch7/grpo_length_normalization"
 TARGET_STEPS = 200
 STAGING_LOG_ROOT = (
-    ".agents/logs/ch7/grpo_on_policy_ablations/"
+    "runs/logs/ch7/grpo_on_policy_ablations/"
     "length_normalization_rerun_staging_single_gpu"
 )
 
@@ -131,7 +131,7 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help=(
             "Optional label=log_dir entry. "
-            "Example: --include-run masked_normalize_lr8e-5=.agents/logs/..."
+            "Example: --include-run masked_normalize_lr8e-5=runs/logs/..."
         ),
     )
     parser.add_argument(

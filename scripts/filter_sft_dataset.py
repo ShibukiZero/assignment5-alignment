@@ -11,7 +11,7 @@ from typing import Any
 from cs336_alignment.drgrpo_grader import r1_zero_reward_fn
 
 
-DEFAULT_DATA_DIR = "/root/autodl-tmp/a5-alignment/MATH_like/competition_math_numeric"
+DEFAULT_DATA_DIR = "data/MATH_like/competition_math_numeric"
 DEFAULT_SFT_PATH = f"{DEFAULT_DATA_DIR}/sft.jsonl"
 DEFAULT_TRAIN_PATH = f"{DEFAULT_DATA_DIR}/train.jsonl"
 DEFAULT_OUTPUT_PATH = f"{DEFAULT_DATA_DIR}/filtered_sft.jsonl"

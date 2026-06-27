@@ -12,9 +12,9 @@ from cs336_alignment.prompt_templates import PROMPT_FORMAT_CHOICES, format_gener
 from cs336_alignment.zero_shot import generate_texts, write_json, write_jsonl
 
 
-DEFAULT_MODEL = "/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft/final_model"
-DEFAULT_OUTPUT_PATH = ".agents/logs/ch3/red_team_sft/outputs.jsonl"
-DEFAULT_SUMMARY_PATH = ".agents/logs/ch3/red_team_sft/summary.json"
+DEFAULT_MODEL = "runs/supplement/ch3/sft/final_model"
+DEFAULT_OUTPUT_PATH = "runs/logs/ch3/red_team_sft/outputs.jsonl"
+DEFAULT_SUMMARY_PATH = "runs/logs/ch3/red_team_sft/summary.json"
 
 logger = logging.getLogger(__name__)
 

@@ -29,11 +29,11 @@ from cs336_alignment.experiment_metrics import cuda_memory_metrics
 from cs336_alignment.sft_data import PackedSFTDataset, iterate_batches
 
 
-DEFAULT_MODEL = "/root/autodl-tmp/a5-alignment/models/Llama-3.1-8B"
-DEFAULT_TRAIN_PATH = "/root/autodl-tmp/a5-alignment/datasets/ch3/train.jsonl.gz"
-DEFAULT_VAL_PATH = "/root/autodl-tmp/a5-alignment/datasets/ch3/test.jsonl.gz"
-DEFAULT_OUTPUT_DIR = "/root/autodl-tmp/a5-alignment/runs/supplement/ch3/sft"
-DEFAULT_LOG_DIR = ".agents/logs/ch3/sft"
+DEFAULT_MODEL = "models/Llama-3.1-8B"
+DEFAULT_TRAIN_PATH = "data/datasets/ch3/train.jsonl.gz"
+DEFAULT_VAL_PATH = "data/datasets/ch3/test.jsonl.gz"
+DEFAULT_OUTPUT_DIR = "runs/supplement/ch3/sft"
+DEFAULT_LOG_DIR = "runs/logs/ch3/sft"
 
 logger = logging.getLogger(__name__)
 
