@@ -1059,12 +1059,17 @@ For the final leaderboard-style long run, the strongest
 direct on-policy GRPO configuration from the ablations was therefore used rather than the SFT+KL
 variant: Qwen2.5-Math-1.5B with the R1-Zero prompt, learning rate `4e-5`,
 `reinforce_with_baseline`, `masked_mean` length normalization, per-group reward
-standardization, and no reference KL penalty. Training ran for 400 GRPO steps and
-evaluated every 20 steps on the full substitute validation split. This final
-run used 3199 validation examples from `competition_math_numeric`; because the
-official course MATH files were unavailable, the result below should be
-read as a leaderboard-style substitute-validation result rather than as an
-official 5K MATH leaderboard submission.
+standardization, and no reference KL penalty. The run was carried out under the
+leaderboard's 4-hour wall-clock budget on a single H100 GPU, with the policy and
+the vLLM rollout engine co-resident on the same card via sleep/wake phase
+switching. The configuration requested 400 GRPO steps with evaluation every 20
+steps on the full substitute validation split, but a hard 4-hour wall-clock cap
+stopped training after 368 steps, with the last full-validation evaluation at
+step 360. This final run used 3199 validation examples from
+`competition_math_numeric`; because the official course MATH files were
+unavailable, the result below should be read as a leaderboard-style
+substitute-validation result rather than as an official 5K MATH leaderboard
+submission.
 
 ![Leaderboard validation answer reward](artifacts/experiments/main/ch7/leaderboard/leaderboard_validation_reward.svg)
 
@@ -1081,24 +1086,31 @@ official 5K MATH leaderboard submission.
 | metric | value |
 |---|---:|
 | validation examples | 3199 |
-| initial validation answer reward | 3.16% |
-| best validation answer reward | 73.71% at step 280 |
-| final validation answer reward | 72.59% at step 400 |
-| final validation format accuracy | 94.59% |
-| final rollout answer reward | 83.20% |
-| final rollout format reward | 94.14% |
-| final average response token length | 379.2 |
-| final token entropy | 0.1230 |
+| initial validation answer reward | 2.94% |
+| best validation answer reward | 73.80% at step 240 |
+| final validation answer reward | 73.55% at step 360 |
+| final validation format accuracy | 93.22% |
+| best elapsed step time | 2.53 h |
+| final elapsed step time | 3.87 h |
+| final rollout answer reward | 74.22% |
+| final rollout format reward | 89.45% |
+| final average response token length | 516.4 |
+| final token entropy | 0.0533 |
 
-The final run improves rapidly through the first 200 steps, peaks at 73.71%
-full-validation answer reward at step 280, and then enters a shallow plateau:
-the final step-400 checkpoint remains close to the peak at 72.59%. The rollout
-curves do not show a late collapse. Rollout answer reward remains high at the
-end, while response length stabilizes around a few hundred tokens and token
-entropy stays low but nonzero. The gap between this 73.71% full-validation
-result and the 88.18% 1024-example monitoring result from the ablations is
-therefore mostly an evaluation-split difference, not evidence that the final
-configuration failed to reproduce the ablation trend.
+The final run improves rapidly through the first 200 steps and peaks at 73.80%
+full-validation answer reward at step 240, reached after only 2.53 hours of
+elapsed step time, comfortably inside the 4-hour budget. It then enters a shallow
+plateau: the last full-validation evaluation before the cap (step 360, 3.87 hours
+elapsed) remains close to the peak at 73.55%, confirming that the additional
+steps past the peak bought no meaningful gain. The rollout curves do not show a
+late collapse. Rollout answer reward stays high at the end, while average
+response length grows steadily to roughly 516 tokens; this lengthening of the
+sampled traces is what gradually slows the later rollout and evaluation phases
+and, together with the 4-hour wall-clock cap, ends the run at step 368. Token
+entropy stays low but nonzero. The gap between this 73.80% full-validation result
+and the 88.18% 1024-example monitoring result from the ablations is therefore
+mostly an evaluation-split difference, not evidence that the final configuration
+failed to reproduce the ablation trend.
 
 ---
 

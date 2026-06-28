@@ -18,37 +18,35 @@
 <line x1="95.0" y1="578" x2="95.0" y2="583" stroke="#222" stroke-width="1"/>
 <text x="95.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">0.0</text>
 <line x1="236.0" y1="578" x2="236.0" y2="583" stroke="#222" stroke-width="1"/>
-<text x="236.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">0.9</text>
+<text x="236.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">0.8</text>
 <line x1="377.0" y1="578" x2="377.0" y2="583" stroke="#222" stroke-width="1"/>
-<text x="377.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">1.8</text>
+<text x="377.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">1.5</text>
 <line x1="518.0" y1="578" x2="518.0" y2="583" stroke="#222" stroke-width="1"/>
-<text x="518.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">2.8</text>
+<text x="518.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">2.3</text>
 <line x1="659.0" y1="578" x2="659.0" y2="583" stroke="#222" stroke-width="1"/>
-<text x="659.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">3.7</text>
+<text x="659.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">3.1</text>
 <line x1="800.0" y1="578" x2="800.0" y2="583" stroke="#222" stroke-width="1"/>
-<text x="800.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">4.6</text>
-<polyline fill="none" stroke="#1f77b4" stroke-width="2.3" points="95.0,558.1 120.8,365.1 147.3,304.5 178.8,223.1 212.7,177.0 245.8,159.7 281.3,144.0 316.3,144.3 352.5,137.1 388.7,129.4 424.5,124.8 462.1,121.3 498.9,124.1 537.5,125.6 576.9,113.6 614.6,118.0 651.9,119.9 689.9,121.5 726.4,121.3 762.7,119.9 800.0,120.7"/>
-<circle cx="95.0" cy="558.1" r="3" fill="#1f77b4"/>
-<circle cx="120.8" cy="365.1" r="3" fill="#1f77b4"/>
-<circle cx="147.3" cy="304.5" r="3" fill="#1f77b4"/>
-<circle cx="178.8" cy="223.1" r="3" fill="#1f77b4"/>
-<circle cx="212.7" cy="177.0" r="3" fill="#1f77b4"/>
-<circle cx="245.8" cy="159.7" r="3" fill="#1f77b4"/>
-<circle cx="281.3" cy="144.0" r="3" fill="#1f77b4"/>
-<circle cx="316.3" cy="144.3" r="3" fill="#1f77b4"/>
-<circle cx="352.5" cy="137.1" r="3" fill="#1f77b4"/>
-<circle cx="388.7" cy="129.4" r="3" fill="#1f77b4"/>
-<circle cx="424.5" cy="124.8" r="3" fill="#1f77b4"/>
-<circle cx="462.1" cy="121.3" r="3" fill="#1f77b4"/>
-<circle cx="498.9" cy="124.1" r="3" fill="#1f77b4"/>
-<circle cx="537.5" cy="125.6" r="3" fill="#1f77b4"/>
-<circle cx="576.9" cy="113.6" r="3" fill="#1f77b4"/>
-<circle cx="614.6" cy="118.0" r="3" fill="#1f77b4"/>
-<circle cx="651.9" cy="119.9" r="3" fill="#1f77b4"/>
-<circle cx="689.9" cy="121.5" r="3" fill="#1f77b4"/>
-<circle cx="726.4" cy="121.3" r="3" fill="#1f77b4"/>
-<circle cx="762.7" cy="119.9" r="3" fill="#1f77b4"/>
-<circle cx="800.0" cy="120.7" r="3" fill="#1f77b4"/>
+<text x="800.0" y="602" text-anchor="middle" font-family="Arial" font-size="12">3.9</text>
+<polyline fill="none" stroke="#1f77b4" stroke-width="2.3" points="95.0,559.5 127.0,198.5 162.7,157.7 202.0,149.7 241.3,134.7 279.7,132.5 316.6,134.1 351.9,133.3 392.4,121.5 434.8,116.4 475.5,119.5 516.4,122.1 556.5,113.0 599.6,116.2 640.7,140.2 679.2,124.5 717.1,121.9 758.1,118.5 800.0,114.6"/>
+<circle cx="95.0" cy="559.5" r="3" fill="#1f77b4"/>
+<circle cx="127.0" cy="198.5" r="3" fill="#1f77b4"/>
+<circle cx="162.7" cy="157.7" r="3" fill="#1f77b4"/>
+<circle cx="202.0" cy="149.7" r="3" fill="#1f77b4"/>
+<circle cx="241.3" cy="134.7" r="3" fill="#1f77b4"/>
+<circle cx="279.7" cy="132.5" r="3" fill="#1f77b4"/>
+<circle cx="316.6" cy="134.1" r="3" fill="#1f77b4"/>
+<circle cx="351.9" cy="133.3" r="3" fill="#1f77b4"/>
+<circle cx="392.4" cy="121.5" r="3" fill="#1f77b4"/>
+<circle cx="434.8" cy="116.4" r="3" fill="#1f77b4"/>
+<circle cx="475.5" cy="119.5" r="3" fill="#1f77b4"/>
+<circle cx="516.4" cy="122.1" r="3" fill="#1f77b4"/>
+<circle cx="556.5" cy="113.0" r="3" fill="#1f77b4"/>
+<circle cx="599.6" cy="116.2" r="3" fill="#1f77b4"/>
+<circle cx="640.7" cy="140.2" r="3" fill="#1f77b4"/>
+<circle cx="679.2" cy="124.5" r="3" fill="#1f77b4"/>
+<circle cx="717.1" cy="121.9" r="3" fill="#1f77b4"/>
+<circle cx="758.1" cy="118.5" r="3" fill="#1f77b4"/>
+<circle cx="800.0" cy="114.6" r="3" fill="#1f77b4"/>
 <line x1="828" y1="96" x2="850" y2="96" stroke="#1f77b4" stroke-width="2.5"/>
 <text x="858" y="100" font-family="Arial" font-size="13">final_on_policy_lr4e-5_400_full_eval</text>
 <text x="447.5" y="638" text-anchor="middle" font-family="Arial" font-size="15">Elapsed step hours</text>

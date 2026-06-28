@@ -3,16 +3,16 @@
 | metric | value |
 |---|---:|
 | validation examples | 3199 |
-| initial validation answer reward | 3.16% |
-| best validation answer reward | 73.71% at step 280 |
-| final validation answer reward | 72.59% at step 400 |
-| final validation format accuracy | 94.59% |
-| best elapsed step time | 3.14 h |
-| final elapsed step time | 4.59 h |
-| final rollout answer reward | 83.20% |
-| final rollout format reward | 94.14% |
-| final average response token length | 379.2 |
-| final token entropy | 0.1230 |
+| initial validation answer reward | 2.94% |
+| best validation answer reward | 73.80% at step 240 |
+| final validation answer reward | 73.55% at step 360 |
+| final validation format accuracy | 93.22% |
+| best elapsed step time | 2.53 h |
+| final elapsed step time | 3.87 h |
+| final rollout answer reward | 74.22% |
+| final rollout format reward | 89.45% |
+| final average response token length | 516.4 |
+| final token entropy | 0.0533 |
 
 The archived result uses the substitute `competition_math_numeric` validation set, not the official course MATH validation files.
 

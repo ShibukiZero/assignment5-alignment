@@ -1,8 +1,8 @@
 {
   "run": "final_on_policy_lr4e-5_400_full_eval",
-  "source_log_dir": ".agents/logs/leaderboard/final_on_policy_lr4e-5_400_full_eval",
-  "archived_run_dir": "artifacts/experiments/ch7/leaderboard/runs/final_on_policy_lr4e-5_400_full_eval",
-  "copied_file_count": 424,
+  "source_log_dir": "/workspace/a5-alignment/runs/leaderboard/log",
+  "archived_run_dir": "/workspace/a5-alignment/artifacts_new/runs/final_on_policy_lr4e-5_400_full_eval",
+  "copied_file_count": 390,
   "large_files_omitted": true,
   "sample_rollouts_omitted": true,
   "skipped_patterns": [
